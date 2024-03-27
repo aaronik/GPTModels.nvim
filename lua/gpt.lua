@@ -14,9 +14,9 @@ M.setup = function(args)
 end
 
 M.gpt = function()
-  print('wo from gpt')
-  -- local module = require('gpt.module')
-  -- return module.gpt()
+  package.loaded['gpt.module'] = nil
+  local module = require('gpt.module')
+  return module.gpt()
 end
 
 -- -- Assigning everything that module exposes to M
