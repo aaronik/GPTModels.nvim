@@ -1,6 +1,3 @@
--- main module file
--- local module = require("undo-selection.module")
-
 local config = {}
 
 local M = {}
@@ -14,9 +11,9 @@ M.setup = function(args)
 end
 
 M.gpt = function()
-  package.loaded['gpt.module'] = nil
+  -- package.loaded['gpt'] = nil
   local module = require('gpt.module')
-  return module.gpt()
+  return module.run()
 end
 
 -- -- Assigning everything that module exposes to M

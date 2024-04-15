@@ -12,3 +12,5 @@
 /lua_modules
 /.luarocks
 .aider*
+
+debug.log
