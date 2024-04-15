@@ -1,29 +1,36 @@
 -- Utility functions
 local M = {}
 
+M.P = function(v)
+  print(vim.inspect(v))
+  return v
+end
+
+M.RELOAD = function(...)
+  return require("plenary.reload").reload_module(...)
+end
+
+M.R = function(name)
+  M.RELOAD(name)
+  return require(name)
+end
+
 function M.log(message)
   local log_file = io.open("./debug.log", "a")
-  if not log_file then error("No log file found!") end
+  if not log_file then error("No log file found! It should be debug.log in the root.") end
   log_file:write(message .. "\n")
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
 end
 
-function M.pretty_print_table(tbl, indent)
-  local result = ""
-  if not indent then indent = 0 end
-  for k, v in pairs(tbl) do
-    if type(v) == "table" and indent <= 0 then
-      result = result .. "\n" .. string.rep(" ", indent) .. tostring(k) .. ": " .. M.pretty_print_table(v, indent + 2)
-    else
-      result = result .. "\n" .. string.rep(" ", indent) .. tostring(k) .. ": " .. tostring(v)
-    end
-  end
-  return result
-end
-
 function M.dbg()
   require('debug').debug()
+end
+
+-- Note: requires command to be executed by user with <cmd> rather than :
+function M.in_visual_mode()
+  local mode = vim.api.nvim_get_mode().mode
+  return mode == 'v' or mode == 'V' or mode == ''
 end
 
 -- Just get some data about the current visual selection
@@ -61,11 +68,5 @@ end
 --     end_column = end_col,
 --   }
 -- end
-
--- Note: requires command to be executed by user with <cmd> rather than :
-function M.in_visual_mode()
-  local mode = vim.api.nvim_get_mode().mode
-  return mode == 'v' or mode == 'V' or mode == ''
-end
 
 return M
