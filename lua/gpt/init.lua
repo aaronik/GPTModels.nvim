@@ -1,8 +1,4 @@
--- lua/
-
 local util = require('../util')
-
-util.P(util)
 
 local M = {}
 
@@ -15,12 +11,11 @@ M.setup = function(args)
 end
 
 -- The main function
-M.run = function()
-  print(util.in_visual_mode())
-  if not util.in_visual_mode() then
-    return
+---@param opts { visual_mode: boolean }
+M.run = function(opts)
+  if opts.visual_mode then
+    util.log(util.get_visual_selection())
   end
-  util.log(util.pretty_print_table(util.get_visual_selection()))
 end
 
 M.gpt = M.run

@@ -15,22 +15,21 @@ M.R = function(name)
   return require(name)
 end
 
-function M.log(message)
+-- Log to the file debug.log in the root. File can be watched for easier debugging.
+M.log = function(data)
+  if type(data) == "table" then
+    data = vim.inspect(data)
+  end
+
   local log_file = io.open("./debug.log", "a")
   if not log_file then error("No log file found! It should be debug.log in the root.") end
-  log_file:write(message .. "\n")
+  log_file:write(tostring(data) .. "\n")
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
 end
 
-function M.dbg()
+M.dbg = function()
   require('debug').debug()
-end
-
--- Note: requires command to be executed by user with <cmd> rather than :
-function M.in_visual_mode()
-  local mode = vim.api.nvim_get_mode().mode
-  return mode == 'v' or mode == 'V' or mode == ''
 end
 
 -- Just get some data about the current visual selection
@@ -38,7 +37,7 @@ end
 -- That means using <cmd> to invoke will result in stale info.
 -- But without <cmd>, using :, we can't tell if we were in visual mode.
 -- What a world.
-function M.get_visual_selection()
+M.get_visual_selection = function()
   local selection = {}
   selection.start_line = vim.fn.getpos("'<")[2]
   selection.end_line = vim.fn.getpos("'>")[2]
