@@ -5,9 +5,10 @@ local Popup = require("nui.popup")
 
 local M = {}
 
-local function close_popup(bufnr)
-  vim.api.nvim_buf_delete(bufnr, { force = true })
-end
+-- -- This works to close the popup. Probably good to delete the buffer too!
+-- local function close_popup(bufnr)
+--   vim.api.nvim_buf_delete(bufnr, { force = true })
+-- end
 
 function _GPTOnEditWindowCR(input_bufnr, code_bufnr)
   util.log('TODO Submit the coooooooooode')
@@ -15,7 +16,7 @@ function _GPTOnEditWindowCR(input_bufnr, code_bufnr)
   local code_text = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
   util.log(input_text)
   util.log(code_text)
-  close_popup(input_bufnr) -- This 'accidentally' closes all windows, which is the behavior i want
+  -- close_popup(input_bufnr) -- This 'accidentally' closes all windows, which is the behavior i want
 end
 
 local function build_common_popup_opts(text)
@@ -56,8 +57,10 @@ function M.build_and_mount(selected_text)
   vim.api.nvim_buf_set_option(top_left_popup.bufnr, 'filetype', vim.bo.filetype)
   vim.api.nvim_buf_set_option(top_right_popup.bufnr, 'filetype', vim.bo.filetype)
 
+  -- The windows are small, so let's not wrap TODO Couldn't figure this out in 5 mins of looking
+
   if selected_text then
-    vim.api.nvim_buf_set_lines(top_left_popup.bufnr, -1, -1, false, selected_text)
+    vim.api.nvim_buf_set_lines(top_left_popup.bufnr, 0, -1, true, selected_text)
   end
 
   -- -- Close the popup when leaving the buffer, just nice to have
