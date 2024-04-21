@@ -1,9 +1,10 @@
 ---@diagnostic disable: undefined-global
 
-local module = require("../lua/gpt.module")
-local vim = vim -- TODO Get this to provide type feedback
+local util = require("util")
 local assert = require("luassert")
-local spy = require('luassert.spy')
+
+-- TODO Test running :GPT injects the correct is_visual_mode
+
 
 -- TODO I can't for the life of me get this working.
 describe("get_visual_selection", function()
@@ -25,7 +26,7 @@ describe("get_visual_selection", function()
     vim.api.nvim_command('sleep 100m')
 
     -- Ensure get_visual_selection is getting the whole selection
-    local selection = module.get_visual_selection()
+    local selection = util.get_visual_selection()
     assert.same({ start_line = 0, end_line = 2, start_column = 0, end_column = 2147483647 }, selection)
   end)
 end)

@@ -11,6 +11,7 @@ function InvokeGpt(opts, preview_ns, preview_buffer)
 
   -- Load the code on the first time it's run, rather than on startup.
   -- This behavior will likely have to be reconsidered
+  -- TODO regular require
   util.R('gpt').run(gpt_opts);
 end
 

@@ -15,6 +15,8 @@ end
 M.run = function(opts)
   if opts.visual_mode then
     util.log(util.get_visual_selection())
+  else
+    util.log('not in visual mode')
   end
 end
 

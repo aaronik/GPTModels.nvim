@@ -43,29 +43,15 @@ M.get_visual_selection = function()
   selection.end_line = vim.fn.getpos("'>")[2]
   selection.start_column = vim.fn.getpos("'<")[3]
   selection.end_column = vim.fn.getpos("'>")[3]
+
+  local end_col = math.min(selection.end_column, 2147483646)
+  local text = vim.api.nvim_buf_get_text(
+    0, selection.start_line - 1, selection.start_column - 1, selection.end_line - 1, end_col, {}
+  )
+
+  selection.text = text
+
   return selection
 end
-
--- function M.get_visual_selection()
---   -- Save current cursor position
---   local save_pos = vim.api.nvim_win_get_cursor(0)
---   -- Move to start of visual selection
---   vim.cmd('normal! gv"<Esc>"')
---   local start_line, start_col = unpack(vim.api.nvim_win_get_cursor(0))
---   -- Move to end of visual selection
---   vim.cmd('normal! gvo"<Esc>"')
---   local end_line, end_col = unpack(vim.api.nvim_win_get_cursor(0))
---   -- Restore cursor position
---   vim.api.nvim_win_set_cursor(0, save_pos)
---   -- Adjust for Vim's 1-based indexing
---   start_col = start_col + 1
---   end_col = end_col + 1
---   return {
---     start_line = start_line,
---     start_column = start_col,
---     end_line = end_line,
---     end_column = end_col,
---   }
--- end
 
 return M
