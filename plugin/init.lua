@@ -2,7 +2,7 @@
 --
 -- via https://www.petergundel.de/neovim/lua/hack/2023/12/17/get-neovim-mode-when-executing-a-command.html
 
-local util = require('../lua.util')
+local util = require('gpt.util')
 
 function InvokeGpt(opts, preview_ns, preview_buffer)
   local gpt_opts = {

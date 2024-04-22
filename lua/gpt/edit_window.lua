@@ -1,4 +1,4 @@
-local util = require('../lua.util')
+local util = require('gpt.util')
 
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
@@ -59,6 +59,7 @@ function M.build_and_mount(selected_text)
 
   -- The windows are small, so let's not wrap TODO Couldn't figure this out in 5 mins of looking
 
+  -- Theoretically we'll always have selected_text at this point, but ok to defend
   if selected_text then
     vim.api.nvim_buf_set_lines(top_left_popup.bufnr, 0, -1, true, selected_text)
   end
