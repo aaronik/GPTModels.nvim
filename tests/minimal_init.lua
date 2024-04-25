@@ -1,11 +1,18 @@
-local plenary_dir = os.getenv("PLENARY_DIR") or "/tmp/plenary.nvim"
-local is_not_a_directory = vim.fn.isdirectory(plenary_dir) == 0
-if is_not_a_directory then
-  vim.fn.system({"git", "clone", "https://github.com/nvim-lua/plenary.nvim", plenary_dir})
-end
-
+local lazypath = vim.fn.stdpath("data") .. "/lazy"
+vim.notify = print
 vim.opt.rtp:append(".")
-vim.opt.rtp:append(plenary_dir)
+vim.opt.rtp:append(lazypath .. "/plenary.nvim")
+vim.opt.rtp:append(lazypath .. "/nui.nvim")
+-- vim.opt.rtp:append(lazypath .. "/nvim-nio")
 
-vim.cmd("runtime plugin/plenary.vim")
-require("plenary.busted")
+-- -- Get all our normal plugins into the test env
+-- local suite = os.getenv("SUITE")
+-- vim.opt.rtp:append(suite .. "nvim")
+
+vim.opt.swapfile = false
+
+vim.cmd("runtime! plugin/plenary.vim")
+
+P = function(...)
+  print(vim.inspect(...))
+end
