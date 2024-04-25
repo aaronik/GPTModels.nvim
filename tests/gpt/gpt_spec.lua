@@ -3,9 +3,9 @@
 local util = require("gpt.util")
 local assert = require("luassert")
 local gpt = require('gpt')
+local edit_window = require('gpt.edit_window')
 
 describe("gpt.run (the main function)", function()
-
   -- Set current window height, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
   before_each(function()
     vim.api.nvim_win_set_height(0, 30)
@@ -20,6 +20,21 @@ describe("gpt.run (the main function)", function()
   end)
 end)
 
+describe("gpt.edit_window", function ()
+  before_each(function()
+    vim.api.nvim_win_set_height(0, 30)
+  end)
+
+  it("has no error with text", function()
+    edit_window.build_and_mount({ "text line 1", "text line 2" })
+  end)
+
+  it("has no error without text", function()
+    edit_window.build_and_mount()
+  end)
+
+end)
+
 -- -- TODO I can't for the life of me get this working.
 -- describe("util.get_visual_selection", function()
 --   it("returns a table with the current visual selection", function()
@@ -28,6 +43,7 @@ end)
 
 --     -- Switch to the new buffer
 --     vim.api.nvim_set_current_buf(test_buf)
+--     vim.api.nvim_win_set_height(0, 30)
 
 --     local buf = vim.api.nvim_get_current_buf()
 
@@ -45,7 +61,7 @@ end)
 --     vim.api.nvim_input('ggVG')
 
 --     -- Ensure get_visual_selection is getting the whole selection
---     local selection = get_visual_selection()
+--     local selection = util.get_visual_selection()
 --     assert.same({ start_line = 0, end_line = 2, start_column = 0, end_column = 2147483647 }, selection)
 --   end)
 -- end)
