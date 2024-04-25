@@ -1,62 +1,34 @@
 local util = require('gpt.util')
-  local event = require("nui.utils.autocmd").event
-
+local event = require("nui.utils.autocmd").event
+local com = require('gpt.window.common')
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 
 local M = {}
 
--- This works to close the popup. Probably good to delete the buffer too!
-local function close_popup(bufnr)
-  vim.api.nvim_buf_delete(bufnr, { force = true })
-end
-
-function _GPTOnEditWindowCR(input_bufnr, code_bufnr)
-  util.log('TODO Submit the coooooooooode')
+function _GPTOnChatWindowCR(input_bufnr, chat_bufnr)
   local input_text = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
-  local code_text = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
-  util.log(input_text)
-  util.log(code_text)
-  -- close_popup(input_bufnr) -- This 'accidentally' closes all windows, which is the behavior i want
-end
 
-local function build_common_popup_opts(text)
-  return {
-    border = {
-      style = "rounded",
-      text = {
-        top = " " .. text .. " ",
-        top_align = "center",
-        bottom = "",
-        bottom_align = "center",
-      },
-    },
-    focusable = true,
-    enter = true,
-    win_options = {
-      -- winhighlight = "Normal:Normal",
-      winhighlight = "Normal:Normal,FloatBorder:SpecialChar",
-    },
-  }
+  -- Add input text to chat
+  vim.api.nvim_buf_set_lines(chat_bufnr, -1, -1, true, input_text)
+
+  -- Clear input
+  vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 end
 
 function M.build_and_mount()
-  local top_popup = Popup(build_common_popup_opts("Chat"))
-  local input = Popup(build_common_popup_opts("Prompt"))
+  local chat = Popup(com.build_common_popup_opts("Chat"))
+  local input = Popup(com.build_common_popup_opts("Prompt"))
 
-  -- Experimenting with md
-  vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'md')
+  -- Input window is text with no syntax
+  vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
+  vim.api.nvim_buf_set_option(input.bufnr, 'syntax', '')
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
 
-  -- Set buffers to same filetype as current file, for highlighting
-  vim.api.nvim_buf_set_option(top_popup.bufnr, 'filetype', vim.bo.filetype)
-
-  -- Close the popup when leaving the buffer, just nice to have
-  input:on(event.BufLeave, function()
-    close_popup(input.bufnr)
-  end, { once = true })
+  -- Chat window will be markdown?
+  vim.api.nvim_buf_set_option(chat.bufnr, 'filetype', 'md')
 
   -- TODO The goal is to call a function when <CR> is pressed in normal mode within this popup.
   -- This way works, but it's gross. I'd much rather something like popup:on(<CR>, whatever()),
@@ -65,7 +37,7 @@ function M.build_and_mount()
     input.bufnr,
     "n",
     "<CR>",
-    ":lua _GPTOnEditWindowCR(" .. input.bufnr .. ", " .. top_popup.bufnr .. ")<CR>",
+    ":lua _GPTOnChatWindowCR(" .. input.bufnr .. ", " .. chat.bufnr .. ")<CR>",
     { noremap = true, silent = true }
   )
 
@@ -79,7 +51,7 @@ function M.build_and_mount()
     },
     Layout.Box({
       Layout.Box({
-        Layout.Box(top_popup, { size = "100%" }),
+        Layout.Box(chat, { size = "100%" }),
       }, { dir = "row", size = "80%" }),
       Layout.Box(input, { size = "22%" }),
     }, { dir = "col" })
@@ -89,4 +61,3 @@ function M.build_and_mount()
 end
 
 return M
-
