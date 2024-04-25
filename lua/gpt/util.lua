@@ -33,10 +33,6 @@ M.dbg = function()
 end
 
 -- Just get some data about the current visual selection
--- vim updates the getpos values _after exiting from visual mode_.
--- That means using <cmd> to invoke will result in stale info.
--- But without <cmd>, using :, we can't tell if we were in visual mode.
--- What a world.
 M.get_visual_selection = function()
   local selection = {}
   selection.start_line = vim.fn.getpos("'<")[2]

@@ -6,11 +6,16 @@ local Popup = require("nui.popup")
 local M = {}
 
 function _GPTOnEditWindowCR(input_bufnr, code_bufnr)
-  util.log('TODO Submit the coooooooooode')
   local input_text = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local code_text = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
-  util.log(input_text)
-  util.log(code_text)
+
+  local text = input_text .. "\n" .. code_text
+
+  -- Add input text to chat
+  vim.api.nvim_buf_set_lines(text, -1, -1, true, input_text)
+
+  -- Clear input
+  vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 end
 
 function M.build_and_mount(selected_text)

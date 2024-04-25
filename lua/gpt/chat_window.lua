@@ -50,9 +50,7 @@ function M.build_and_mount()
       },
     },
     Layout.Box({
-      Layout.Box({
-        Layout.Box(chat, { size = "100%" }),
-      }, { dir = "row", size = "80%" }),
+      Layout.Box(chat, { size = "80%" }),
       Layout.Box(input, { size = "22%" }),
     }, { dir = "col" })
   )
