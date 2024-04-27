@@ -27,9 +27,6 @@ function M.build_and_mount()
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
 
-  -- Chat window will be markdown?
-  vim.api.nvim_buf_set_option(chat.bufnr, 'filetype', 'md')
-
   -- TODO The goal is to call a function when <CR> is pressed in normal mode within this popup.
   -- This way works, but it's gross. I'd much rather something like popup:on(<CR>, whatever()),
   -- and run lua code from there. Don't want to convert everything to strings to pass it.
