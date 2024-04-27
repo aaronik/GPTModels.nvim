@@ -25,6 +25,21 @@ describe("util", function()
       local c = util.merge_tables(a, b)
       assert.same(c, { a = true, false })
     end)
+
+    it("merges combo style tables", function()
+      local a = { a = true }
+      local b = { false }
+      local c = util.merge_tables(a, b)
+      assert.same(c, { a = true, false })
+    end)
+
+    it("does not overwrite arguments", function ()
+      local a = { a = true }
+      local b = { b = true }
+      util.merge_tables(a, b)
+      assert.same(a, { a = true })
+      assert.same(b, { b = true })
+    end)
   end)
 
   describe("get_visual_selection", function()
@@ -67,7 +82,8 @@ describe("util", function()
 
       -- Ensure get_visual_selection is getting the whole selection
       local selection = util.get_visual_selection()
-      assert.same({ start_line = 0, end_line = 2, start_column = 0, end_column = 2147483647, text = expected_lines }, selection)
+      assert.same({ start_line = 0, end_line = 2, start_column = 0, end_column = 2147483647, text = expected_lines },
+        selection)
     end)
   end)
 end)

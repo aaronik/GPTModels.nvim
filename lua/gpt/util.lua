@@ -33,14 +33,22 @@ M.dbg = function()
 end
 
 M.merge_tables = function(t1, t2)
-    for k, v in pairs(t2) do
-        if type(k) == "number" then -- when an entry in an array like table
-            table.insert(t1, v)
-        else
-            t1[k] = v -- when a hashmap type entry
-        end
+  local new_table = {}
+  for k, v in pairs(t1) do
+    if type(k) == "number" then
+      table.insert(new_table, v)
+    else
+      new_table[k] = v
     end
-    return t1
+  end
+  for k, v in pairs(t2) do
+    if type(k) == "number" then
+      table.insert(new_table, v)
+    else
+      new_table[k] = v
+    end
+  end
+  return new_table
 end
 
 -- Just get some data about the current visual selection
