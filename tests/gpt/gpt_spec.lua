@@ -47,7 +47,6 @@ describe("gpt.edit_window", function()
     assert.is_not(bufs.right_bufnr, nil)
   end)
 
-  -- TODO This is still not working but there's got to be something I'm missing.
   it("shifts through windows on <Tab>", function()
     local bufs = edit_window.build_and_mount()
     local input_bufnr = bufs.input_bufnr
@@ -71,13 +70,11 @@ describe("gpt.edit_window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
-  -- So hard to test modes
-  pending("opens in input mode", function()
+  it("opens in input mode", function()
     edit_window.build_and_mount()
-    -- Can't test that vim is in insert mode, since the test call itself brings it out of insert mode
-    local history = vim.fn.histget("cmd", -1)
-    P(vim.fn.histget('cmd'))
-    assert.is_true(history == "startinsert")
+    vim.api.nvim_feedkeys('xhello', 'mtx', true)
+    -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
+    assert.same(vim.api.nvim_get_current_line(), 'hello')
   end)
 
   it("doesn't error on <CR>", function()
@@ -96,12 +93,11 @@ describe("gpt.chat_window", function()
     assert.is_not(bufs.chat_bufnr, nil)
   end)
 
-  -- So hard to test modes
-  pending("opens in input mode", function()
+  it("opens in input mode", function()
     chat_window.build_and_mount()
-    -- Can't test that vim is in insert mode, since the test call itself brings it out of insert mode
-    local history = vim.fn.histget("cmd", -1)
-    assert.is_true(history == "startinsert")
+    vim.api.nvim_feedkeys('xhello', 'mtx', true)
+    -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
+    assert.same(vim.api.nvim_get_current_line(), 'hello')
   end)
 
   it("puts text in chat window on <CR> and removes it from input window", function()
@@ -109,7 +105,6 @@ describe("gpt.chat_window", function()
     local input_bufnr = bufs.input_bufnr
     local chat_bufnr = bufs.chat_bufnr
 
-    -- Ensure normal mode, go insert mode, type hello, go normal, enter
     local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
