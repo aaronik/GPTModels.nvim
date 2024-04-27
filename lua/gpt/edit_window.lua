@@ -24,8 +24,6 @@ function M.build_and_mount(selected_text)
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Turn off syntax highlighting for input buffer.
-  -- TODO Make sure this doesn't for some reason cause treesitter to look
-  -- for markdown!
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
   vim.api.nvim_buf_set_option(input.bufnr, 'syntax', '')
 

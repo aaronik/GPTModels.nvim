@@ -6,7 +6,7 @@ local Popup = require("nui.popup")
 
 local M = {}
 
-function _GPTOnChatWindowCR(input_bufnr, chat_bufnr)
+local on_CR = function(input_bufnr, chat_bufnr)
   local input_text = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
 
   -- Add input text to chat
@@ -37,8 +37,8 @@ function M.build_and_mount()
     input.bufnr,
     "n",
     "<CR>",
-    ":lua _GPTOnChatWindowCR(" .. input.bufnr .. ", " .. chat.bufnr .. ")<CR>",
-    { noremap = true, silent = true }
+    "",
+    { noremap = true, silent = true, callback = function () on_CR(input.bufnr, chat.bufnr) end }
   )
 
   local layout = Layout(
