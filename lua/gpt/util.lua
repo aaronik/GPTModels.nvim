@@ -32,6 +32,17 @@ M.dbg = function()
   require('debug').debug()
 end
 
+M.merge_tables = function(t1, t2)
+    for k, v in pairs(t2) do
+        if type(k) == "number" then -- when an entry in an array like table
+            table.insert(t1, v)
+        else
+            t1[k] = v -- when a hashmap type entry
+        end
+    end
+    return t1
+end
+
 -- Just get some data about the current visual selection
 M.get_visual_selection = function()
   local selection = {}

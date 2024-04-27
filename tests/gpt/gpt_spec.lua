@@ -4,12 +4,21 @@ local util = require("gpt.util")
 local assert = require("luassert")
 local gpt = require('gpt')
 local edit_window = require('gpt.edit_window')
+local chat_window = require('gpt.chat_window')
+
+function CommonBefore()
+  before_each(function()
+    -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
+    vim.api.nvim_win_set_height(0, 100)
+    vim.api.nvim_win_set_width(0, 100)
+
+    -- clear cmd history, lest it get remembered and bleed across tests
+    vim.fn.histdel('cmd')
+  end)
+end
 
 describe("gpt.run (the main function)", function()
-  -- Set current window height, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
-  before_each(function()
-    vim.api.nvim_win_set_height(0, 30)
-  end)
+  CommonBefore()
 
   it("opens in visual mode without error", function()
     gpt.run({ visual_mode = true })
@@ -20,10 +29,8 @@ describe("gpt.run (the main function)", function()
   end)
 end)
 
-describe("gpt.edit_window", function ()
-  before_each(function()
-    vim.api.nvim_win_set_height(0, 30)
-  end)
+describe("gpt.edit_window", function()
+  CommonBefore()
 
   it("has no error with text", function()
     edit_window.build_and_mount({ "text line 1", "text line 2" })
@@ -33,35 +40,100 @@ describe("gpt.edit_window", function ()
     edit_window.build_and_mount()
   end)
 
+  it("returns buffer numbers", function()
+    local bufs = edit_window.build_and_mount()
+    assert.is_not(bufs.input_bufnr, nil)
+    assert.is_not(bufs.left_bufnr, nil)
+    assert.is_not(bufs.right_bufnr, nil)
+  end)
+
+  -- TODO This is still not working but there's got to be something I'm missing.
+  it("shifts through windows on <Tab>", function()
+    local bufs = edit_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local left_bufnr = bufs.left_bufnr
+    local right_bufnr = bufs.right_bufnr
+
+    local input_win = vim.fn.bufwinid(input_bufnr)
+    local left_win = vim.fn.bufwinid(left_bufnr)
+    local right_win = vim.fn.bufwinid(right_bufnr)
+
+    local esc = vim.api.nvim_replace_termcodes('<Esc>', true, true, true)
+    local tab = vim.api.nvim_replace_termcodes("<Tab>", true, true, true)
+
+    vim.api.nvim_feedkeys(esc, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), input_win)
+    vim.api.nvim_feedkeys(tab, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), left_win)
+    vim.api.nvim_feedkeys(tab, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), right_win)
+    vim.api.nvim_feedkeys(tab, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), input_win)
+  end)
+
+  -- So hard to test modes
+  pending("opens in input mode", function()
+    edit_window.build_and_mount()
+    -- Can't test that vim is in insert mode, since the test call itself brings it out of insert mode
+    local history = vim.fn.histget("cmd", -1)
+    P(vim.fn.histget('cmd'))
+    assert.is_true(history == "startinsert")
+  end)
+
+  it("doesn't error on <CR>", function()
+    edit_window.build_and_mount()
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+  end)
 end)
 
--- -- TODO I can't for the life of me get this working.
--- describe("util.get_visual_selection", function()
---   it("returns a table with the current visual selection", function()
---     -- Create a new buffer
---     local test_buf = vim.api.nvim_create_buf(false, true)
+describe("gpt.chat_window", function()
+  CommonBefore()
 
---     -- Switch to the new buffer
---     vim.api.nvim_set_current_buf(test_buf)
---     vim.api.nvim_win_set_height(0, 30)
+  it("returns buffer numbers", function()
+    local bufs = chat_window.build_and_mount()
+    assert.is_not(bufs.input_bufnr, nil)
+    assert.is_not(bufs.chat_bufnr, nil)
+  end)
 
---     local buf = vim.api.nvim_get_current_buf()
+  -- So hard to test modes
+  pending("opens in input mode", function()
+    chat_window.build_and_mount()
+    -- Can't test that vim is in insert mode, since the test call itself brings it out of insert mode
+    local history = vim.fn.histget("cmd", -1)
+    assert.is_true(history == "startinsert")
+  end)
 
---     local lines = { "Nonsense text 1", "Nonsense text 2" }
+  it("puts text in chat window on <CR> and removes it from input window", function()
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
 
---     -- Append lines at the start of the buffer
---     -- nvim_buf_set_lines arguments: buffer handle, start index, end index, strict indexing, lines to set
---     vim.api.nvim_buf_set_lines(buf, 0, 0, false, lines)
+    -- Ensure normal mode, go insert mode, type hello, go normal, enter
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
 
---     -- Ensure that text was added
---     local current_buffer_contents = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
---     assert.same({ [1] = "Nonsense text 1", [2] = "Nonsense text 2", [3] = "" }, current_buffer_contents)
+    local chat_text = vim.api.nvim_buf_get_text(chat_bufnr, 0, 0, -1, -1, {})
 
---     -- Select all the text in the buffer
---     vim.api.nvim_input('ggVG')
+    -- ensure hello is one of the lines in chat buf
+    local contains_hello = false
+    for _, line in ipairs(chat_text) do
+      if line == "hello" then
+        contains_hello = true
+        break
+      end
+    end
+    assert.is_true(contains_hello)
 
---     -- Ensure get_visual_selection is getting the whole selection
---     local selection = util.get_visual_selection()
---     assert.same({ start_line = 0, end_line = 2, start_column = 0, end_column = 2147483647 }, selection)
---   end)
--- end)
+    -- ensure input is empty
+    local input_text = vim.api.nvim_buf_get_text(input_bufnr, 0, 0, -1, -1, {})
+    contains_hello = false
+    for _, line in ipairs(input_text) do
+      if line == "hello" then
+        contains_hello = true
+        break
+      end
+    end
+    assert.is_not_true(contains_hello)
+  end)
+end)

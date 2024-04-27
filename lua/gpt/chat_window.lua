@@ -56,6 +56,14 @@ function M.build_and_mount()
   )
 
   layout:mount()
+
+  -- start window in insert mode
+  vim.api.nvim_command('startinsert')
+
+  return {
+    input_bufnr = input.bufnr,
+    chat_bufnr = chat.bufnr
+  }
 end
 
 return M
