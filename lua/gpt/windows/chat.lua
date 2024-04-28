@@ -10,15 +10,17 @@ local M = {}
 ---@param chat_bufnr integer
 local on_CR = function(input_bufnr, chat_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
-  table.insert(input_lines, "")
-  table.insert(input_lines, "")
 
-  -- Add input text to chat
+  -- Add input text to chat buf
   vim.api.nvim_buf_set_lines(chat_bufnr, -1, -1, true, input_lines)
 
-  -- Clear input
+  -- Add a separator below user input text
+  vim.api.nvim_buf_set_lines(chat_bufnr, -1, -1, true, { "---", "" })
+
+  -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
+  -- Current state of chat buf, before this llm response
   local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
   local chat_text = table.concat(chat_lines, "\n")
 
@@ -27,6 +29,12 @@ local on_CR = function(input_bufnr, chat_bufnr)
     prompt = table.concat(input_lines, "\n"),
     on_response = function(response)
       chat_text = chat_text .. response
+      vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
+    end,
+    on_end = function()
+      -- Add sepearator below LLM text
+      -- TODO This is rickity as balls. What if the user types while this is coming down?
+      chat_text = chat_text .. "\n---\n"
       vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
     end
   })
@@ -44,9 +52,6 @@ function M.build_and_mount()
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
 
-  -- TODO The goal is to call a function when <CR> is pressed in normal mode within this popup.
-  -- This way works, but it's gross. I'd much rather something like popup:on(<CR>, whatever()),
-  -- and run lua code from there. Don't want to convert everything to strings to pass it.
   vim.api.nvim_buf_set_keymap(
     input.bufnr,
     "n",

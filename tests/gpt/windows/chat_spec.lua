@@ -4,6 +4,7 @@ local util = require("gpt.util")
 local assert = require("luassert")
 local chat_window = require('gpt.windows.chat')
 local stub = require('luassert.stub')
+local llm = require('gpt.llm')
 
 describe("The Chat window", function()
   before_each(function()
@@ -73,36 +74,66 @@ describe("The Chat window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
+  describe("when inputting text and pressing <CR>", function()
+    it("removes text from input and puts it in chat", function()
+      local bufs = chat_window.build_and_mount()
+      local input_bufnr = bufs.input_bufnr
+      local chat_bufnr = bufs.chat_bufnr
 
-  it("puts text in chat window on <CR> and removes it from input window", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
+      local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+      vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
+      local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
-    local chat_text = vim.api.nvim_buf_get_text(chat_bufnr, 0, 0, -1, -1, {})
-
-    -- ensure hello is one of the lines in chat buf
-    local contains_hello = false
-    for _, line in ipairs(chat_text) do
-      if line == "hello" then
-        contains_hello = true
-        break
+      -- ensure hello is one of the lines in chat buf
+      local contains_hello = false
+      for _, line in ipairs(chat_lines) do
+        if line == "hello" then
+          contains_hello = true
+          break
+        end
       end
-    end
-    assert.is_true(contains_hello)
+      assert.is_true(contains_hello)
 
-    -- ensure input is empty
-    local input_text = vim.api.nvim_buf_get_text(input_bufnr, 0, 0, -1, -1, {})
-    contains_hello = false
-    for _, line in ipairs(input_text) do
-      if line == "hello" then
-        contains_hello = true
-        break
+      -- ensure input is empty
+      local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
+      assert.same(input_lines, { "" })
+    end)
+
+    it("places the response into chat", function()
+      local bufs = chat_window.build_and_mount()
+      local input_bufnr = bufs.input_bufnr
+      local chat_bufnr = bufs.chat_bufnr
+
+      -- stub llm call
+      local s = stub(llm, "make_request")
+
+      -- make call to llm stub
+      local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+      vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+      -- grab the given callback
+      local on_response = s.calls[1].refs[1].on_response
+      local on_end = s.calls[1].refs[1].on_end
+
+      -- simulate llm responding
+      on_response("response text1\nresponse text2")
+      on_end()
+
+      local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
+
+      local contains_hello = false
+      local contains_1 = false
+      local contains_2 = false
+      for _, line in ipairs(chat_lines) do
+        if line == "hello" then contains_hello = true end
+        if line == "response text1" then contains_1 = true end
+        if line == "response text2" then contains_2 = true end
       end
-    end
-    assert.is_not_true(contains_hello)
+      assert.is_true(contains_hello)
+      assert.is_true(contains_1)
+      assert.is_true(contains_2)
+
+    end)
   end)
 end)
