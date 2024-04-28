@@ -5,7 +5,7 @@ local assert = require("luassert")
 local chat_window = require('gpt.windows.chat')
 local stub = require('luassert.stub')
 
-function CommonBefore()
+describe("The Chat window", function()
   before_each(function()
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
     vim.api.nvim_win_set_height(0, 100)
@@ -21,10 +21,6 @@ function CommonBefore()
     local s = stub(job, "new")
     s.returns({ start = function() end })
   end)
-end
-
-describe("The Chat window", function()
-  CommonBefore()
 
   it("returns buffer numbers", function()
     local bufs = chat_window.build_and_mount()

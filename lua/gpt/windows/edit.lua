@@ -17,6 +17,7 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
+  -- Aggregate response text as it comes in
   local response_text = ""
 
   llm.make_request({
@@ -24,12 +25,10 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
     prompt = prompt,
     on_response = function (response)
       response_text = response_text .. response
-      vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, vim.split(response_text, "\n"))
+      local response_lines = vim.split(response_text, "\n")
+      vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)
     end
   })
-
-  -- -- Add input text to chat
-  -- vim.api.nvim_buf_set_lines(code_bufnr, -1, -1, true, input_lines)
 end
 
 function M.build_and_mount(selected_text)
@@ -48,9 +47,6 @@ function M.build_and_mount(selected_text)
   vim.api.nvim_buf_set_option(left_popup.bufnr, 'filetype', vim.bo.filetype)
   vim.api.nvim_buf_set_option(right_popup.bufnr, 'filetype', vim.bo.filetype)
 
-  -- The windows are small, so let's not wrap TODO Couldn't figure this out in 5 mins of looking
-
-  -- Theoretically we'll always have selected_text at this point, but ok to defend
   if selected_text then
     vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_text)
   end

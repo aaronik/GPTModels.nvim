@@ -9,9 +9,7 @@ function InvokeGpt(opts, preview_ns, preview_buffer)
     visual_mode = opts.count ~= -1
   }
 
-  -- Load the code on the first time it's run, rather than on startup.
-  -- This behavior will likely have to be reconsidered
-  -- TODO regular require
+  -- TODO use regular require
   util.R('gpt').run(gpt_opts);
 end
 

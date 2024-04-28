@@ -104,6 +104,7 @@ describe("The Edit window", function()
     -- simulate a multiline resposne from the llm
     on_response("line 1\nline 2")
 
+    -- Those lines should be separated on newlines and placed into the right buf
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })
   end)
 end)

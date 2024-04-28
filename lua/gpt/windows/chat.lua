@@ -2,7 +2,7 @@ local util = require('gpt.util')
 local com = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
-local ollama = require("gpt.adapters.ollama")
+local llm = require("gpt.llm")
 
 local M = {}
 
@@ -22,13 +22,14 @@ local on_CR = function(input_bufnr, chat_bufnr)
   local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
   local chat_text = table.concat(chat_lines, "\n")
 
-  ollama.make_request(table.concat(input_lines, "\n"), "llama3", function(chunk)
-      chat_text = chat_text .. chunk
+  llm.make_request({
+    stream = true,
+    prompt = table.concat(input_lines, "\n"),
+    on_response = function(response)
+      chat_text = chat_text .. response
       vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
-    end,
-    function()
-      util.log('--END--')
-    end)
+    end
+  })
 end
 
 ---@return { input_bufnr: integer, chat_bufnr: integer }
