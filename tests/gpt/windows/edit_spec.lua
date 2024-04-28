@@ -4,6 +4,7 @@ local util = require("gpt.util")
 local assert = require("luassert")
 local edit_window = require('gpt.windows.edit')
 local stub = require('luassert.stub')
+local llm = require('gpt.llm')
 
 describe("The Edit window", function()
   before_each(function()
@@ -14,9 +15,7 @@ describe("The Edit window", function()
     -- clear cmd history, lest it get remembered and bleed across tests
     vim.fn.histdel('cmd')
 
-    -- stubbing job:new prevents the llm call from happening
-    -- TODO Add llm layer, which switches over adapters based on config,
-    -- and can be stubbed itself
+    -- stubbing job:new prevents curl requests from happening
     local job = require('plenary.job')
     local s = stub(job, "new")
     s.returns({ start = function() end })
@@ -91,10 +90,20 @@ describe("The Edit window", function()
 
   it("Places llm responses into right window", function()
     local bufs = edit_window.build_and_mount()
+
+    local s = stub(llm, "make_request")
+
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-    -- this shit is given to ollama.make_request, with a cb, which should be invoked.
-    -- Then check the buf
+    local on_response = s.calls[1].refs[1].on_response
+
+    -- before on_response gets a response from the llm, the right window should be empty
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "" })
+
+    -- simulate a multiline resposne from the llm
+    on_response("line 1\nline 2")
+
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })
   end)
 end)

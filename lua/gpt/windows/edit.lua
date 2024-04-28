@@ -2,21 +2,34 @@ local util   = require('gpt.util')
 local com    = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup  = require("nui.popup")
-local ollama = require('gpt.adapters.ollama')
+local llm    = require('gpt.llm')
 
 local M      = {}
 
-local on_CR  = function(input_bufnr, code_bufnr)
-  local input_text = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
-  local code_text = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
+local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
+  local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
+  local input_text = table.concat(input_lines, "\n")
+  local code_lines = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
+  local code_text = table.concat(code_lines, "\n")
 
-  local text = util.merge_tables(input_text, code_text)
-
-  -- Add input text to chat
-  vim.api.nvim_buf_set_lines(code_bufnr, -1, -1, true, input_text)
+  local prompt = input_text .. "\n\nHere is the code:\n\n" .. code_text
 
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
+
+  local response_text = ""
+
+  llm.make_request({
+    stream = true,
+    prompt = prompt,
+    on_response = function (response)
+      response_text = response_text .. response
+      vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, vim.split(response_text, "\n"))
+    end
+  })
+
+  -- -- Add input text to chat
+  -- vim.api.nvim_buf_set_lines(code_bufnr, -1, -1, true, input_lines)
 end
 
 function M.build_and_mount(selected_text)
@@ -44,7 +57,7 @@ function M.build_and_mount(selected_text)
 
   -- Set <CR>
   vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, left_popup.bufnr) end }
+    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, left_popup.bufnr, right_popup.bufnr) end }
   )
 
   local bufs = { left_popup.bufnr, right_popup.bufnr, input.bufnr }
