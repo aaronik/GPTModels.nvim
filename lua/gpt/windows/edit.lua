@@ -1,7 +1,8 @@
 local util   = require('gpt.util')
-local com    = require('gpt.window.common')
+local com    = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup  = require("nui.popup")
+local ollama = require('gpt.adapters.ollama')
 
 local M      = {}
 
@@ -59,7 +60,7 @@ function M.build_and_mount(selected_text)
       end
     })
 
-    -- Shift-Tab cycles through windows
+    -- Shift-Tab cycles through windows in reverse
     vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "", {
       noremap = true,
       silent = true,

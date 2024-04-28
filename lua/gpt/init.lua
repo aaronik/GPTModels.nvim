@@ -1,6 +1,6 @@
 local util = require('gpt.util')
-local edit_window = require("gpt.edit_window")
-local chat_window = require("gpt.chat_window")
+local edit_window = require("gpt.windows.edit")
+local chat_window = require("gpt.windows.chat")
 
 local M = {}
 

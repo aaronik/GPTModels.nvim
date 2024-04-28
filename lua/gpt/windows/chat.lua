@@ -1,5 +1,5 @@
 local util = require('gpt.util')
-local com = require('gpt.window.common')
+local com = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local ollama = require("gpt.adapters.ollama")
@@ -73,10 +73,6 @@ function M.build_and_mount()
   -- start window in insert mode
   vim.api.nvim_command('startinsert')
 
-  -- TODO remove
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "q", "",
-    { noremap = true, silent = true, callback = function() layout:unmount() end })
-
   -- keymaps
   local bufs = { chat.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
@@ -91,7 +87,7 @@ function M.build_and_mount()
       end
     })
 
-    -- Shift-Tab cycles through windows
+    -- Shift-Tab cycles through windows in reverse
     vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "", {
       noremap = true,
       silent = true,
@@ -101,6 +97,11 @@ function M.build_and_mount()
         vim.api.nvim_set_current_win(prev_win)
       end
     })
+
+    -- "q" exits from the thing
+    -- TODO remove or test
+    vim.api.nvim_buf_set_keymap(buf, "n", "q", "",
+      { noremap = true, silent = true, callback = function() layout:unmount() end })
   end
 
   return {
