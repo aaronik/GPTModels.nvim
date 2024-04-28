@@ -12,3 +12,6 @@ test_nvim:
 
 test:
 	-$(MAKE) test_nvim || exit 1
+
+test-watch:
+	nodemon -e lua -x "$(MAKE) test"

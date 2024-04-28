@@ -5,6 +5,7 @@ local assert = require("luassert")
 local gpt = require('gpt')
 local edit_window = require('gpt.edit_window')
 local chat_window = require('gpt.chat_window')
+local stub = require('luassert.stub')
 
 function CommonBefore()
   before_each(function()
@@ -14,6 +15,13 @@ function CommonBefore()
 
     -- clear cmd history, lest it get remembered and bleed across tests
     vim.fn.histdel('cmd')
+
+    -- stubbing job:new prevents the llm call from happening
+    -- TODO Add llm layer, which switches over adapters based on config,
+    -- and can be stubbed itself
+    local job = require('plenary.job')
+    local s = stub(job, "new")
+    s.returns({ start = function() end })
   end)
 end
 
@@ -47,6 +55,7 @@ describe("gpt.edit_window", function()
     assert.is_not(bufs.right_bufnr, nil)
   end)
 
+  -- TODO S-tab
   it("shifts through windows on <Tab>", function()
     local bufs = edit_window.build_and_mount()
     local input_bufnr = bufs.input_bufnr
@@ -98,6 +107,26 @@ describe("gpt.chat_window", function()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)
     -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
     assert.same(vim.api.nvim_get_current_line(), 'hello')
+  end)
+
+  -- TODO S-tab
+  it("shifts through windows on <Tab>", function()
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
+
+    local input_win = vim.fn.bufwinid(input_bufnr)
+    local chat_win = vim.fn.bufwinid(chat_bufnr)
+
+    local esc = vim.api.nvim_replace_termcodes('<Esc>', true, true, true)
+    local tab = vim.api.nvim_replace_termcodes("<Tab>", true, true, true)
+
+    vim.api.nvim_feedkeys(esc, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), input_win)
+    vim.api.nvim_feedkeys(tab, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), chat_win)
+    vim.api.nvim_feedkeys(tab, 'mtx', true)
+    assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
   it("puts text in chat window on <CR> and removes it from input window", function()

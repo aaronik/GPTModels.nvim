@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global
 
--- curl http://localhost:11434/api/generate -d '{ "model": "llama3", "prompt": "What is water made of?" }'
-
 local job = require('plenary.job')
 local util = require("gpt.util")
 local assert = require("luassert")
@@ -9,6 +7,7 @@ local stub = require('luassert.stub')
 local ollama = require('gpt.adapters.ollama')
 
 describe("ollama.make_request", function()
+
     it("passes correct data to curl", function()
         local s = stub(job, "new")
 
