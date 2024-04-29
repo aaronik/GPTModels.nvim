@@ -133,7 +133,33 @@ describe("The Chat window", function()
       assert.is_true(contains_hello)
       assert.is_true(contains_1)
       assert.is_true(contains_2)
+    end)
 
+    it("Gives the entire contents of the chat to the LLM", function()
+      local bufs = chat_window.build_and_mount()
+      local input_bufnr = bufs.input_bufnr
+      local chat_bufnr = bufs.chat_bufnr
+
+      -- stub llm call
+      local s = stub(llm, "make_request")
+
+      -- add some text to input buffer
+      vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "input line" })
+
+      -- simulate a chat history
+      vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, { "llm response" })
+
+      -- press enter
+      local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+      vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+      -- grab the given prompt
+      ---@type string
+      local prompt = s.calls[1].refs[1].prompt
+
+      P(prompt)
+
+      assert.is_true(prompt:match("llm response") ~= nil)
     end)
   end)
 end)

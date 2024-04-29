@@ -51,12 +51,29 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_text)
   end
 
-  -- Set <CR>
+  local layout = Layout(
+    {
+      position = "50%",
+      size = {
+        width = "90%",
+        height = "90%",
+      },
+    },
+    Layout.Box({
+      Layout.Box({
+        Layout.Box(left_popup, { size = "50%" }),
+        Layout.Box(right_popup, { size = "50%" }),
+      }, { dir = "row", size = "80%" }),
+      Layout.Box(input, { size = "22%" }),
+    }, { dir = "col" })
+  )
+
+  -- Set <CR> on input
   vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
     { noremap = true, silent = true, callback = function() on_CR(input.bufnr, left_popup.bufnr, right_popup.bufnr) end }
   )
 
-  -- Keymaps
+  -- Further Keymaps
   local bufs = { left_popup.bufnr, right_popup.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
@@ -88,27 +105,10 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        -- util.
+        layout:unmount()
       end
     })
   end
-
-  local layout = Layout(
-    {
-      position = "50%",
-      size = {
-        width = "90%",
-        height = "90%",
-      },
-    },
-    Layout.Box({
-      Layout.Box({
-        Layout.Box(left_popup, { size = "50%" }),
-        Layout.Box(right_popup, { size = "50%" }),
-      }, { dir = "row", size = "80%" }),
-      Layout.Box(input, { size = "22%" }),
-    }, { dir = "col" })
-  )
 
   layout:mount()
 
