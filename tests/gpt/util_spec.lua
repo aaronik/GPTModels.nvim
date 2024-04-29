@@ -4,6 +4,13 @@ local util = require("gpt.util")
 local assert = require("luassert")
 
 describe("util", function()
+  describe("log", function()
+    it("works", function()
+      -- TODO stub io.{open,write,flush,close}; ensure write gets variadic arguments
+      util.log("--Test run--")
+    end)
+  end)
+
   describe("merge_tables", function()
     it("merges hash style tables", function()
       local a = { a = true }

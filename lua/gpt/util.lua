@@ -18,19 +18,32 @@ M.P = function(v)
   return v
 end
 
----Log to the file debug.log in the root. File can be watched for easier debugging.
----@param ... (table | string)[]
-M.log = function(...)
-  -- local args = {...}
-
-  local loggables = vim.inspect(...)
+-- Log to the file debug.log in the root. File can be watched for easier debugging.
+M.log = function(data)
+  if type(data) == "table" then
+    data = vim.inspect(data)
+  end
 
   local log_file = io.open("./debug.log", "a")
   if not log_file then error("No log file found! It should be debug.log in the root.") end
-  log_file:write(tostring(loggables) .. "\n")
+  log_file:write(tostring(data) .. "\n")
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
 end
+
+
+-----Log to the file debug.log in the root. File can be watched for easier debugging.
+-----@param ... table | string
+--M.log = function(...)
+--  M.P(args)
+--  local data = vim.inspect(args)
+
+--  local log_file = io.open("./debug.log", "a")
+--  if not log_file then error("No log file found! It should be debug.log in the root.") end
+--  log_file:write(tostring(data) .. "\n")
+--  log_file:flush() -- Ensure the output is written immediately
+--  log_file:close()
+--end
 
 ---Found out in python you can do dict1 | dict2 to produce a merged dict. Wish lua had that.
 ---* shallow merge

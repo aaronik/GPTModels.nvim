@@ -8,8 +8,6 @@ local llm = require('gpt.llm')
 
 describe("The Chat window", function()
   before_each(function()
-    util.log({}, "hey", "what")
-
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
     vim.api.nvim_win_set_height(0, 100)
     vim.api.nvim_win_set_width(0, 100)
