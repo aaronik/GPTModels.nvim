@@ -23,7 +23,7 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   llm.make_request({
     stream = true,
     prompt = prompt,
-    on_response = function (response)
+    on_response = function(response)
       response_text = response_text .. response
       local response_lines = vim.split(response_text, "\n")
       vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)
@@ -56,6 +56,7 @@ function M.build_and_mount(selected_text)
     { noremap = true, silent = true, callback = function() on_CR(input.bufnr, left_popup.bufnr, right_popup.bufnr) end }
   )
 
+  -- Keymaps
   local bufs = { left_popup.bufnr, right_popup.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
@@ -77,6 +78,17 @@ function M.build_and_mount(selected_text)
         local prev_buf_index = (i - 2) % #bufs + 1
         local prev_win = vim.fn.bufwinid(bufs[prev_buf_index])
         vim.api.nvim_set_current_win(prev_win)
+      end
+    })
+
+    -- q to exit -- TODO This is probably more personal config. Consider
+    -- removing this before it goes live. Or making it optional or something
+    -- else.
+    vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        -- util.
       end
     })
   end

@@ -1,37 +1,45 @@
 -- Utility functions
 local M = {}
 
-M.P = function(v)
-  print(vim.inspect(v))
-  return v
-end
-
+-- remove program code from lua cache, reload
 M.RELOAD = function(...)
   return require("plenary.reload").reload_module(...)
 end
 
+-- modified 'require'; use to flush entire program from top level for plugin development.
 M.R = function(name)
   M.RELOAD(name)
   return require(name)
 end
 
--- Log to the file debug.log in the root. File can be watched for easier debugging.
-M.log = function(data)
-  if type(data) == "table" then
-    data = vim.inspect(data)
-  end
+-- print tables contents
+M.P = function(v)
+  print(vim.inspect(v))
+  return v
+end
+
+---Log to the file debug.log in the root. File can be watched for easier debugging.
+---@param ... (table | string)[]
+M.log = function(...)
+  -- local args = {...}
+
+  local loggables = vim.inspect(...)
 
   local log_file = io.open("./debug.log", "a")
   if not log_file then error("No log file found! It should be debug.log in the root.") end
-  log_file:write(tostring(data) .. "\n")
+  log_file:write(tostring(loggables) .. "\n")
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
 end
 
-M.dbg = function()
-  require('debug').debug()
-end
-
+---Found out in python you can do dict1 | dict2 to produce a merged dict. Wish lua had that.
+---* shallow merge
+---* doesn't write to t1 or t2
+---* returns new table t3 with all keys from t1 and t2
+---* keys from t2 will overwrite t1
+---@param t1 table
+---@param t2 table
+---@return table
 M.merge_tables = function(t1, t2)
   local new_table = {}
   for k, v in pairs(t1) do
@@ -51,7 +59,8 @@ M.merge_tables = function(t1, t2)
   return new_table
 end
 
--- Just get some data about the current visual selection
+---Get useful data about the current visual selection
+---@return {start_line: number, end_line: number, start_column: number, end_column: number, text: string[]}
 M.get_visual_selection = function()
   local selection = {}
   selection.start_line = vim.fn.getpos("'<")[2]
