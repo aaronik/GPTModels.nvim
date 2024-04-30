@@ -15,15 +15,20 @@ Store.register_message = function(message)
   local last_message = Store._messages[#Store._messages]
 
   -- If the most recent message is not from the user, then we'll assume the llm is in the process of giving a response.
-  if last_message.role ~= "user" then
+  -- User messages never come in piecemeal.
+  if last_message.role == "assistant" and message.role == "assistant" then
     last_message.content = last_message.content .. message.content
-  elseif last_message.role == "user" then
+  else
     table.insert(Store._messages, message)
   end
 end
 
 Store.get_messages = function()
   return Store._messages
+end
+
+Store.reset_messages = function()
+  Store._messages = {}
 end
 
 return Store
