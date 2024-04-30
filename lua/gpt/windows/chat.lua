@@ -36,7 +36,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
   table.insert(messages, { role = "user", content = input_text })
   render_buffer_from_messages(chat_bufnr, messages)
 
-  llm.make_request({
+  llm.chat({
     llm = {
       stream = true,
       messages = messages,

@@ -9,9 +9,17 @@ local M = {}
 --- Make request
 ---@param args MakeChatRequestArgs
 ---@return nil
-M.make_request = function(args)
+M.chat = function(args)
   -- This is where swapping out ollama for other supported llms will happen
   ollama.chat(args)
+end
+
+--- Make request
+---@param args MakeGenerateRequestArgs
+---@return nil
+M.generate = function(args)
+  -- This is where swapping out ollama for other supported llms will happen
+  ollama.generate(args)
 end
 
 return M

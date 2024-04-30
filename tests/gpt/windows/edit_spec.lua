@@ -91,12 +91,15 @@ describe("The Edit window", function()
   it("Places llm responses into right window", function()
     local bufs = edit_window.build_and_mount()
 
-    local s = stub(llm, "make_request")
+    local s = stub(llm, "generate")
 
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-    local on_response = s.calls[1].refs[1].on_response
+    ---@type MakeGenerateRequestArgs
+    local args = s.calls[1].refs[1]
+
+    local on_response = args.on_response
 
     -- before on_response gets a response from the llm, the right window should be empty
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "" })

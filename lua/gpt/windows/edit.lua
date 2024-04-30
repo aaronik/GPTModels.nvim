@@ -20,9 +20,12 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   -- Aggregate response text as it comes in
   local response_text = ""
 
-  llm.make_request({
-    stream = true,
-    prompt = prompt,
+  llm.generate({
+    llm = {
+      model = "llama3",
+      stream = true,
+      prompt = prompt,
+    },
     on_response = function(response)
       response_text = response_text .. response
       local response_lines = vim.split(response_text, "\n")
