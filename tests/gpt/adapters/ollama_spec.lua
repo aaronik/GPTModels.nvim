@@ -37,7 +37,7 @@ describe("ollama.generate", function()
       return { start = function() end }
     end)
 
-    ollama.generate({
+    local jorb = ollama.generate({
       llm = {
         prompt = "pr0mpT",
         model = "llama3",
@@ -47,6 +47,7 @@ describe("ollama.generate", function()
     })
 
     assert.stub(s).was_called(1)
+    assert.equal("function", type(jorb.shutdown))
   end)
 end)
 
@@ -82,7 +83,7 @@ describe("ollama.chat", function()
       return { start = function() end }
     end)
 
-    ollama.chat({
+    local jorb = ollama.chat({
       llm = {
         model = "llama3",
         messages = messages,
@@ -92,5 +93,6 @@ describe("ollama.chat", function()
     })
 
     assert.stub(s).was_called(1)
+    assert.equal("function", type(jorb.shutdown))
   end)
 end)

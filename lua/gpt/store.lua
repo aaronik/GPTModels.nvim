@@ -31,4 +31,15 @@ Store.reset_messages = function()
   Store._messages = {}
 end
 
+---@param job Job
+---@return nil
+Store.register_job = function(job)
+  Store._job = job
+end
+
+---@return Job | nil
+Store.get_job = function()
+  return Store._job
+end
+
 return Store

@@ -7,7 +7,20 @@ local Store = require("gpt.store")
 
 local M = {}
 
--- TODO on_exit call job:shutdown()
+---@param bufnr integer
+---@param messages LlmMessage[]
+local render_buffer_from_messages = function(bufnr, messages)
+  local lines = {}
+  for _, message in ipairs(messages) do
+    local message_content = vim.split(message.content, "\n")
+    lines = util.merge_tables(lines, message_content)
+    table.insert(lines, "---")
+  end
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
+end
+
+-- TODO when window is closed call job:shutdown()
+-- TODO auto-scroll (lua fn for ctl-e?) when focus is not in chat window
 
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
@@ -17,18 +30,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
   -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
-
-  ---@param bufnr integer
-  ---@param messages LlmMessage[]
-  local render_buffer_from_messages = function (bufnr, messages)
-    local lines = {}
-    for _, message in ipairs(messages) do
-      local message_content = vim.split(message.content, "\n")
-      lines = util.merge_tables(lines, message_content)
-      table.insert(lines, "---")
-    end
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
-  end
 
   Store.register_message({ role = "user", content = input_text })
   render_buffer_from_messages(chat_bufnr, Store.get_messages())
@@ -42,7 +43,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
     kind = "chat",
     on_response = function(message)
       Store.register_message(message)
-
       render_buffer_from_messages(chat_bufnr, Store.get_messages())
     end,
     on_end = function()
@@ -116,8 +116,22 @@ function M.build_and_mount()
 
     -- "q" exits from the thing
     -- TODO remove or test
-    vim.api.nvim_buf_set_keymap(buf, "n", "q", "",
-      { noremap = true, silent = true, callback = function() layout:unmount() end })
+    vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        -- TODO export to util again or something
+
+        -- If there's an active request when this closes, cancel it
+        -- TODO test
+        -- TODO unfortunately this does not seem to stop the request from continuing to fire.
+        -- TJ's libraries are risky.
+        if Store.get_job() ~= nil then
+          Store.get_job():shutdown()
+        end
+        layout:unmount()
+      end
+    })
   end
 
   return {

@@ -4,7 +4,7 @@ local util = require("gpt.util")
 local assert = require("luassert")
 local Store = require("gpt.store")
 
-describe("store", function()
+describe("Store", function()
   before_each(function()
     Store.reset_messages()
   end)
@@ -51,5 +51,19 @@ describe("store", function()
     Store.register_message({ role = "assistant", content = "hello" })
     Store.reset_messages()
     assert.same({}, Store.get_messages())
+  end)
+
+  it("takes one job", function()
+    assert.equal(nil, Store.get_job())
+
+    local job1 = { start = function() end, new = function() end }
+    Store.register_job(job1)
+
+    assert.equal(job1, Store.get_job())
+
+    local job2 = { start = function() end, new = function() end }
+    Store.register_job(job2)
+
+    assert.equal(job2, Store.get_job())
   end)
 end)

@@ -27,5 +27,8 @@
 ---@field on_end function | nil
 ---@field on_error fun(message: string) | nil
 
-
+---@class Job
+---@field new function
+---@field start function
+---@field shutdown function
 

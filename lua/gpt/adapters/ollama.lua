@@ -7,7 +7,7 @@ local M = {}
 -- curl http://localhost:11434/api/chat -d '{ "model": "llama2", "messages": [ { "role": "user", "content": "why is the sky blue?" } ] }'
 
 ---@param args MakeGenerateRequestArgs
----@return { shutdown: function }
+---@return Job
 M.generate = function(args)
     local url = "http://localhost:11434/api/generate"
 
@@ -44,7 +44,7 @@ M.generate = function(args)
 end
 
 ---@param args MakeChatRequestArgs
----@return { shutdown: function }
+---@return Job
 M.chat = function(args)
     local url = "http://localhost:11434/api/chat"
 

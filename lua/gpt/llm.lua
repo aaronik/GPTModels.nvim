@@ -8,18 +8,18 @@ local M = {}
 
 --- Make request
 ---@param args MakeChatRequestArgs
----@return nil
+---@return Job
 M.chat = function(args)
   -- This is where swapping out ollama for other supported llms will happen
-  ollama.chat(args)
+  return ollama.chat(args)
 end
 
 --- Make request
 ---@param args MakeGenerateRequestArgs
----@return nil
+---@return Job
 M.generate = function(args)
   -- This is where swapping out ollama for other supported llms will happen
-  ollama.generate(args)
+  return ollama.generate(args)
 end
 
 return M

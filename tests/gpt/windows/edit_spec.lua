@@ -15,10 +15,10 @@ describe("The Edit window", function()
     -- clear cmd history, lest it get remembered and bleed across tests
     vim.fn.histdel('cmd')
 
-    -- stubbing job:new prevents curl requests from happening
-    local job = require('plenary.job')
-    local s = stub(job, "new")
-    s.returns({ start = function() end })
+    -- -- stubbing job:new prevents curl requests from happening
+    -- local job = require('plenary.job')
+    -- local s = stub(job, "new")
+    -- s.returns({ start = function() end })
   end)
 
   it("returns buffer numbers", function()
