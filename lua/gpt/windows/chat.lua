@@ -8,9 +8,7 @@ local M = {}
 
 -- TODO This lives wherever our state lives
 ---@type LlmMessage[]
-local messages = {
-  { role = "user", content = input_text }
-}
+local messages = {}
 
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
@@ -21,23 +19,21 @@ local on_CR = function(input_bufnr, chat_bufnr)
   -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
-  table.insert(messages, { role = "user", content = input_text })
-
   ---@param bufnr integer
   ---@param messages LlmMessage[]
   local render_buffer_from_messages = function (bufnr, messages)
     util.log(messages)
     local lines = {}
     for _, message in ipairs(messages) do
-      table.insert(lines, message.content)
+      local message_content = vim.split(message.content, "\n")
+      lines = util.merge_tables(lines, message_content)
       table.insert(lines, "---")
     end
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
   end
 
-  -- TODO Make our data store the collection of messages, and whenever one
-  -- comes in, update that data store, then render the data store to the
-  -- buffer, replacing all text in it, like we currently do.
+  table.insert(messages, { role = "user", content = input_text })
+  render_buffer_from_messages(chat_bufnr, messages)
 
   llm.make_request({
     llm = {

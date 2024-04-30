@@ -25,7 +25,6 @@ M.generate = function(args)
             on_stdout = vim.schedule_wrap(function(_, json)
                 if json then
                     local data = vim.fn.json_decode(json) or { response = "JSON decode error for LLM response!" }
-                    util.log(data)
                     args.on_response(data.response)        -- for generate
                 end
             end),
@@ -59,7 +58,6 @@ M.chat = function(args)
             on_stdout = vim.schedule_wrap(function(_, json)
                 if json then
                     local data = vim.fn.json_decode(json) or { response = "JSON decode error for LLM response!" }
-                    util.log(data)
                     -- data is large, data.resposne is the text we're looking for
                     args.on_response(data.message) -- for chat
                 end

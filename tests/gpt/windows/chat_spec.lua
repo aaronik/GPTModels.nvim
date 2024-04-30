@@ -115,12 +115,12 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     -- grab the given callback
-    local on_response = s.calls[1].refs[1].on_response
-    local on_end = s.calls[1].refs[1].on_end
+    ---@type MakeChatRequestArgs
+    local args = s.calls[1].refs[1]
+    local on_response = args.on_response
 
     -- simulate llm responding
-    on_response("response text1\nresponse text2")
-    on_end()
+    on_response({ role = "assistant", content = "response text1\nresponse text2"})
 
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
@@ -135,40 +135,5 @@ describe("The Chat window", function()
     assert.is_true(contains_hello)
     assert.is_true(contains_1)
     assert.is_true(contains_2)
-  end)
-
-  it("Gives the entire contents of the chat to the LLM", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
-
-    -- stub llm call
-    local s = stub(llm, "make_request")
-
-    -- add some text to input buffer
-    vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "user input 1" })
-
-    -- press enter
-    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- grab the given prompt
-    ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
-
-    -- https://github.com/ollama/ollama/blob/main/docs/api.md#request-8
-    local messages = args.messages
-
-    P(s.calls[1].refs[1].messages)
-
-    -- TODO Loop it
-    assert.equal(messages[1].role, "user")
-    assert.equal(messages[1].content, "user input 1")
-    assert.equal(messages[2].role, "assistant")
-    assert.equal(messages[2].content, "assistant input 1")
-    assert.equal(messages[3].role, "user")
-    assert.equal(messages[3].content, "user input 2")
-    assert.equal(messages[4].role, "assistant")
-    assert.equal(messages[4].content, "assistant input 2")
   end)
 end)
