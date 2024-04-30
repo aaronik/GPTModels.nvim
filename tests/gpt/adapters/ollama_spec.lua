@@ -38,7 +38,7 @@ describe("ollama.make_request", function()
       return { start = function() end }
     end)
 
-    ollama.make_request({
+    ollama.chat({
       llm = {
         prompt = "pr0mpT",
         model = "llama3",

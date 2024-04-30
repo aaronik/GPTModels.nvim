@@ -7,11 +7,11 @@ local ollama = require('gpt.adapters.ollama')
 local M = {}
 
 --- Make request
----@param args MakeRequestArgs
+---@param args MakeChatRequestArgs
 ---@return nil
 M.make_request = function(args)
   -- This is where swapping out ollama for other supported llms will happen
-  ollama.make_request(args)
+  ollama.chat(args)
 end
 
 return M

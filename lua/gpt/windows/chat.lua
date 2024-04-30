@@ -6,40 +6,61 @@ local llm = require("gpt.llm")
 
 local M = {}
 
+-- TODO This lives wherever our state lives
+---@type LlmMessage[]
+local messages = {
+  { role = "user", content = input_text }
+}
+
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
 local on_CR = function(input_bufnr, chat_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
-
-  -- Add input text to chat buf
-  vim.api.nvim_buf_set_lines(chat_bufnr, -1, -1, true, input_lines)
-
-  -- Add a separator below user input text
-  vim.api.nvim_buf_set_lines(chat_bufnr, -1, -1, true, { "---", "" })
+  local input_text = table.concat(input_lines, "\n")
 
   -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
-  -- Current state of chat buf, before this llm response
-  local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
-  local chat_text = table.concat(chat_lines, "\n")
+  table.insert(messages, { role = "user", content = input_text })
+
+  ---@param bufnr integer
+  ---@param messages LlmMessage[]
+  local render_buffer_from_messages = function (bufnr, messages)
+    util.log(messages)
+    local lines = {}
+    for _, message in ipairs(messages) do
+      table.insert(lines, message.content)
+      table.insert(lines, "---")
+    end
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
+  end
+
+  -- TODO Make our data store the collection of messages, and whenever one
+  -- comes in, update that data store, then render the data store to the
+  -- buffer, replacing all text in it, like we currently do.
 
   llm.make_request({
     llm = {
       stream = true,
       messages = messages,
-      prompt = table.concat(chat_lines, "\n"),
+      model = "llama3"
     },
-    kind = "generate",
-    on_response = function(response)
-      chat_text = chat_text .. response
-      vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
+    kind = "chat",
+    on_response = function(message)
+      -- If the most recent message is not from the user, then we'll assume the llm is in the process of giving a response.
+      if messages[#messages].role ~= "user" then
+        messages[#messages].content = messages[#messages].content .. message.content
+      else
+        table.insert(messages, message)
+      end
+
+      render_buffer_from_messages(chat_bufnr, messages)
     end,
     on_end = function()
-      -- Add sepearator below LLM text
-      -- TODO This is rickity as balls. What if the user types while this is coming down?
-      chat_text = chat_text .. "\n---\n"
-      vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
+      -- -- Add sepearator below LLM text
+      -- -- TODO This is rickity as balls. What if the user types while this is coming down?
+      -- chat_text = chat_text .. "\n---\n"
+      -- vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
     end
   })
 end

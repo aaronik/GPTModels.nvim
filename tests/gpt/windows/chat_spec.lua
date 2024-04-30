@@ -153,7 +153,7 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     -- grab the given prompt
-    ---@type MakeRequestArgs
+    ---@type MakeGenerateRequestArgs
     local args = s.calls[1].refs[1]
 
     -- https://github.com/ollama/ollama/blob/main/docs/api.md#request-8
