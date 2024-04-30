@@ -110,8 +110,10 @@ describe("The Chat window", function()
     -- stub llm call
     local s = stub(llm, "chat")
 
+    vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "hello" })
+
     -- make call to llm stub
-    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     -- grab the given callback
@@ -120,8 +122,9 @@ describe("The Chat window", function()
     local on_response = args.on_response
 
     -- simulate llm responding
-    on_response({ role = "assistant", content = "response text1\nresponse text2"})
+    on_response({ role = "assistant", content = "response text1\nresponse text2" })
 
+    -- Now the chat buffer should have all the things
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
     local contains_hello = false

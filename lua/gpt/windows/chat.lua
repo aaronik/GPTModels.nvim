@@ -3,14 +3,11 @@ local com = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local llm = require("gpt.llm")
+local Store = require("gpt.store")
 
 local M = {}
 
 -- TODO on_exit call job:shutdown()
-
--- TODO This lives wherever our state lives
----@type LlmMessage[]
-local messages = {}
 
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
@@ -33,25 +30,20 @@ local on_CR = function(input_bufnr, chat_bufnr)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
   end
 
-  table.insert(messages, { role = "user", content = input_text })
-  render_buffer_from_messages(chat_bufnr, messages)
+  Store.register_message({ role = "user", content = input_text })
+  render_buffer_from_messages(chat_bufnr, Store.get_messages())
 
   llm.chat({
     llm = {
       stream = true,
-      messages = messages,
+      messages = Store.get_messages(),
       model = "llama3"
     },
     kind = "chat",
     on_response = function(message)
-      -- If the most recent message is not from the user, then we'll assume the llm is in the process of giving a response.
-      if messages[#messages].role ~= "user" then
-        messages[#messages].content = messages[#messages].content .. message.content
-      else
-        table.insert(messages, message)
-      end
+      Store.register_message(message)
 
-      render_buffer_from_messages(chat_bufnr, messages)
+      render_buffer_from_messages(chat_bufnr, Store.get_messages())
     end,
     on_end = function()
     end
