@@ -108,7 +108,7 @@ describe("The Chat window", function()
     local chat_bufnr = bufs.chat_bufnr
 
     -- stub llm call
-    local s = stub(llm, "make_request")
+    local s = stub(llm, "chat")
 
     -- make call to llm stub
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
