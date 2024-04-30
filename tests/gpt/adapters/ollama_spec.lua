@@ -1,5 +1,6 @@
 ---@diagnostic disable: undefined-global
 
+require('gpt.types')
 local job = require('plenary.job')
 local util = require("gpt.util")
 local assert = require("luassert")
@@ -7,44 +8,47 @@ local stub = require('luassert.stub')
 local ollama = require('gpt.adapters.ollama')
 
 describe("ollama.make_request", function()
+  it("passes correct data to curl", function()
+    local s = stub(job, "new")
 
-    it("passes correct data to curl", function()
-        local s = stub(job, "new")
+    ---job:new(args)
+    s.invokes(function(data)
+      ---args = { "http://localhost:11434/api/generate", "-d", '{"model": "llama3", "stream": true, "prompt": "string", "etc" }' },
+      ---@type { args: string[], command: "curl", on_exit: function, on_stdout: function }
+      local args = data.new.calls[1].refs[2]
 
-        s.invokes(function(data)
-            local args = data.new.calls[1].refs[2]
+      -- right url in right place
+      assert.equal(args.args[1], "http://localhost:11434/api/generate")
 
-            -- args is
-            -- {
-            --   args = { "http://localhost:11434/api/generate", "-d", '{"model": "llama3", "stream": true, "prompt": "What color is an elephant?"}' },
-            --   command = "curl",
-            --   on_exit = <function 1>,
-            --   on_stdout = <function 2>
-            -- }
+      local curl_data_json = args.args[3]
 
-            -- right url in right place
-            assert.equal(args.args[1], "http://localhost:11434/api/generate")
+      ---@type LlmArgs | nil
+      local curl_data = vim.fn.json_decode(curl_data_json)
 
-            local curl_data_json = args.args[3]
-            local curl_data = vim.fn.json_decode(curl_data_json)
+      if curl_data == nil then
+        error("vim.fn.json_decode returned unexpected nil")
+      end
 
-            -- model
-            assert.equal(curl_data.model, "llama3")
+      assert.equal(curl_data.model, "llama3")
+      assert.equal(curl_data.prompt, "pr0mpT")
+      assert.same(curl_data.messages, {})
+      assert.equal(curl_data.stream, true)
 
-            -- prompt
-            assert.equal(curl_data.prompt, "pr0mpT")
-
-            -- return this so job can call :start after :new
-            return { start = function() end }
-        end)
-
-        ollama.make_request(
-            "pr0mpT",
-            "llama3",
-            function() end,
-            function() end
-        )
-
-        assert.stub(s).was_called(1)
+      -- return this so job can call :start after :new
+      return { start = function() end }
     end)
+
+    ollama.make_request({
+      llm = {
+        prompt = "pr0mpT",
+        model = "llama3",
+        messages = {},
+        stream = true,
+      },
+      on_response = function() end,
+      kind = "generate" -- TODO Chat
+    })
+
+    assert.stub(s).was_called(1)
+  end)
 end)

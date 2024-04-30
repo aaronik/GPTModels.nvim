@@ -12,8 +12,9 @@ M.setup = function(args)
   M.config = vim.tbl_deep_extend("force", M.config, args or {})
 end
 
--- The main function
+-- This is called on :GPT
 ---@param opts { visual_mode: boolean }
+---@see file plugin/init.lua
 M.run = function(opts)
   if opts.visual_mode then
     local selected_text = util.get_visual_selection().text

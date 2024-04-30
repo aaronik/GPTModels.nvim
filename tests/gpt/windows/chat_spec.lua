@@ -1,5 +1,8 @@
 ---@diagnostic disable: undefined-global
 
+-- TODO use telescope to add files to chat! This could be a defining feature.
+
+require('gpt.types')
 local util = require("gpt.util")
 local assert = require("luassert")
 local chat_window = require('gpt.windows.chat')
@@ -74,92 +77,98 @@ describe("The Chat window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
-  describe("when inputting text and pressing <CR>", function()
-    it("removes text from input and puts it in chat", function()
-      local bufs = chat_window.build_and_mount()
-      local input_bufnr = bufs.input_bufnr
-      local chat_bufnr = bufs.chat_bufnr
+  it("On <CR> removes text from input and puts it in chat", function()
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
 
-      local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
-      vim.api.nvim_feedkeys(keys, 'mtx', false)
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-      local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
+    local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
-      -- ensure hello is one of the lines in chat buf
-      local contains_hello = false
-      for _, line in ipairs(chat_lines) do
-        if line == "hello" then
-          contains_hello = true
-          break
-        end
+    -- ensure hello is one of the lines in chat buf
+    local contains_hello = false
+    for _, line in ipairs(chat_lines) do
+      if line == "hello" then
+        contains_hello = true
+        break
       end
-      assert.is_true(contains_hello)
+    end
+    assert.is_true(contains_hello)
 
-      -- ensure input is empty
-      local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
-      assert.same(input_lines, { "" })
-    end)
+    -- ensure input is empty
+    local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
+    assert.same(input_lines, { "" })
+  end)
 
-    it("places the response into chat", function()
-      local bufs = chat_window.build_and_mount()
-      local input_bufnr = bufs.input_bufnr
-      local chat_bufnr = bufs.chat_bufnr
+  it("On <CR> it places the llm response into chat", function()
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
 
-      -- stub llm call
-      local s = stub(llm, "make_request")
+    -- stub llm call
+    local s = stub(llm, "make_request")
 
-      -- make call to llm stub
-      local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
-      vim.api.nvim_feedkeys(keys, 'mtx', false)
+    -- make call to llm stub
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-      -- grab the given callback
-      local on_response = s.calls[1].refs[1].on_response
-      local on_end = s.calls[1].refs[1].on_end
+    -- grab the given callback
+    local on_response = s.calls[1].refs[1].on_response
+    local on_end = s.calls[1].refs[1].on_end
 
-      -- simulate llm responding
-      on_response("response text1\nresponse text2")
-      on_end()
+    -- simulate llm responding
+    on_response("response text1\nresponse text2")
+    on_end()
 
-      local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
+    local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
-      local contains_hello = false
-      local contains_1 = false
-      local contains_2 = false
-      for _, line in ipairs(chat_lines) do
-        if line == "hello" then contains_hello = true end
-        if line == "response text1" then contains_1 = true end
-        if line == "response text2" then contains_2 = true end
-      end
-      assert.is_true(contains_hello)
-      assert.is_true(contains_1)
-      assert.is_true(contains_2)
-    end)
+    local contains_hello = false
+    local contains_1 = false
+    local contains_2 = false
+    for _, line in ipairs(chat_lines) do
+      if line == "hello" then contains_hello = true end
+      if line == "response text1" then contains_1 = true end
+      if line == "response text2" then contains_2 = true end
+    end
+    assert.is_true(contains_hello)
+    assert.is_true(contains_1)
+    assert.is_true(contains_2)
+  end)
 
-    it("Gives the entire contents of the chat to the LLM", function()
-      local bufs = chat_window.build_and_mount()
-      local input_bufnr = bufs.input_bufnr
-      local chat_bufnr = bufs.chat_bufnr
+  it("Gives the entire contents of the chat to the LLM", function()
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
 
-      -- stub llm call
-      local s = stub(llm, "make_request")
+    -- stub llm call
+    local s = stub(llm, "make_request")
 
-      -- add some text to input buffer
-      vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "input line" })
+    -- add some text to input buffer
+    vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "user input 1" })
 
-      -- simulate a chat history
-      vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, { "llm response" })
+    -- press enter
+    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-      -- press enter
-      local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-      vim.api.nvim_feedkeys(keys, 'mtx', false)
+    -- grab the given prompt
+    ---@type MakeRequestArgs
+    local args = s.calls[1].refs[1]
 
-      -- grab the given prompt
-      ---@type string
-      local prompt = s.calls[1].refs[1].prompt
+    -- https://github.com/ollama/ollama/blob/main/docs/api.md#request-8
+    local messages = args.messages
 
-      P(prompt)
+    P(s.calls[1].refs[1].messages)
 
-      assert.is_true(prompt:match("llm response") ~= nil)
-    end)
+    -- TODO Loop it
+    assert.equal(messages[1].role, "user")
+    assert.equal(messages[1].content, "user input 1")
+    assert.equal(messages[2].role, "assistant")
+    assert.equal(messages[2].content, "assistant input 1")
+    assert.equal(messages[3].role, "user")
+    assert.equal(messages[3].content, "user input 2")
+    assert.equal(messages[4].role, "assistant")
+    assert.equal(messages[4].content, "assistant input 2")
   end)
 end)

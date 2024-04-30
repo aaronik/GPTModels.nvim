@@ -25,8 +25,12 @@ local on_CR = function(input_bufnr, chat_bufnr)
   local chat_text = table.concat(chat_lines, "\n")
 
   llm.make_request({
-    stream = true,
-    prompt = table.concat(chat_lines, "\n"),
+    llm = {
+      stream = true,
+      messages = messages,
+      prompt = table.concat(chat_lines, "\n"),
+    },
+    kind = "generate",
     on_response = function(response)
       chat_text = chat_text .. response
       vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
