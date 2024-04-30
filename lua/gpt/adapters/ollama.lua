@@ -7,7 +7,7 @@ local M = {}
 -- curl http://localhost:11434/api/chat -d '{ "model": "llama2", "messages": [ { "role": "user", "content": "why is the sky blue?" } ] }'
 
 ---@param args MakeGenerateRequestArgs
----@return nil
+---@return { shutdown: function }
 M.generate = function(args)
     local url = "http://localhost:11434/api/generate"
 
@@ -25,7 +25,7 @@ M.generate = function(args)
             on_stdout = vim.schedule_wrap(function(_, json)
                 if json then
                     local data = vim.fn.json_decode(json) or { response = "JSON decode error for LLM response!" }
-                    args.on_response(data.response)        -- for generate
+                    args.on_response(data.response) -- for generate
                 end
             end),
             on_stderr = vim.schedule_wrap(function(error, data, self)
@@ -33,14 +33,18 @@ M.generate = function(args)
                 -- TODO Figure this out and call on_error with data if it's not nil
             end),
             on_exit = vim.schedule_wrap(function()
-                args.on_end()
+                if args.on_end ~= nil then
+                    args.on_end()
+                end
             end)
         })
         :start()
+
+    return job
 end
 
 ---@param args MakeChatRequestArgs
----@return nil
+---@return { shutdown: function }
 M.chat = function(args)
     local url = "http://localhost:11434/api/chat"
 
@@ -74,6 +78,8 @@ M.chat = function(args)
             end)
         })
         :start()
+
+    return job
 end
 
 return M

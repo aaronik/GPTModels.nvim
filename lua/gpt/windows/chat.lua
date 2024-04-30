@@ -6,6 +6,8 @@ local llm = require("gpt.llm")
 
 local M = {}
 
+-- TODO on_exit call job:shutdown()
+
 -- TODO This lives wherever our state lives
 ---@type LlmMessage[]
 local messages = {}
@@ -22,7 +24,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
   ---@param bufnr integer
   ---@param messages LlmMessage[]
   local render_buffer_from_messages = function (bufnr, messages)
-    util.log(messages)
     local lines = {}
     for _, message in ipairs(messages) do
       local message_content = vim.split(message.content, "\n")
@@ -53,10 +54,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
       render_buffer_from_messages(chat_bufnr, messages)
     end,
     on_end = function()
-      -- -- Add sepearator below LLM text
-      -- -- TODO This is rickity as balls. What if the user types while this is coming down?
-      -- chat_text = chat_text .. "\n---\n"
-      -- vim.api.nvim_buf_set_lines(chat_bufnr, 0, -1, true, vim.split(chat_text, "\n"))
     end
   })
 end
