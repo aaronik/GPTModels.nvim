@@ -51,7 +51,6 @@ M.chat = function(args)
     local curl_args = {
         url,
         "--data",
-        -- vim.fn.json_encode(args.llm)
         vim.fn.json_encode(args.llm)
     }
 
@@ -59,7 +58,13 @@ M.chat = function(args)
         :new({
             command = "curl",
             args = curl_args,
-            on_stdout = vim.schedule_wrap(function(_, json)
+            on_stdout = vim.schedule_wrap(function(_, json, self)
+                -- TODO The ish: shutdown() doesn't work, self:pid() is recursive and breaks, I want pid to be on job.
+                -- I'd rather it happen at the beginning of job instantiation though, than on first response / error.
+                -- Luckily, curl immediately starts writing to stdout with the status bar, which unfortunately plenary.job
+                -- interprets as stderr.
+                -- This is hacks upon hacks upon hacks. I think we need to ditch plenary.job, or fix it.
+                job.my_pid = self.pid
                 if json then
                     local data = vim.fn.json_decode(json) or { response = "JSON decode error for LLM response!" }
                     -- data is large, data.resposne is the text we're looking for
@@ -67,6 +72,7 @@ M.chat = function(args)
                 end
             end),
             on_stderr = vim.schedule_wrap(function(error, data, self)
+                job.my_pid = self.pid
                 -- This gives the curl status stuff, not errors. Library is broken.
                 -- TODO Figure this out and call on_error with data if it's not nil
             end),
@@ -78,6 +84,9 @@ M.chat = function(args)
             end)
         })
         :start()
+
+    -- util.log(job:pid())
+    -- util.log(job.my_pid)
 
     return job
 end

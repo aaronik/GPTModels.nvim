@@ -27,7 +27,7 @@ Store.get_messages = function()
   return Store._messages
 end
 
-Store.reset_messages = function()
+Store.clear_messages = function()
   Store._messages = {}
 end
 
@@ -40,6 +40,10 @@ end
 ---@return Job | nil
 Store.get_job = function()
   return Store._job
+end
+
+Store.clear_job = function()
+  Store._job = nil
 end
 
 return Store

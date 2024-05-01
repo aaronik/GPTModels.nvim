@@ -31,4 +31,6 @@
 ---@field new function
 ---@field start function
 ---@field shutdown function
+---@field pid integer
+---@field pid_int integer
 

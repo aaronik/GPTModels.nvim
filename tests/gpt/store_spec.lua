@@ -6,7 +6,7 @@ local Store = require("gpt.store")
 
 describe("Store", function()
   before_each(function()
-    Store.reset_messages()
+    Store.clear_messages()
   end)
 
   it("Adds, joins, and gets messages", function()
@@ -49,7 +49,7 @@ describe("Store", function()
 
   it("resets messages", function()
     Store.register_message({ role = "assistant", content = "hello" })
-    Store.reset_messages()
+    Store.clear_messages()
     assert.same({}, Store.get_messages())
   end)
 
@@ -65,5 +65,13 @@ describe("Store", function()
     Store.register_job(job2)
 
     assert.equal(job2, Store.get_job())
+  end)
+
+  it('resets job', function()
+    local job = { start = function() end, new = function() end }
+    Store.register_job(job)
+
+    Store.clear_job()
+    assert.equal(nil, Store.get_job())
   end)
 end)
