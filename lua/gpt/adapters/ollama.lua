@@ -15,20 +15,24 @@ M.generate = function(args)
         url,
         "--silent",
         "--data",
-        vim.fn.json_encode(args.llm)
+        vim.fn.json_encode(args.llm),
+        "--no-buffer",
     }
 
     local job = cmd.exec({
         cmd = "curl",
         args = curl_args,
-        onread = vim.schedule_wrap(function(err, response)
+        onread = vim.schedule_wrap(function(err, json)
             if err then error(err) end
-            if not response then return end
+            if not json then return end
             util.log("NEW RESP:")
-            util.log(response)
+            util.log(json)
 
-            -- local status_ok, data = pcall(vim.fn.json_decode, json)
-            -- args.on_read(nil, data.response)     -- for generate
+            local status_ok, data = pcall(vim.fn.json_decode, json)
+            if not status_ok or not data then
+                error("Error getting json TODO better this" .. json)
+            end
+            args.on_read(nil, data.response)     -- for generate
         end),
         onexit = vim.schedule_wrap(function()
             if args.on_end ~= nil then
@@ -49,7 +53,8 @@ M.chat = function(args)
         url,
         "--silent",
         "--data",
-        vim.fn.json_encode(args.llm)
+        vim.fn.json_encode(args.llm),
+        "--no-buffer",
     }
 
     local job = cmd.exec({
