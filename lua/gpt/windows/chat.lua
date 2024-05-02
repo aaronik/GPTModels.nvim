@@ -53,30 +53,24 @@ local on_CR = function(input_bufnr, chat_bufnr)
   Store.register_job(jorb)
 end
 
-local function tab_cb(i, bufs)
+local function on_tab(i, bufs)
   local next_buf_index = (i % #bufs) + 1
   local next_win = vim.fn.bufwinid(bufs[next_buf_index])
   vim.api.nvim_set_current_win(next_win)
 end
 
-local function stab_cb(i, bufs)
+local function on_s_tab(i, bufs)
   local next_buf_index = (i % #bufs) + 1
   local next_win = vim.fn.bufwinid(bufs[next_buf_index])
   vim.api.nvim_set_current_win(next_win)
 end
 
 -- TODO TEST
-local function q_cb(layout)
-  -- TODO export to util again or something
-
-  -- If there's an active request when this closes, cancel it
-  -- TODO test
-  -- TODO unfortunately this does not seem to stop the request from continuing to fire.
+local function on_q(layout)
   local job = Store.get_job()
   if job ~= nil then
     job.die()
-    -- os.execute("kill -2 " .. tostring(job.pid_int))     -- This is aweful and i hope it dies
-    -- jorb:shutdown() -- does not work
+    Store.clear_job()
   end
   layout:unmount()
 end
@@ -127,14 +121,14 @@ function M.build_and_mount()
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() tab_cb(i, bufs) end,
+      callback = function() on_tab(i, bufs) end,
     })
 
     -- Shift-Tab cycles through windows in reverse
     vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() stab_cb(i, bufs) end,
+      callback = function() on_s_tab(i, bufs) end,
     })
 
     -- "q" exits from the thing
@@ -142,7 +136,7 @@ function M.build_and_mount()
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function() q_cb(layout) end,
+      callback = function() on_q(layout) end,
     })
   end
 

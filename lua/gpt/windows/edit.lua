@@ -3,6 +3,7 @@ local com    = require('gpt.windows.common')
 local Layout = require("nui.layout")
 local Popup  = require("nui.popup")
 local llm    = require('gpt.llm')
+local Store  = require('gpt.store')
 
 local M      = {}
 
@@ -20,10 +21,10 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   -- Aggregate response text as it comes in
   local response_text = ""
 
-  llm.generate({
+  local job = llm.generate({
     llm = {
       model = "llama3",
-      stream = true,
+      stream = false,
       prompt = prompt,
     },
     on_read = function(_, response)
@@ -32,6 +33,18 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
       vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)
     end
   })
+
+  Store.register_job(job)
+end
+
+-- TODO TEST
+local function on_q(layout)
+  local job = Store.get_job()
+  if job ~= nil then
+    job.die()
+    Store.clear_job()
+  end
+  layout:unmount()
 end
 
 function M.build_and_mount(selected_text)
@@ -107,9 +120,7 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function()
-        layout:unmount()
-      end
+      callback = function() on_q(layout) end,
     })
   end
 

@@ -25,8 +25,6 @@ M.generate = function(args)
         onread = vim.schedule_wrap(function(err, json)
             if err then error(err) end
             if not json then return end
-            util.log("NEW RESP:")
-            util.log(json)
 
             local status_ok, data = pcall(vim.fn.json_decode, json)
             if not status_ok or not data then
@@ -64,9 +62,7 @@ M.chat = function(args)
             if err then error(err) end
             if not json then return end
 
-            util.log('new json coming in:')
             local json_lines = vim.split(json, "\n", { trimempty = true })
-            util.log(json_lines)
 
             for _, line in ipairs(json_lines) do
                 local status_ok, data = pcall(vim.fn.json_decode, line)
