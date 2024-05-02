@@ -10,27 +10,29 @@
 ---@field stream boolean
 ---@field prompt string
 
----@class MakeGenerateRequestArgs
----@field llm LlmGenerateArgs
----@field on_response fun(response: string)
----@field on_end function | nil
----@field on_error fun(message: string) | nil
-
 ---@class LlmChatArgs
 ---@field model string | nil
 ---@field stream boolean
 ---@field messages LlmMessage[] | nil
 
+---@class MakeGenerateRequestArgs
+---@field llm LlmGenerateArgs
+---@field on_read fun(err: string | nil, response: string)
+---@field on_end function | nil
+
 ---@class MakeChatRequestArgs
 ---@field llm LlmChatArgs
----@field on_response fun(message: LlmMessage)
+---@field on_read fun(err: string | nil, message: LlmMessage)
 ---@field on_end function | nil
----@field on_error fun(message: string) | nil
 
 ---@class Job
----@field new function
----@field start function
----@field shutdown function
----@field pid integer
----@field pid_int integer
+---@field handle uv_process_t | nil
+---@field pid string | integer
+---@field die function
+
+---@class ExecArgs
+---@field cmd string
+---@field args string[] | nil
+---@field onread fun(err: string | nil, data: string | nil) | nil
+---@field onexit fun(code: integer, signal: integer) | nil
 

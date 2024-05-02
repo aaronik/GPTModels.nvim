@@ -41,7 +41,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
       model = "llama3"
     },
     kind = "chat",
-    on_response = function(message)
+    on_read = function(_, message)
       Store.register_message(message)
       render_buffer_from_messages(chat_bufnr, Store.get_messages())
     end,
@@ -51,6 +51,34 @@ local on_CR = function(input_bufnr, chat_bufnr)
   })
 
   Store.register_job(jorb)
+end
+
+local function tab_cb(i, bufs)
+  local next_buf_index = (i % #bufs) + 1
+  local next_win = vim.fn.bufwinid(bufs[next_buf_index])
+  vim.api.nvim_set_current_win(next_win)
+end
+
+local function stab_cb(i, bufs)
+  local next_buf_index = (i % #bufs) + 1
+  local next_win = vim.fn.bufwinid(bufs[next_buf_index])
+  vim.api.nvim_set_current_win(next_win)
+end
+
+-- TODO TEST
+local function q_cb(layout)
+  -- TODO export to util again or something
+
+  -- If there's an active request when this closes, cancel it
+  -- TODO test
+  -- TODO unfortunately this does not seem to stop the request from continuing to fire.
+  local job = Store.get_job()
+  if job ~= nil then
+    job.die()
+    -- os.execute("kill -2 " .. tostring(job.pid_int))     -- This is aweful and i hope it dies
+    -- jorb:shutdown() -- does not work
+  end
+  layout:unmount()
 end
 
 ---@return { input_bufnr: integer, chat_bufnr: integer }
@@ -91,32 +119,6 @@ function M.build_and_mount()
 
   -- start window in insert mode
   vim.api.nvim_command('startinsert')
-
-  local function tab_cb(i, bufs)
-    local next_buf_index = (i % #bufs) + 1
-    local next_win = vim.fn.bufwinid(bufs[next_buf_index])
-    vim.api.nvim_set_current_win(next_win)
-  end
-
-  local function stab_cb(i, bufs)
-    local next_buf_index = (i % #bufs) + 1
-    local next_win = vim.fn.bufwinid(bufs[next_buf_index])
-    vim.api.nvim_set_current_win(next_win)
-  end
-
-  local function q_cb(layout)
-    -- TODO export to util again or something
-
-    -- If there's an active request when this closes, cancel it
-    -- TODO test
-    -- TODO unfortunately this does not seem to stop the request from continuing to fire.
-    local jorb = Store.get_job()
-    if jorb ~= nil then
-      os.execute("kill -2 " .. tostring(jorb.pid_int))     -- This is aweful and i hope it dies
-      -- jorb:shutdown() -- does not work
-    end
-    layout:unmount()
-  end
 
   -- keymaps
   local bufs = { chat.bufnr, input.bufnr }

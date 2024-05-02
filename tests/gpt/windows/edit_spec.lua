@@ -99,13 +99,11 @@ describe("The Edit window", function()
     ---@type MakeGenerateRequestArgs
     local args = s.calls[1].refs[1]
 
-    local on_response = args.on_response
-
     -- before on_response gets a response from the llm, the right window should be empty
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "" })
 
     -- simulate a multiline resposne from the llm
-    on_response("line 1\nline 2")
+    args.on_read(nil, "line 1\nline 2")
 
     -- Those lines should be separated on newlines and placed into the right buf
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })

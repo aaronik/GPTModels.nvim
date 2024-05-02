@@ -26,7 +26,7 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
       stream = true,
       prompt = prompt,
     },
-    on_response = function(response)
+    on_read = function(_, response)
       response_text = response_text .. response
       local response_lines = vim.split(response_text, "\n")
       vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)

@@ -7,19 +7,19 @@ local ollama = require('gpt.adapters.ollama')
 local M = {}
 
 --- Make request
----@param args MakeChatRequestArgs
----@return Job
-M.chat = function(args)
-  -- This is where swapping out ollama for other supported llms will happen
-  return ollama.chat(args)
-end
-
---- Make request
 ---@param args MakeGenerateRequestArgs
 ---@return Job
 M.generate = function(args)
   -- This is where swapping out ollama for other supported llms will happen
   return ollama.generate(args)
+end
+
+--- Make request
+---@param args MakeChatRequestArgs
+---@return Job
+M.chat = function(args)
+  -- This is where swapping out ollama for other supported llms will happen
+  return ollama.chat(args)
 end
 
 return M
