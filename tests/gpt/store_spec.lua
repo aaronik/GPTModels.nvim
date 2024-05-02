@@ -30,7 +30,7 @@ describe("Store", function()
     )
   end)
 
-  it("Doesn't mind about unexpected orderings", function()
+  it("Doesn't mind about unexpected message orderings", function()
     Store.register_message({ role = "assistant", content = "hello" })
     assert.same({ { role = "assistant", content = "hello" } }, Store.get_messages())
 
@@ -47,7 +47,7 @@ describe("Store", function()
     )
   end)
 
-  it("resets messages", function()
+  it("clears messages", function()
     Store.register_message({ role = "assistant", content = "hello" })
     Store.clear_messages()
     assert.same({}, Store.get_messages())
@@ -67,7 +67,7 @@ describe("Store", function()
     assert.equal(job2, Store.get_job())
   end)
 
-  it('resets job', function()
+  it('clears job', function()
     local job = { start = function() end, new = function() end }
     Store.register_job(job)
 

@@ -1,5 +1,7 @@
 local Store = {}
 
+-- Messages --
+
 -- TODO This becomes a file store
 ---@type LlmMessage[]
 Store._messages = {}
@@ -30,6 +32,8 @@ end
 Store.clear_messages = function()
   Store._messages = {}
 end
+
+-- Jobs --
 
 ---@param job Job
 ---@return nil

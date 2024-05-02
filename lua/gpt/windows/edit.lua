@@ -18,18 +18,15 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
-  -- Aggregate response text as it comes in
-  local response_text = ""
-
   local job = llm.generate({
     llm = {
       model = "llama3",
-      stream = false,
+      stream = true,
       prompt = prompt,
     },
     on_read = function(_, response)
-      response_text = response_text .. response
-      local response_lines = vim.split(response_text, "\n")
+      Store.register_text(response)
+      local response_lines = vim.split(Store.get_text() or "", "\n")
       vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)
     end
   })

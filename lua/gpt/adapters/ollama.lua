@@ -30,7 +30,7 @@ M.generate = function(args)
             if not status_ok or not data then
                 error("Error getting json TODO better this" .. json)
             end
-            args.on_read(nil, data.response)     -- for generate
+            args.on_read(nil, data.response)
         end),
         onexit = vim.schedule_wrap(function()
             if args.on_end ~= nil then

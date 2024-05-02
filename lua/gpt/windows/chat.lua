@@ -40,7 +40,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
       messages = Store.get_messages(),
       model = "llama3"
     },
-    kind = "chat",
     on_read = function(_, message)
       Store.register_message(message)
       render_buffer_from_messages(chat_bufnr, Store.get_messages())

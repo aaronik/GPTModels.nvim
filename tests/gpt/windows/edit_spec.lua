@@ -14,9 +14,6 @@ describe("The Edit window", function()
     vim.api.nvim_win_set_height(0, 100)
     vim.api.nvim_win_set_width(0, 100)
 
-    -- clear cmd history, lest it get remembered and bleed across tests
-    vim.fn.histdel('cmd')
-
     stub(cmd, "exec")
   end)
 

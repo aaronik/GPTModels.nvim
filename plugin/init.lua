@@ -11,6 +11,7 @@ function InvokeGpt(opts, preview_ns, preview_buffer)
 
   -- TODO use regular require
   util.R('gpt').run(gpt_opts);
+  -- require('gpt').run(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(
