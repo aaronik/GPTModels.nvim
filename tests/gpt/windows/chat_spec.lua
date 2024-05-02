@@ -19,7 +19,7 @@ describe("The Chat window", function()
     -- clear cmd history, lest it get remembered and bleed across tests
     vim.fn.histdel('cmd')
 
-    -- stubbing job:new prevents the llm call from happening
+    -- stubbing cmd.exec prevents the llm call from happening
     stub(cmd, "exec")
   end)
 

@@ -7,7 +7,6 @@ local cmd = require('gpt.cmd')
 
 describe("cmd.exec", function()
   it("calls onread with data", function()
-    local finished = false
     local dat = "initial"
 
     ---@type ExecArgs
@@ -18,25 +17,21 @@ describe("cmd.exec", function()
         if err then error(err) end
         if data then dat = data end
       end,
-      onexit = function()
-        finished = true
-      end
     }
 
-    cmd.exec(exec_args)
+    local job = cmd.exec(exec_args)
 
     -- vim to wait up to 50ms until job's done
-    vim.wait(50, function() return finished end)
+    vim.wait(50, function() return job.done() end)
 
     -- test cmd / args / onread happy path
     assert.same("woohoo", dat)
 
-    -- test onexit is called
-    assert.is_true(finished)
+    -- ensure job.done() works
+    assert.is_true(job.done())
   end)
 
   it("calls onread with errors", function()
-    local finished = false
     local e = "initial"
 
     ---@type ExecArgs
@@ -47,18 +42,15 @@ describe("cmd.exec", function()
         if data then error(data) end
         if err then e = err end
       end,
-      onexit = function(_, _)
-        finished = true
-      end
     }
 
-    cmd.exec(exec_args)
+    local job = cmd.exec(exec_args)
 
     -- vim to wait up to _ ms until job's done
-    vim.wait(50, function() return finished end)
+    vim.wait(100, function() return job.done() end)
 
     -- make sure the job exited w/o timing out
-    assert.is_true(finished)
+    assert.is_true(job.done())
 
     -- That directory is definitely not found, which leads to a message to
     -- stderr with this in it
@@ -66,7 +58,6 @@ describe("cmd.exec", function()
   end)
 
   it("handles exit codes", function()
-    local finished = false
     local cod = 0
 
     ---@type ExecArgs
@@ -74,24 +65,22 @@ describe("cmd.exec", function()
       cmd = "false",
       onexit = function(code, _)
         cod = code
-        finished = true
       end
     }
 
-    cmd.exec(exec_args)
+    local job = cmd.exec(exec_args)
 
     -- vim to wait up to 50ms until job's done
-    vim.wait(50, function() return finished end)
+    vim.wait(50, function() return job.done() end)
 
     -- make sure the job exited w/o timing out
-    assert.is_true(finished)
+    assert.is_true(job.done())
 
     -- `false` throws a 1
     assert.equal(1, cod)
   end)
 
   it("handles interrupts", function()
-    local finished = false
     local sig = 0
 
     ---@type ExecArgs
@@ -100,7 +89,6 @@ describe("cmd.exec", function()
       args = { "1" },
       onexit = function(_, signal)
         sig = signal
-        finished = true
       end
     }
 
@@ -111,16 +99,15 @@ describe("cmd.exec", function()
     cmd.exec({ cmd = "kill", args = { "-9", tostring(job.pid) } })
 
     -- vim to wait up to 50ms until job's done
-    vim.wait(50, function() return finished end)
+    vim.wait(50, function() return job.done() end)
 
     -- make sure the job exited w/o timing out
-    assert.is_true(finished)
+    assert.is_true(job.done())
 
     assert.equal(sig, 9)
   end)
 
   it("die()s on command", function()
-    local finished = false
     local sig = 0
 
     ---@type ExecArgs
@@ -129,7 +116,6 @@ describe("cmd.exec", function()
       args = { "10" },
       onexit = function(_, signal)
         sig = signal
-        finished = true
       end
     }
 
@@ -140,10 +126,10 @@ describe("cmd.exec", function()
     job.die()
 
     -- vim to wait up to _ ms until job's done
-    vim.wait(500, function() return finished end)
+    vim.wait(500, function() return job.done() end)
 
     -- make sure the job exited w/o timing out
-    assert.is_true(finished)
+    assert.is_true(job.done())
 
     -- 15 is sigterm, used in die()
     assert.equal(sig, 15)

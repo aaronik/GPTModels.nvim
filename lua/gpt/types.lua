@@ -29,6 +29,7 @@
 ---@field handle uv_process_t | nil
 ---@field pid string | integer
 ---@field die function
+---@field done fun():boolean
 
 ---@class ExecArgs
 ---@field cmd string

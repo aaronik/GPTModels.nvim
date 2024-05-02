@@ -12,6 +12,8 @@ function M.exec(args)
   local stdout = vim.loop.new_pipe()
   local stderr = vim.loop.new_pipe()
 
+  local done = false
+
   local handle, pid = uv.spawn(args.cmd, {
     stdio = { stdin, stdout, stderr },
     args = args.args
@@ -19,6 +21,7 @@ function M.exec(args)
     stdin:close()
     stdout:close()
     stderr:close()
+    done = true
     if args.onexit then args.onexit(code, signal) end
   end)
 
@@ -30,6 +33,7 @@ function M.exec(args)
   return {
     handle = handle,
     pid = pid,
+    done = function() return done end,
     die = function()
       if not handle then return end
       uv.process_kill(handle, 'sigterm')
@@ -40,7 +44,7 @@ function M.exec(args)
             uv.close(handle)
           end)
         end
-      end, 500) -- Adjust the delay as necessary
+      end, 500)
     end,
   }
 end
