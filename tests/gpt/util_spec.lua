@@ -4,6 +4,22 @@ local util = require("gpt.util")
 local assert = require("luassert")
 
 describe("util", function()
+  describe("guid", function()
+    it("never repeats", function()
+      local guids = {}
+      for _ = 1, 1000 do
+        guids[util.guid()] = true
+      end
+
+      local count = 0
+      for _ in pairs(guids) do
+        count = count + 1
+      end
+
+      assert.equal(1000, count)
+    end)
+  end)
+
   describe("log", function()
     it("works", function()
       -- TODO stub io.{open,write,flush,close}; ensure write gets variadic arguments
@@ -40,7 +56,7 @@ describe("util", function()
       assert.same(c, { a = true, false })
     end)
 
-    it("does not overwrite arguments", function ()
+    it("does not overwrite arguments", function()
       local a = { a = true }
       local b = { b = true }
       util.merge_tables(a, b)
