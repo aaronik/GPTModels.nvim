@@ -6,6 +6,7 @@ local edit_window = require('gpt.windows.edit')
 local stub = require('luassert.stub')
 local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
+local pj = require('plenary.job')
 
 describe("The Edit window", function()
   before_each(function()
@@ -105,5 +106,29 @@ describe("The Edit window", function()
 
     -- Those lines should be separated on newlines and placed into the right buf
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })
+  end)
+
+  -- TODO Actually, maybe we don't want to kill the job? Maybe it should just continue to
+  -- run and populate a store in the background?
+  it("kills jobs and closes the window when q is pressed", function()
+    edit_window.build_and_mount()
+    local s = stub(llm, "generate")
+    local die_called = false
+
+    s.returns({
+      die = function()
+        die_called = true
+      end
+    })
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- press q
+    keys = vim.api.nvim_replace_termcodes('q', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.is_true(die_called)
   end)
 end)

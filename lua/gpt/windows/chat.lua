@@ -98,6 +98,7 @@ function M.build_and_mount()
   local layout = Layout(
     {
       position = "50%",
+      relative = "editor",
       size = {
         width = "90%",
         height = "90%",
@@ -138,6 +139,13 @@ function M.build_and_mount()
       silent = true,
       callback = function() on_q(layout) end,
     })
+
+    -- vim.api.nvim_create_autocmd("BufLeave", {
+    --   buffer = buf,
+    --   callback = function()
+    --     on_q(layout)
+    --   end,
+    -- })
   end
 
   return {

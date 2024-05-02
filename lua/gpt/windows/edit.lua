@@ -37,7 +37,6 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
--- TODO TEST
 local function on_q(layout)
   local job = Store.get_job()
   if job ~= nil then
@@ -70,6 +69,7 @@ function M.build_and_mount(selected_text)
   local layout = Layout(
     {
       position = "50%",
+      relative = "editor",
       size = {
         width = "90%",
         height = "90%",
