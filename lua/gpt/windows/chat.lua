@@ -31,18 +31,18 @@ local on_CR = function(input_bufnr, chat_bufnr)
   -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
-  Store.register_message({ role = "user", content = input_text })
-  render_buffer_from_messages(chat_bufnr, Store.get_messages())
+  Store.chat.chat.append({ role = "user", content = input_text })
+  render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
 
   local jorb = llm.chat({
     llm = {
       stream = true,
-      messages = Store.get_messages(),
+      messages = Store.chat.chat.read(),
       model = "llama3"
     },
     on_read = function(_, message)
-      Store.register_message(message)
-      render_buffer_from_messages(chat_bufnr, Store.get_messages())
+      Store.chat.chat.append(message)
+      render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
     end,
     on_end = function()
       Store.clear_job()
@@ -85,6 +85,9 @@ function M.build_and_mount()
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
+
+  -- If there's a chat history, open with that.
+  render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
 
   vim.api.nvim_buf_set_keymap(
     input.bufnr,

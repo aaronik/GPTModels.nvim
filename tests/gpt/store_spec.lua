@@ -1,56 +1,97 @@
 ---@diagnostic disable: undefined-global
 
 local util = require("gpt.util")
-local assert = require("luassert")
 local Store = require("gpt.store")
+local assert = require("luassert")
 
-describe("Store", function()
+describe("Store | setting / getting", function()
   before_each(function()
-    Store.clear_messages()
+    Store.chat.clear()
+    Store.edit.clear()
+  end)
+
+  it("sets and gets", function()
+    Store.edit.right.append("right")
+    Store.edit.right.append("right")
+    Store.edit.left.append("left")
+    Store.edit.left.append("left")
+    Store.edit.input.append("input")
+    Store.edit.input.append("input")
+
+    Store.chat.input.append("input")
+    Store.chat.input.append("input")
+
+    Store.chat.chat.append({ role = "assistant", content = "chat" })
+    Store.chat.chat.append({ role = "assistant", content = "chat" })
+
+    assert.equal("rightright", Store.edit.right.read())
+    assert.equal("leftleft", Store.edit.left.read())
+    assert.equal("inputinput", Store.edit.input.read())
+
+    assert.equal("inputinput", Store.chat.input.read())
+    assert.same({{ role = "assistant", content = "chatchat" }}, Store.chat.chat.read())
+  end)
+end)
+
+describe("Store | messages", function()
+  before_each(function()
+    Store.chat.clear()
+  end)
+
+  it("starts with empty table", function()
+    Store.chat.chat.append({ role = "assistant", content = "hello" })
+    Store.chat.clear()
+    assert.same({}, Store.chat.chat.read())
+  end)
+
+  it("clears messages", function()
+    Store.chat.chat.append({ role = "assistant", content = "hello" })
+    Store.chat.clear()
+    assert.same({}, Store.chat.chat.read())
   end)
 
   it("Adds, joins, and gets messages", function()
-    Store.register_message({ role = "user", content = "hello" })
-    assert.same({ { role = "user", content = "hello" } }, Store.get_messages())
+    Store.chat.chat.append({ role = "user", content = "hello" })
+    assert.same({ { role = "user", content = "hello" } }, Store.chat.chat.read())
 
-    Store.register_message({ role = "assistant", content = "hello" })
-    assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello" } }, Store.get_messages())
+    Store.chat.chat.append({ role = "assistant", content = "hello" })
+    assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello" } }, Store.chat.chat.read())
 
-    Store.register_message({ role = "assistant", content = " there" })
+    Store.chat.chat.append({ role = "assistant", content = " there" })
     assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello there" } },
-      Store.get_messages())
+      Store.chat.chat.read())
 
-    Store.register_message({ role = "user", content = "cool" })
+    Store.chat.chat.append({ role = "user", content = "cool" })
     assert.same({
         { role = "user",      content = "hello" },
         { role = "assistant", content = "hello there" },
         { role = "user",      content = "cool" }
       },
-      Store.get_messages()
+      Store.chat.chat.read()
     )
   end)
 
   it("Doesn't mind about unexpected message orderings", function()
-    Store.register_message({ role = "assistant", content = "hello" })
-    assert.same({ { role = "assistant", content = "hello" } }, Store.get_messages())
+    Store.chat.chat.append({ role = "assistant", content = "hello" })
+    assert.same({ { role = "assistant", content = "hello" } }, Store.chat.chat.read())
 
-    Store.register_message({ role = "user", content = "hello" })
-    assert.same({ { role = "assistant", content = "hello" }, { role = "user", content = "hello" } }, Store.get_messages())
+    Store.chat.chat.append({ role = "user", content = "hello" })
+    assert.same({ { role = "assistant", content = "hello" }, { role = "user", content = "hello" } }, Store.chat.chat.read())
 
-    Store.register_message({ role = "assistant", content = " there" })
+    Store.chat.chat.append({ role = "assistant", content = " there" })
     assert.same({
         { role = "assistant", content = "hello" },
         { role = "user",      content = "hello" },
         { role = "assistant", content = " there" }
       },
-      Store.get_messages()
+      Store.chat.chat.read()
     )
   end)
+end)
 
-  it("clears messages", function()
-    Store.register_message({ role = "assistant", content = "hello" })
-    Store.clear_messages()
-    assert.same({}, Store.get_messages())
+describe("Store | jobs", function()
+  before_each(function()
+    Store.clear_job()
   end)
 
   it("takes one job", function()

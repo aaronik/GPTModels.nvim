@@ -7,7 +7,14 @@ local Store  = require('gpt.store')
 
 local M      = {}
 
-local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
+---@param bufnr integer
+---@param text string
+local function render_buffer_from_text(bufnr, text)
+  local response_lines = vim.split(text or "", "\n")
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
+end
+
+local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
   local code_lines = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
@@ -25,9 +32,8 @@ local on_CR  = function(input_bufnr, code_bufnr, right_bufnr)
       prompt = prompt,
     },
     on_read = function(_, response)
-      Store.register_text(response)
-      local response_lines = vim.split(Store.get_text() or "", "\n")
-      vim.api.nvim_buf_set_lines(right_bufnr, 0, -1, true, response_lines)
+      Store.edit.right.append(response)
+      render_buffer_from_text(right_bufnr, Store.edit.right.read())
     end
   })
 
