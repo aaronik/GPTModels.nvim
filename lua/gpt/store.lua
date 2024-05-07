@@ -20,6 +20,11 @@ end
 
 local Store = {}
 Store = {
+  clear = function ()
+    Store.edit.clear()
+    Store.chat.clear()
+  end,
+
   edit = {
     _right = "",
     right = {

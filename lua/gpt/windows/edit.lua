@@ -49,24 +49,39 @@ local function on_q(layout)
   layout:unmount()
 end
 
+---@param selected_text string[] | nil
 function M.build_and_mount(selected_text)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
   local right_popup = Popup(com.build_common_popup_opts("Edits"))
-  local input = Popup(com.build_common_popup_opts("Prompt"))
+  local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Turn off syntax highlighting for input buffer.
-  vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
-  vim.api.nvim_buf_set_option(input.bufnr, 'syntax', '')
+  vim.api.nvim_buf_set_option(input_popup.bufnr, 'filetype', 'txt')
+  vim.api.nvim_buf_set_option(input_popup.bufnr, 'syntax', '')
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
+  vim.api.nvim_buf_set_option(input_popup.bufnr, "buftype", "nofile")
 
   -- Set buffers to same filetype as current file, for highlighting
   vim.api.nvim_buf_set_option(left_popup.bufnr, 'filetype', vim.bo.filetype)
   vim.api.nvim_buf_set_option(right_popup.bufnr, 'filetype', vim.bo.filetype)
 
+  -- When the user opened this from visual mode with text
   if selected_text then
     vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_text)
+  end
+
+  -- When the store already has some data
+  -- If a selection is passed in, though, then it gets a new session
+  if not selected_text then
+    local left_content = Store.edit.left.read()
+    if left_content then render_buffer_from_text(left_popup.bufnr, left_content) end
+
+    local right_content = Store.edit.right.read()
+    if right_content then render_buffer_from_text(right_popup.bufnr, right_content) end
+
+    local input_content = Store.edit.input.read()
+    if input_content then render_buffer_from_text(input_popup.bufnr, input_content) end
   end
 
   local layout = Layout(
@@ -83,17 +98,17 @@ function M.build_and_mount(selected_text)
         Layout.Box(left_popup, { size = "50%" }),
         Layout.Box(right_popup, { size = "50%" }),
       }, { dir = "row", size = "80%" }),
-      Layout.Box(input, { size = "22%" }),
+      Layout.Box(input_popup, { size = "22%" }),
     }, { dir = "col" })
   )
 
   -- Set <CR> on input
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, left_popup.bufnr, right_popup.bufnr) end }
+  vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
+    { noremap = true, silent = true, callback = function() on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr) end }
   )
 
   -- Further Keymaps
-  local bufs = { left_popup.bufnr, right_popup.bufnr, input.bufnr }
+  local bufs = { left_popup.bufnr, right_popup.bufnr, input_popup.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -133,7 +148,7 @@ function M.build_and_mount(selected_text)
   vim.api.nvim_command('startinsert')
 
   return {
-    input_bufnr = input.bufnr,
+    input_bufnr = input_popup.bufnr,
     left_bufnr = left_popup.bufnr,
     right_bufnr = right_popup.bufnr
   }

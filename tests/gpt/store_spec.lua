@@ -29,7 +29,7 @@ describe("Store | setting / getting", function()
     assert.equal("inputinput", Store.edit.input.read())
 
     assert.equal("inputinput", Store.chat.input.read())
-    assert.same({{ role = "assistant", content = "chatchat" }}, Store.chat.chat.read())
+    assert.same({ { role = "assistant", content = "chatchat" } }, Store.chat.chat.read())
   end)
 end)
 
@@ -55,7 +55,8 @@ describe("Store | messages", function()
     assert.same({ { role = "user", content = "hello" } }, Store.chat.chat.read())
 
     Store.chat.chat.append({ role = "assistant", content = "hello" })
-    assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello" } }, Store.chat.chat.read())
+    assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello" } },
+      Store.chat.chat.read())
 
     Store.chat.chat.append({ role = "assistant", content = " there" })
     assert.same({ { role = "user", content = "hello" }, { role = "assistant", content = "hello there" } },
@@ -76,7 +77,8 @@ describe("Store | messages", function()
     assert.same({ { role = "assistant", content = "hello" } }, Store.chat.chat.read())
 
     Store.chat.chat.append({ role = "user", content = "hello" })
-    assert.same({ { role = "assistant", content = "hello" }, { role = "user", content = "hello" } }, Store.chat.chat.read())
+    assert.same({ { role = "assistant", content = "hello" }, { role = "user", content = "hello" } },
+      Store.chat.chat.read())
 
     Store.chat.chat.append({ role = "assistant", content = " there" })
     assert.same({

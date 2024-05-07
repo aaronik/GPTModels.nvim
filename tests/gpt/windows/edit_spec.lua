@@ -6,7 +6,7 @@ local edit_window = require('gpt.windows.edit')
 local stub = require('luassert.stub')
 local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
-local pj = require('plenary.job')
+local Store = require('gpt.store')
 
 describe("The Edit window", function()
   before_each(function()
@@ -15,6 +15,8 @@ describe("The Edit window", function()
     vim.api.nvim_win_set_width(0, 100)
 
     stub(cmd, "exec")
+
+    Store.clear()
   end)
 
   it("returns buffer numbers", function()
@@ -29,6 +31,38 @@ describe("The Edit window", function()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)
     -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
     assert.same(vim.api.nvim_get_current_line(), 'hello')
+  end)
+
+  it("opens with recent usage with no text provided", function()
+    Store.edit.right.append("right content")
+    Store.edit.input.append("input content")
+    Store.edit.left.append("left content")
+
+    local bufs = edit_window.build_and_mount()
+
+    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+
+    assert.same({"right content"}, right_lines)
+    assert.same({"input content"}, input_lines)
+    assert.same({"left content"}, left_lines)
+  end)
+
+  it("does not open with recent usage when text is provided", function()
+    Store.edit.right.append("right content")
+    Store.edit.input.append("input content")
+    Store.edit.left.append("left content")
+
+    local bufs = edit_window.build_and_mount({ "provided text" })
+
+    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+
+    assert.same({""}, right_lines)
+    assert.same({""}, input_lines)
+    assert.same({"provided text"}, left_lines)
   end)
 
   it("places given selected text in left window", function()
