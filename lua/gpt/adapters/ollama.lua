@@ -28,7 +28,7 @@ M.generate = function(args)
 
             local status_ok, data = pcall(vim.fn.json_decode, json)
             if not status_ok or not data then
-                error("Error getting json TODO better this" .. json)
+                error("Error decoding json: " .. json)
             end
             args.on_read(nil, data.response)
         end),

@@ -30,6 +30,11 @@ function M.exec(args)
     uv.read_start(stderr, function(_, err) args.onread(err, nil) end)
   end
 
+  if args.sync then
+    -- arbitrarily chosen, don't love that it's built in here
+    vim.wait(2 * 60 * 1000, function() return done end)
+  end
+
   return {
     handle = handle,
     pid = pid,

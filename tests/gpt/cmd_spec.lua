@@ -11,6 +11,7 @@ describe("cmd.exec", function()
 
     ---@type ExecArgs
     local exec_args = {
+      sync = false,
       cmd = "printf",
       args = { "woohoo" },
       onread = function(err, data)
@@ -36,6 +37,7 @@ describe("cmd.exec", function()
 
     ---@type ExecArgs
     local exec_args = {
+      sync = false,
       cmd = "ls",
       args = { "/thisdirdefinitelydoesntexistimsureofitforreal" },
       onread = function(err, data)
@@ -62,6 +64,7 @@ describe("cmd.exec", function()
 
     ---@type ExecArgs
     local exec_args = {
+      sync = false,
       cmd = "false",
       onexit = function(code, _)
         cod = code
@@ -85,6 +88,7 @@ describe("cmd.exec", function()
 
     ---@type ExecArgs
     local exec_args = {
+      sync = false,
       cmd = "sleep",
       args = { "1" },
       onexit = function(_, signal)
@@ -104,7 +108,7 @@ describe("cmd.exec", function()
     -- make sure the job exited w/o timing out
     assert.is_true(job.done())
 
-    assert.equal(sig, 9)
+    assert.equal(9, sig)
   end)
 
   it("die()s on command", function()
@@ -112,6 +116,7 @@ describe("cmd.exec", function()
 
     ---@type ExecArgs
     local exec_args = {
+      sync = false,
       cmd = "sleep",
       args = { "10" },
       onexit = function(_, signal)
@@ -132,6 +137,29 @@ describe("cmd.exec", function()
     assert.is_true(job.done())
 
     -- 15 is sigterm, used in die()
-    assert.equal(sig, 15)
+    assert.equal(15, sig)
+  end)
+
+  it("can exec synchronously", function()
+    local sig = signal
+
+    ---@type ExecArgs
+    local exec_args = {
+      sync = true,
+      cmd = "sleep",
+      args = { "0.05" },
+      onexit = function(_, signal)
+        sig = signal
+        util.log(sig)
+      end
+    }
+
+    local job = cmd.exec(exec_args)
+
+    -- The job should run synchronously, so by the time we get here, it should already
+    -- have finished, and sig should already be OK
+    job.die()
+
+    assert.equal(0, sig)
   end)
 end)

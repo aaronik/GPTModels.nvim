@@ -36,4 +36,5 @@
 ---@field args string[] | nil
 ---@field onread fun(err: string | nil, data: string | nil) | nil
 ---@field onexit fun(code: integer, signal: integer) | nil
+---@field sync boolean | nil
 
