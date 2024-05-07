@@ -12,18 +12,27 @@ M.setup = function(args)
   M.config = vim.tbl_deep_extend("force", M.config, args or {})
 end
 
--- This is called on :GPT
 ---@param opts { visual_mode: boolean }
 ---@see file plugin/init.lua
-M.run = function(opts)
+M.edit = function(opts)
   if opts.visual_mode then
     local selected_text = util.get_visual_selection().text
     edit_window.build_and_mount(selected_text)
   else
-    chat_window.build_and_mount()
+    edit_window.build_and_mount()
   end
 end
 
-M.gpt = M.run
+---@param opts { visual_mode: boolean }
+---@see file plugin/init.lua
+M.chat = function (opts)
+  if opts.visual_mode then
+    local selected_text = util.get_visual_selection().text
+    chat_window.build_and_mount(selected_text)
+  else
+    chat_window.build_and_mount()
+  end
+
+end
 
 return M

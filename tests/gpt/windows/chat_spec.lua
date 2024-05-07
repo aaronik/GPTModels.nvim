@@ -37,6 +37,12 @@ describe("The Chat window", function()
     assert.same(vim.api.nvim_get_current_line(), 'hello')
   end)
 
+  it("puts selected text into input buffer and puts newline under it", function()
+    local bufs = chat_window.build_and_mount({"selected text"})
+    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+    assert.same({"selected text", ""}, input_lines)
+  end)
+
   it("opens with last chat", function()
     local content = "window should open with this content populated"
     Store.chat.chat.append({ role = "assistant", content = content })

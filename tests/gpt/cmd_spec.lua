@@ -150,7 +150,6 @@ describe("cmd.exec", function()
       args = { "0.05" },
       onexit = function(_, signal)
         sig = signal
-        util.log(sig)
       end
     }
 

@@ -74,8 +74,9 @@ local function on_q(layout)
   layout:unmount()
 end
 
+---@param selected_text string[] | nil
 ---@return { input_bufnr: integer, chat_bufnr: integer }
-function M.build_and_mount()
+function M.build_and_mount(selected_text)
   local chat = Popup(com.build_common_popup_opts("Chat"))
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
@@ -114,8 +115,15 @@ function M.build_and_mount()
 
   layout:mount()
 
-  -- start window in insert mode
-  vim.api.nvim_command('startinsert')
+ -- Add text selection to input buf
+  if selected_text then
+    vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
+    local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+  else
+    -- start window in insert mode
+    vim.api.nvim_command('startinsert')
+  end
 
   -- keymaps
   local bufs = { chat.bufnr, input.bufnr }
