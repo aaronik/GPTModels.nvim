@@ -8,7 +8,8 @@ local assert = require("luassert")
 local chat_window = require('gpt.windows.chat')
 local stub = require('luassert.stub')
 local llm = require('gpt.llm')
-    local cmd = require('gpt.cmd')
+local cmd = require('gpt.cmd')
+local Store = require('gpt.store')
 
 describe("The Chat window", function()
   before_each(function()
@@ -34,6 +35,18 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)
     -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
     assert.same(vim.api.nvim_get_current_line(), 'hello')
+  end)
+
+  it("opens with last chat", function()
+    local content = "window should open with this content populated"
+    Store.chat.chat.append({ role = "assistant", content = content })
+
+    local bufs = chat_window.build_and_mount()
+    local input_bufnr = bufs.input_bufnr
+    local chat_bufnr = bufs.chat_bufnr
+
+    local lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
+    assert.equal(content, lines[1])
   end)
 
   it("shifts through windows on <Tab>", function()
@@ -74,7 +87,7 @@ describe("The Chat window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
-  it("On <CR> removes text from input and puts it in chat", function()
+  it("Removes text from input and puts it in chat on <CR>", function()
     local bufs = chat_window.build_and_mount()
     local input_bufnr = bufs.input_bufnr
     local chat_bufnr = bufs.chat_bufnr
@@ -99,7 +112,7 @@ describe("The Chat window", function()
     assert.same(input_lines, { "" })
   end)
 
-  it("On <CR> it places the llm response into chat", function()
+  it("Places llm response into chat window", function()
     local bufs = chat_window.build_and_mount()
     local input_bufnr = bufs.input_bufnr
     local chat_bufnr = bufs.chat_bufnr
@@ -130,43 +143,6 @@ describe("The Chat window", function()
       if line == "hello" then contains_hello = true end
       if line == "response text1" then contains_1 = true end
       if line == "response text2" then contains_2 = true end
-    end
-    assert.is_true(contains_hello)
-    assert.is_true(contains_1)
-    assert.is_true(contains_2)
-  end)
-
-  it("On <CR> it places the llm response into chat", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
-
-    -- stub llm call
-    local s = stub(llm, "chat")
-
-    vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "hello" })
-
-    -- make call to llm stub
-    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- grab the given callback
-    ---@type MakeChatRequestArgs
-    local args = s.calls[1].refs[1]
-
-    -- simulate llm responding
-    args.on_read(nil, { role = "assistant", content = "resp t1\nresp t2" })
-
-    -- Now the chat buffer should have all the things
-    local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
-
-    local contains_hello = false
-    local contains_1 = false
-    local contains_2 = false
-    for _, line in ipairs(chat_lines) do
-      if line == "hello" then contains_hello = true end
-      if line == "resp t1" then contains_1 = true end
-      if line == "resp t2" then contains_2 = true end
     end
     assert.is_true(contains_hello)
     assert.is_true(contains_1)

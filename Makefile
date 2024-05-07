@@ -3,6 +3,8 @@ TESTS_DIR=tests
 
 .PHONY: test
 
+# TODO I want test to contain a lua-language-server pass
+
 test_nvim:
 	@nvim \
 		--headless \
