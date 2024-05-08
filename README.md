@@ -14,3 +14,7 @@
 * on q, save input
 * Filetype automatically in code (and chat?)
 * Make prompt tests
+* Code window clears right pane upon new llm request
+* Code window keeps input alive
+* Code window has loading indicator
+* Chat window has loading indicator
