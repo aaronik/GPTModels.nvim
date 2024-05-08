@@ -44,9 +44,9 @@ describe("The Code window", function()
     local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
     local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
 
-    assert.same({"right content"}, right_lines)
-    assert.same({"input content"}, input_lines)
-    assert.same({"left content"}, left_lines)
+    assert.same({ "right content" }, right_lines)
+    assert.same({ "input content" }, input_lines)
+    assert.same({ "left content" }, left_lines)
   end)
 
   it("does not open with recent usage when text is provided", function()
@@ -60,9 +60,9 @@ describe("The Code window", function()
     local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
     local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
 
-    assert.same({""}, right_lines)
-    assert.same({""}, input_lines)
-    assert.same({"provided text"}, left_lines)
+    assert.same({ "" }, right_lines)
+    assert.same({ "" }, input_lines)
+    assert.same({ "provided text" }, left_lines)
   end)
 
   it("places given selected text in left window", function()
@@ -137,6 +137,19 @@ describe("The Code window", function()
 
     -- Those lines should be separated on newlines and placed into the right buf
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })
+  end)
+
+  it("includes a system prompt", function()
+    code_window.build_and_mount()
+    local s = stub(llm, "generate")
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xincluding system prompt?<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    local args = s.calls[1].refs[1]
+
+    assert.is_not.same(args.llm.system, nil)
   end)
 
   -- TODO Actually, maybe we don't want to kill the job? Maybe it should just continue to

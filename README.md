@@ -11,3 +11,6 @@
 * Loading indicators
 * Code prompt
 * add files to chat / code
+* on q, save input
+* Filetype automatically in code (and chat?)
+* Make prompt tests

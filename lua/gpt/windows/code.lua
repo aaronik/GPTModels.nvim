@@ -14,13 +14,36 @@ local function render_buffer_from_text(bufnr, text)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
 end
 
+---@param input_text string
+---@param code_text string
+---@return string, string
+local code_prompt = function (input_text, code_text)
+
+  local prompt_string = ""
+  prompt_string = prompt_string .. "%s\n\n"
+  prompt_string = prompt_string .. "Here is the code:\n\n"
+  prompt_string = prompt_string .. "%s"
+
+  local prompt = string.format(prompt_string, input_text, code_text)
+
+  local system_string = ""
+  system_string = system_string .. "You are a code generator.\n"
+  system_string = system_string .. "You only respond with code.\n"
+  system_string = system_string .. "Do not explain the code.\n"
+  system_string = system_string .. "Do not use backticks. Do not include ``` at all.\n"
+
+  local system = string.format(system_string, input_text, code_text)
+
+  return prompt, system
+end
+
 local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
   local code_lines = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
   local code_text = table.concat(code_lines, "\n")
 
-  local prompt = input_text .. "\n\nHere is the code:\n\n" .. code_text
+  local prompt, system = code_prompt(input_text, code_text)
 
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
@@ -30,6 +53,7 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
       model = "llama3",
       stream = true,
       prompt = prompt,
+      system = system,
     },
     on_read = function(_, response)
       Store.code.right.append(response)

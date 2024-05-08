@@ -6,11 +6,13 @@
 ---@field content string
 
 ---@class LlmGenerateArgs
+---@field system string | nil
 ---@field model string | nil
 ---@field stream boolean
 ---@field prompt string
 
 ---@class LlmChatArgs
+---@field system string | nil
 ---@field model string | nil
 ---@field stream boolean
 ---@field messages LlmMessage[] | nil

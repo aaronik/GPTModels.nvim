@@ -36,9 +36,9 @@ describe("The Chat window", function()
   end)
 
   it("puts selected text into input buffer and puts newline under it", function()
-    local bufs = chat_window.build_and_mount({"selected text"})
+    local bufs = chat_window.build_and_mount({ "selected text" })
     local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
-    assert.same({"selected text", ""}, input_lines)
+    assert.same({ "selected text", "" }, input_lines)
   end)
 
   it("opens with last chat", function()
