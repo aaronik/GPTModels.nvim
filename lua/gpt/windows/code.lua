@@ -14,17 +14,19 @@ local function render_buffer_from_text(bufnr, text)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
 end
 
+---@param filetype string
 ---@param input_text string
 ---@param code_text string
 ---@return string, string
-local code_prompt = function (input_text, code_text)
+local code_prompt = function (filetype, input_text, code_text)
 
   local prompt_string = ""
   prompt_string = prompt_string .. "%s\n\n"
+  prompt_string = prompt_string .. "The extension of the language is %s.\n"
   prompt_string = prompt_string .. "Here is the code:\n\n"
   prompt_string = prompt_string .. "%s"
 
-  local prompt = string.format(prompt_string, input_text, code_text)
+  local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
   local system_string = ""
   system_string = system_string .. "You are a code generator.\n"
@@ -43,7 +45,11 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
   local code_lines = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
   local code_text = table.concat(code_lines, "\n")
 
-  local prompt, system = code_prompt(input_text, code_text)
+  local filetype = vim.api.nvim_buf_get_option(code_bufnr, 'filetype')
+
+  util.log(filetype)
+
+  local prompt, system = code_prompt(filetype, input_text, code_text)
 
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})

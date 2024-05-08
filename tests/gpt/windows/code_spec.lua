@@ -147,9 +147,27 @@ describe("The Code window", function()
     local keys = vim.api.nvim_replace_termcodes('xincluding system prompt?<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
+    ---@type MakeGenerateRequestArgs
+    local args = s.calls[1].refs[1]
+    assert.is_not.same(args.llm.system, nil)
+  end)
+
+  it("includes the file type", function()
+    -- return "lua" for filetype request
+    stub(vim.api, "nvim_buf_get_option").returns("lua")
+
+    code_window.build_and_mount()
+    local s = stub(llm, "generate")
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xincluding filetype?<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
     local args = s.calls[1].refs[1]
 
-    assert.is_not.same(args.llm.system, nil)
+    assert.not_same(string.find(args.llm.prompt, "lua"), nil)
+    assert.is_not.same(args.llm.prompt, nil)
   end)
 
   -- TODO Actually, maybe we don't want to kill the job? Maybe it should just continue to
