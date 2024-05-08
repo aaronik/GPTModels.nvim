@@ -21,36 +21,36 @@ end
 local Store = {}
 Store = {
   clear = function ()
-    Store.edit.clear()
+    Store.code.clear()
     Store.chat.clear()
   end,
 
-  edit = {
+  code = {
     _right = "",
     right = {
       ---@param text string
-      append = function(text) Store.edit._right = Store.edit._right .. text end,
-      read = function() return Store.edit._right end,
+      append = function(text) Store.code._right = Store.code._right .. text end,
+      read = function() return Store.code._right end,
     },
 
     _left = "",
     left = {
       ---@param text string
-      append = function(text) Store.edit._left = Store.edit._left .. text end,
-      read = function() return Store.edit._left end,
+      append = function(text) Store.code._left = Store.code._left .. text end,
+      read = function() return Store.code._left end,
     },
 
     _input = "",
     input = {
       ---@param text string
-      append = function(text) Store.edit._input = Store.edit._input .. text end,
-      read = function() return Store.edit._input end,
+      append = function(text) Store.code._input = Store.code._input .. text end,
+      read = function() return Store.code._input end,
     },
 
     clear = function()
-      Store.edit._right = ""
-      Store.edit._left = ""
-      Store.edit._input = ""
+      Store.code._right = ""
+      Store.code._left = ""
+      Store.code._input = ""
     end
   },
   chat = {

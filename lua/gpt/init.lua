@@ -1,5 +1,5 @@
 local util = require('gpt.util')
-local edit_window = require("gpt.windows.edit")
+local code_window = require("gpt.windows.code")
 local chat_window = require("gpt.windows.chat")
 
 local M = {}
@@ -14,12 +14,12 @@ end
 
 ---@param opts { visual_mode: boolean }
 ---@see file plugin/init.lua
-M.edit = function(opts)
+M.code = function(opts)
   if opts.visual_mode then
     local selected_text = util.get_visual_selection().text
-    edit_window.build_and_mount(selected_text)
+    code_window.build_and_mount(selected_text)
   else
-    edit_window.build_and_mount()
+    code_window.build_and_mount()
   end
 end
 

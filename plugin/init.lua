@@ -4,13 +4,13 @@
 
 local util = require('gpt.util')
 
-function InvokeGptEdit(opts, preview_ns, preview_buffer)
+function InvokeGptCode(opts, preview_ns, preview_buffer)
   local gpt_opts = {
     visual_mode = opts.count ~= -1
   }
 
   -- TODO use regular require
-  util.R('gpt').edit(gpt_opts);
+  util.R('gpt').code(gpt_opts);
   -- require('gpt').run(gpt_opts)
 end
 
@@ -25,8 +25,8 @@ function InvokeGptChat(opts, preview_ns, preview_buffer)
 end
 
 vim.api.nvim_create_user_command(
-  "GPTEdit",
-  InvokeGptEdit,
+  "GPTCode",
+  InvokeGptCode,
   { nargs = "?", range = "%", addr = "lines" }
 )
 

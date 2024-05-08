@@ -32,8 +32,8 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
       prompt = prompt,
     },
     on_read = function(_, response)
-      Store.edit.right.append(response)
-      render_buffer_from_text(right_bufnr, Store.edit.right.read())
+      Store.code.right.append(response)
+      render_buffer_from_text(right_bufnr, Store.code.right.read())
     end
   })
 
@@ -52,7 +52,7 @@ end
 ---@param selected_text string[] | nil
 function M.build_and_mount(selected_text)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
-  local right_popup = Popup(com.build_common_popup_opts("Edits"))
+  local right_popup = Popup(com.build_common_popup_opts("Code"))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Turn off syntax highlighting for input buffer.
@@ -74,13 +74,13 @@ function M.build_and_mount(selected_text)
   -- When the store already has some data
   -- If a selection is passed in, though, then it gets a new session
   if not selected_text then
-    local left_content = Store.edit.left.read()
+    local left_content = Store.code.left.read()
     if left_content then render_buffer_from_text(left_popup.bufnr, left_content) end
 
-    local right_content = Store.edit.right.read()
+    local right_content = Store.code.right.read()
     if right_content then render_buffer_from_text(right_popup.bufnr, right_content) end
 
-    local input_content = Store.edit.input.read()
+    local input_content = Store.code.input.read()
     if input_content then render_buffer_from_text(input_popup.bufnr, input_content) end
   end
 

@@ -8,3 +8,6 @@
 ## TODO
 
 * Focus same buffer on nui exit
+* Loading indicators
+* Code prompt
+* add files to chat / code

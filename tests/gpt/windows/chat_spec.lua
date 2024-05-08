@@ -1,7 +1,5 @@
 ---@diagnostic disable: undefined-global
 
--- TODO use telescope to add files to chat! This could be a defining feature.
-
 require('gpt.types')
 local util = require("gpt.util")
 local assert = require("luassert")
