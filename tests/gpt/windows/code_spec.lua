@@ -240,4 +240,23 @@ describe("The Code window", function()
     -- After the second response, the first response should be replaced by the second one
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "second response line" })
   end)
+
+  it("kills any existing jobs in flight when <CR> is pressed", function()
+    code_window.build_and_mount()
+    local s = stub(llm, "generate")
+    local job = {
+      die = stub()
+    }
+    s.returns(job)
+
+    -- Start a job
+    local keys = vim.api.nvim_replace_termcodes('xstart job<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- Press <CR> to start a new job
+    keys = vim.api.nvim_replace_termcodes('a new input<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.stub(job.die).was_called()
+  end)
 end)

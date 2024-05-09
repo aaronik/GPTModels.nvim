@@ -55,6 +55,11 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
   -- Loading indicator
   render_buffer_from_text(right_bufnr, "Loading...")
 
+  -- Nuke existing jobs
+  if Store.get_job() then
+    Store.get_job().die()
+  end
+
   local job = llm.generate({
     llm = {
       model = "llama3",
