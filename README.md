@@ -8,7 +8,6 @@
 ## TODO
 
 * Focus same buffer on nui exit
-* Loading indicators
 * Code prompt
 * add files to chat / code
 * on q, save input
@@ -16,5 +15,4 @@
 * Make prompt tests
 * Code window clears right pane upon new llm request
 * Code window keeps input alive
-* Code window has loading indicator
 * Chat window has loading indicator

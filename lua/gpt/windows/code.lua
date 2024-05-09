@@ -47,12 +47,13 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
 
   local filetype = vim.api.nvim_buf_get_option(code_bufnr, 'filetype')
 
-  util.log(filetype)
-
   local prompt, system = code_prompt(filetype, input_text, code_text)
 
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
+
+  -- Loading indicator
+  render_buffer_from_text(right_bufnr, "Loading...")
 
   local job = llm.generate({
     llm = {

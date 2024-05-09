@@ -129,9 +129,6 @@ describe("The Code window", function()
     ---@type MakeGenerateRequestArgs
     local args = s.calls[1].refs[1]
 
-    -- before on_response gets a response from the llm, the right window should be empty
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "" })
-
     -- simulate a multiline resposne from the llm
     args.on_read(nil, "line 1\nline 2")
 
@@ -192,5 +189,26 @@ describe("The Code window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     assert.is_true(die_called)
+  end)
+
+  it("Has a loading indicator", function()
+    local bufs = code_window.build_and_mount()
+
+    local s = stub(llm, "generate")
+
+    local keys = vim.api.nvim_replace_termcodes('xloading test<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
+    local args = s.calls[1].refs[1]
+
+    -- before on_response gets a response from the llm, the right window should show a loading indicator
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "Loading..." })
+
+    -- simulate a response from the llm
+    args.on_read(nil, "response line")
+
+    -- After the response, the loading indicator should be replaced by the response
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "response line" })
   end)
 end)
