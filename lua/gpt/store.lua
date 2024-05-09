@@ -20,7 +20,7 @@ end
 
 local Store = {}
 Store = {
-  clear = function ()
+  clear = function()
     Store.code.clear()
     Store.chat.clear()
   end,
@@ -31,6 +31,7 @@ Store = {
       ---@param text string
       append = function(text) Store.code._right = Store.code._right .. text end,
       read = function() return Store.code._right end,
+      clear = function() Store.code._right = "" end
     },
 
     _left = "",
@@ -38,6 +39,7 @@ Store = {
       ---@param text string
       append = function(text) Store.code._left = Store.code._left .. text end,
       read = function() return Store.code._left end,
+      clear = function() Store.code._left = "" end
     },
 
     _input = "",
@@ -45,12 +47,13 @@ Store = {
       ---@param text string
       append = function(text) Store.code._input = Store.code._input .. text end,
       read = function() return Store.code._input end,
+      clear = function() Store.code._input = "" end
     },
 
     clear = function()
-      Store.code._right = ""
-      Store.code._left = ""
-      Store.code._input = ""
+      Store.code.right.clear()
+      Store.code.left.clear()
+      Store.code.input.clear()
     end
   },
   chat = {
@@ -59,6 +62,7 @@ Store = {
       ---@param text string
       append = function(text) Store.chat._input = Store.chat._input .. text end,
       read = function() return Store.chat._input end,
+      clear = function() Store.chat._input = "" end
     },
 
     ---@type LlmMessage[]
@@ -67,11 +71,12 @@ Store = {
       read = function() return Store.chat._chat end,
       ---@param message LlmMessage
       append = function(message) concat_chat(Store.chat._chat, message) end,
+      clear = function() Store.chat._chat = {} end
     },
 
     clear = function()
-      Store.chat._input = ""
-      Store.chat._chat = {}
+      Store.chat.input.clear()
+      Store.chat.chat.clear()
     end
   },
 }
