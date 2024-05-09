@@ -65,6 +65,10 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
     on_read = function(_, response)
       Store.code.right.append(response)
       render_buffer_from_text(right_bufnr, Store.code.right.read())
+    end,
+    on_end = function ()
+      Store.code.right.clear()
+      Store.clear_job()
     end
   })
 

@@ -211,4 +211,33 @@ describe("The Code window", function()
     -- After the response, the loading indicator should be replaced by the response
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "response line" })
   end)
+
+  it("Replaces old response for new one that comes in", function()
+    local bufs = code_window.build_and_mount()
+
+    local s = stub(llm, "generate")
+
+    -- Simulate first response
+    local keys = vim.api.nvim_replace_termcodes('xfirst response<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
+    local args_first = s.calls[1].refs[1]
+    args_first.on_read(nil, "first response line")
+    if args_first.on_end then args_first.on_end() end
+
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "first response line" })
+
+    -- Simulate second response
+    keys = vim.api.nvim_replace_termcodes('xsecond response<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+    if args_first.on_end then args_first.on_end() end
+
+    ---@type MakeGenerateRequestArgs
+    local args_second = s.calls[2].refs[1]
+    args_second.on_read(nil, "second response line")
+
+    -- After the second response, the first response should be replaced by the second one
+    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "second response line" })
+  end)
 end)
