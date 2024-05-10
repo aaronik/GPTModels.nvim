@@ -48,9 +48,6 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
   local prompt, system = code_prompt(filetype, input_text, left_text)
 
-  -- Clear input
-  vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
-
   -- Loading indicator
   render_buffer_from_text(right_bufnr, "Loading...")
 
