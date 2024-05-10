@@ -18,8 +18,7 @@ end
 ---@param input_text string
 ---@param code_text string
 ---@return string, string
-local code_prompt = function (filetype, input_text, code_text)
-
+local code_prompt = function(filetype, input_text, code_text)
   local prompt_string = ""
   prompt_string = prompt_string .. "%s\n\n"
   prompt_string = prompt_string .. "The extension of the language is %s.\n"
@@ -39,15 +38,15 @@ local code_prompt = function (filetype, input_text, code_text)
   return prompt, system
 end
 
-local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
+local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
-  local code_lines = vim.api.nvim_buf_get_lines(code_bufnr, 0, -1, false)
-  local code_text = table.concat(code_lines, "\n")
+  local left_lines = vim.api.nvim_buf_get_lines(left_bufnr, 0, -1, false)
+  local left_text = table.concat(left_lines, "\n")
 
-  local filetype = vim.api.nvim_buf_get_option(code_bufnr, 'filetype')
+  local filetype = vim.api.nvim_buf_get_option(left_bufnr, 'filetype')
 
-  local prompt, system = code_prompt(filetype, input_text, code_text)
+  local prompt, system = code_prompt(filetype, input_text, left_text)
 
   -- Clear input
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
@@ -71,8 +70,8 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
       Store.code.right.append(response)
       render_buffer_from_text(right_bufnr, Store.code.right.read())
     end,
-    on_end = function ()
-      Store.code.right.clear()
+    on_end = function()
+      Store.code.right.clear() -- TODO This has to die if the right window will load with previous responses
       Store.clear_job()
     end
   })
@@ -80,17 +79,20 @@ local on_CR = function(input_bufnr, code_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
-local function on_q(layout)
+---@param autocmdid integer
+local function onexit(layout, autocmdid)
   local job = Store.get_job()
   if job ~= nil then
     job.die()
     Store.clear_job()
   end
   layout:unmount()
+
+  vim.api.nvim_del_autocmd(autocmdid)
 end
 
----@param selected_text string[] | nil
-function M.build_and_mount(selected_text)
+---@param selected_lines string[] | nil
+function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
   local right_popup = Popup(com.build_common_popup_opts("Code"))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
@@ -107,13 +109,15 @@ function M.build_and_mount(selected_text)
   vim.api.nvim_buf_set_option(right_popup.bufnr, 'filetype', vim.bo.filetype)
 
   -- When the user opened this from visual mode with text
-  if selected_text then
-    vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_text)
-  end
+  if selected_lines then
+    vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_lines)
 
-  -- When the store already has some data
-  -- If a selection is passed in, though, then it gets a new session
-  if not selected_text then
+    -- On open, save the text to the store, so next open contains that text
+    Store.code.left.clear()
+    Store.code.left.append(table.concat(selected_lines, "\n"))
+  else
+    -- When the store already has some data
+    -- If a selection is passed in, though, then it gets a new session
     local left_content = Store.code.left.read()
     if left_content then render_buffer_from_text(left_popup.bufnr, left_content) end
 
@@ -142,10 +146,23 @@ function M.build_and_mount(selected_text)
     }, { dir = "col" })
   )
 
-  -- Set <CR> on input
+  -- For input, set <CR>
   vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
     { noremap = true, silent = true, callback = function() on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr) end }
   )
+
+  -- For input, save to populate on next open
+  -- TODO This _must_ be called every time the layout is unmounted.
+  -- Otherwise input_popup will be freed and input_popup.bufnr is nil,
+  -- causing an error from within the callback
+  local autocmdid = vim.api.nvim_create_autocmd({ "InsertLeave" }, {
+    pattern = "*",
+    callback = function()
+      local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
+      Store.code.input.clear()
+      Store.code.input.append(table.concat(input_lines, "\n"))
+    end
+  })
 
   -- Further Keymaps
   local bufs = { left_popup.bufnr, right_popup.bufnr, input_popup.bufnr }
@@ -172,13 +189,25 @@ function M.build_and_mount(selected_text)
       end
     })
 
+    -- Ctl-n to reset session
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-n>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        Store.code.clear()
+        for _, bu in ipairs(bufs) do
+          vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
+        end
+      end
+    })
+
     -- q to exit -- TODO This is probably more personal config. Consider
     -- removing this before it goes live. Or making it optional or something
     -- else.
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function() on_q(layout) end,
+      callback = function() onexit(layout, autocmdid) end,
     })
   end
 

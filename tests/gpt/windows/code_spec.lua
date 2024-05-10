@@ -259,4 +259,64 @@ describe("The Code window", function()
 
     assert.stub(job.die).was_called()
   end)
+
+  it("clears all windows on <C-n>", function()
+    local bufs = code_window.build_and_mount()
+
+    -- Populate windows with some content
+    vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { "input content" })
+    vim.api.nvim_buf_set_lines(bufs.left_bufnr, 0, -1, true, { "left content" })
+    vim.api.nvim_buf_set_lines(bufs.right_bufnr, 0, -1, true, { "right content" })
+
+    -- Press <C-n>
+    local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Assert all windows are cleared
+    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true))
+    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true))
+    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+  end)
+
+  it("retains text when reopened after <C-n>", function()
+    local initial_text = { "initial text line 1", "initial text line 2" }
+    local bufs = code_window.build_and_mount(initial_text)
+
+    -- Press <C-n>
+    local keys = vim.api.nvim_replace_termcodes("<Esc><C-n>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Close the window with :q
+    keys = vim.api.nvim_replace_termcodes("<Esc>:q<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Reopen the window
+    bufs = code_window.build_and_mount()
+
+    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+
+    assert.same(initial_text, left_lines)
+  end)
+
+  it("saves input text on normal mode entry and restores on reopen", function()
+    local initial_input = "some initial input"
+    local bufs = code_window.build_and_mount()
+
+    -- Populate input window with some content and enter normal mode
+    vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { initial_input })
+
+    local keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Close the window with :q
+    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Reopen the window
+    bufs = code_window.build_and_mount()
+
+    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+
+    assert.same({ initial_input }, input_lines)
+  end)
 end)

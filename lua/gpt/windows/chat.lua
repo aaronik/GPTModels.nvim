@@ -87,6 +87,9 @@ function M.build_and_mount(selected_text)
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
 
+  -- Chat in markdown
+  vim.api.nvim_buf_set_option(chat.bufnr, 'filetype', 'markdown')
+
   -- If there's a chat history, open with that.
   render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
 

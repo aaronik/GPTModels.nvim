@@ -16,3 +16,6 @@
 * Code window clears right pane upon new llm request
 * Code window keeps input alive
 * Chat window has loading indicator
+* Let requests finish in background
+* Go to gpt-4
+* exiting the layout causes same behavior as q

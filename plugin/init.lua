@@ -10,8 +10,8 @@ function InvokeGptCode(opts, preview_ns, preview_buffer)
   }
 
   -- TODO use regular require
-  util.R('gpt').code(gpt_opts);
-  -- require('gpt').run(gpt_opts)
+  -- util.R('gpt').code(gpt_opts);
+  require('gpt').code(gpt_opts)
 end
 
 function InvokeGptChat(opts, preview_ns, preview_buffer)
@@ -20,8 +20,8 @@ function InvokeGptChat(opts, preview_ns, preview_buffer)
   }
 
   -- TODO use regular require
-  util.R('gpt').chat(gpt_opts);
-  -- require('gpt').run(gpt_opts)
+  -- util.R('gpt').chat(gpt_opts);
+  require('gpt').chat(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(
