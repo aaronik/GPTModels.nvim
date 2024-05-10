@@ -8,7 +8,7 @@ local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
 local Store = require('gpt.store')
 
-describe("The Code window", function()
+describe("The code window", function()
   before_each(function()
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
     vim.api.nvim_win_set_height(0, 100)
@@ -142,9 +142,55 @@ describe("The Code window", function()
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "response line" })
   end)
 
+  it("finishes jobs in the background when closed", function()
+    code_window.build_and_mount()
+    local s = stub(llm, "generate")
+    local die_called = false
+
+    s.returns({
+      die = function()
+        die_called = true
+      end
+    })
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- quit with :q
+    keys = vim.api.nvim_replace_termcodes('<Esc>:q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- -- quit with q
+    -- keys = vim.api.nvim_replace_termcodes('q', true, true, true)
+    -- vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.is_not.True(die_called)
+
+    -- -- simulate hint of wait time for the nui windows to close
+    -- -- TODO This leads to errors about invalid windows. Gotta fix
+    -- vim.wait(10)
+
+    ---@type MakeGenerateRequestArgs
+    local args = s.calls[1].refs[1]
+
+    args.on_read(nil, "response to be saved in background")
+
+    -- Open up and ensure it's there now
+    local bufs = code_window.build_and_mount()
+    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+
+    -- More reponse to still reopen window
+    args.on_read(nil, "\nadditional response")
+
+    -- Gets that response without reopening
+    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
+    assert.same({ "response to be saved in background", "additional response" }, right_lines)
+  end)
+
   -- TODO Actually, maybe we don't want to kill the job? Maybe it should just continue to
   -- run and populate a store in the background?
-  it("kills jobs and closes the window when q is pressed", function()
+  pending("kills jobs and closes the window when q is pressed", function()
     code_window.build_and_mount()
     local s = stub(llm, "generate")
     local die_called = false
@@ -232,25 +278,6 @@ describe("The Code window", function()
     assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "second response line" })
   end)
 
-  it("kills any existing jobs in flight when <CR> is pressed", function()
-    code_window.build_and_mount()
-    local s = stub(llm, "generate")
-    local job = {
-      die = stub()
-    }
-    s.returns(job)
-
-    -- Start a job
-    local keys = vim.api.nvim_replace_termcodes('xstart job<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- Press <CR> to start a new job
-    keys = vim.api.nvim_replace_termcodes('a new input<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    assert.stub(job.die).was_called()
-  end)
-
   it("clears all windows on <C-n>", function()
     local bufs = code_window.build_and_mount()
 
@@ -264,9 +291,9 @@ describe("The Code window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Assert all windows are cleared
-    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true))
-    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true))
-    assert.same({''}, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
   end)
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()

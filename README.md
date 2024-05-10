@@ -19,3 +19,5 @@
 * Let requests finish in background
 * Go to gpt-4
 * exiting the layout causes same behavior as q
+* ctl-c kills the job!
+* Handle graceful window resizing

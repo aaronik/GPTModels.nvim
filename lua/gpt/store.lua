@@ -28,6 +28,10 @@ Store = {
   code = {
     _right = "",
     right = {
+      -- NOTE: If this pattern becomes useful, make it nicer. Right now it's like an unofficial hack.
+      ---@type integer | nil
+      bufnr = nil,
+
       ---@param text string
       append = function(text) Store.code._right = Store.code._right .. text end,
       read = function() return Store.code._right end,

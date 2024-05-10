@@ -7,11 +7,18 @@ local Store  = require('gpt.store')
 
 local M      = {}
 
+-- Render text to a buffer _if the buffer is still valid_,
+-- so this is safe to call on potentially closed buffers.
 ---@param bufnr integer
 ---@param text string
-local function render_buffer_from_text(bufnr, text)
-  local response_lines = vim.split(text or "", "\n")
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
+local function safe_render_buffer_from_text(bufnr, text)
+  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+
+  if buf_loaded and buf_valid then
+    local response_lines = vim.split(text or "", "\n")
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
+  end
 end
 
 ---@param filetype string
@@ -52,7 +59,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.code.right.clear()
 
   -- Loading indicator
-  render_buffer_from_text(right_bufnr, "Loading...")
+  safe_render_buffer_from_text(right_bufnr, "Loading...")
 
   -- Nuke existing jobs
   if Store.get_job() then
@@ -68,7 +75,10 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
     },
     on_read = function(_, response)
       Store.code.right.append(response)
-      render_buffer_from_text(right_bufnr, Store.code.right.read())
+      -- if the window is closed and reopened again while a response is streaming in,
+      -- right_bufnr will be wrong, and it won't get repopulated.
+      -- So we're assigning to ..right.bufnr every time the window opens.
+      safe_render_buffer_from_text(Store.code.right.bufnr, Store.code.right.read())
     end,
     on_end = function()
       Store.clear_job()
@@ -78,16 +88,13 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
----@param autocmdid integer
-local function onexit(layout, autocmdid)
-  local job = Store.get_job()
-  if job ~= nil then
-    job.die()
-    Store.clear_job()
+---@param autocmd_ids integer[]
+local function teardown(layout, autocmd_ids)
+  for _, id in ipairs(autocmd_ids) do
+    vim.api.nvim_del_autocmd(id)
   end
+  -- TODO this might not need to be called, if so, remove
   layout:unmount()
-
-  vim.api.nvim_del_autocmd(autocmdid)
 end
 
 ---@param selected_lines string[] | nil
@@ -95,6 +102,9 @@ function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
   local right_popup = Popup(com.build_common_popup_opts("Code"))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
+
+  -- Register new right bufnr for backgrounded llm responses still running to write into
+  Store.code.right.bufnr = right_popup.bufnr
 
   -- Turn off syntax highlighting for input buffer.
   vim.api.nvim_buf_set_option(input_popup.bufnr, 'filetype', 'txt')
@@ -118,13 +128,13 @@ function M.build_and_mount(selected_lines)
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session
     local left_content = Store.code.left.read()
-    if left_content then render_buffer_from_text(left_popup.bufnr, left_content) end
+    if left_content then safe_render_buffer_from_text(left_popup.bufnr, left_content) end
 
     local right_content = Store.code.right.read()
-    if right_content then render_buffer_from_text(right_popup.bufnr, right_content) end
+    if right_content then safe_render_buffer_from_text(right_popup.bufnr, right_content) end
 
     local input_content = Store.code.input.read()
-    if input_content then render_buffer_from_text(input_popup.bufnr, input_content) end
+    if input_content then safe_render_buffer_from_text(input_popup.bufnr, input_content) end
   end
 
   local layout = Layout(
@@ -151,15 +161,21 @@ function M.build_and_mount(selected_lines)
   )
 
   -- For input, save to populate on next open
-  -- TODO This _must_ be called every time the layout is unmounted.
-  -- Otherwise input_popup will be freed and input_popup.bufnr is nil,
-  -- causing an error from within the callback
-  local autocmdid = vim.api.nvim_create_autocmd({ "InsertLeave" }, {
+  local insertleaveid = vim.api.nvim_create_autocmd({ "InsertLeave" }, {
     pattern = "*",
     callback = function()
       local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
       Store.code.input.clear()
       Store.code.input.append(table.concat(input_lines, "\n"))
+    end
+  })
+
+  -- When the window is closed
+  local bufleaveid
+  bufleaveid = vim.api.nvim_create_autocmd({ "BufWinLeave" }, {
+    pattern = "*",
+    callback = function()
+      teardown(layout, { insertleaveid, bufleaveid })
     end
   })
 
@@ -206,7 +222,9 @@ function M.build_and_mount(selected_lines)
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function() onexit(layout, autocmdid) end,
+      callback = function()
+        layout:unmount()
+      end,
     })
   end
 
