@@ -48,6 +48,9 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
   local prompt, system = code_prompt(filetype, input_text, left_text)
 
+  -- Clear the right window so the next response doesn't append to the previous one
+  Store.code.right.clear()
+
   -- Loading indicator
   render_buffer_from_text(right_bufnr, "Loading...")
 
@@ -68,7 +71,6 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       render_buffer_from_text(right_bufnr, Store.code.right.read())
     end,
     on_end = function()
-      Store.code.right.clear() -- TODO This has to die if the right window will load with previous responses
       Store.clear_job()
     end
   })
