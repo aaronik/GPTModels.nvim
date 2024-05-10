@@ -19,13 +19,6 @@ describe("The Code window", function()
     Store.clear()
   end)
 
-  it("opens in input mode", function()
-    code_window.build_and_mount()
-    vim.api.nvim_feedkeys('xhello', 'mtx', true)
-    -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
-    assert.same(vim.api.nvim_get_current_line(), 'hello')
-  end)
-
   it("places given provided text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
     local bufs = code_window.build_and_mount(given_lines)
@@ -283,7 +276,12 @@ describe("The Code window", function()
     -- Populate input window with some content and enter normal mode
     vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { initial_input })
 
-    local keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    -- Enter insert mode
+    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <Esc> to trigger save
+    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Close the window with :q
@@ -307,8 +305,16 @@ describe("The Code window", function()
     -- Add user input
     vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { "input" })
 
-    -- <Esc> saves input window, <CR> triggers llm call
-    local keys = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
+    -- Enter insert mode, so we can leave it
+    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <Esc> triggers save
+    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <CR> triggers llm call
+    keys = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- right window is saved when an llm response comes in

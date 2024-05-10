@@ -212,9 +212,6 @@ function M.build_and_mount(selected_lines)
 
   layout:mount()
 
-  -- start window in insert mode
-  vim.api.nvim_command('startinsert')
-
   return {
     input_bufnr = input_popup.bufnr,
     left_bufnr = left_popup.bufnr,
