@@ -115,6 +115,11 @@ function M.build_and_mount(selected_text)
     }, { dir = "col" })
   )
 
+  -- recalculate nui window when vim window resizes
+  input:on("VimResized", function()
+    layout:update()
+  end)
+
   layout:mount()
 
  -- Add text selection to input buf

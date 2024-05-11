@@ -128,22 +128,22 @@ function M.build_and_mount(selected_lines)
   end
 
   local layout = Layout(
-        {
-          position = "50%",
-          relative = "editor",
-          size = {
-            width = "90%",
-            height = "90%",
-          },
-        },
-        Layout.Box({
-          Layout.Box({
-            Layout.Box(left_popup, { size = "50%" }),
-            Layout.Box(right_popup, { size = "50%" }),
-          }, { dir = "row", size = "80%" }),
-          Layout.Box(input_popup, { size = "22%" }),
-        }, { dir = "col" })
-      )
+    {
+      position = "50%",
+      relative = "editor",
+      size = {
+        width = "90%",
+        height = "90%",
+      },
+    },
+    Layout.Box({
+      Layout.Box({
+        Layout.Box(left_popup, { size = "50%" }),
+        Layout.Box(right_popup, { size = "50%" }),
+      }, { dir = "row", size = "80%" }),
+      Layout.Box(input_popup, { size = "20%" }),
+    }, { dir = "col" })
+  )
 
   -- For input, set <CR>
   vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
@@ -159,6 +159,11 @@ function M.build_and_mount(selected_lines)
     end,
     { once = false }
   )
+
+  -- recalculate nui window when vim window resizes
+  input_popup:on("VimResized", function()
+    layout:update()
+  end)
 
   -- Further Keymaps
   local bufs = { left_popup.bufnr, right_popup.bufnr, input_popup.bufnr }
