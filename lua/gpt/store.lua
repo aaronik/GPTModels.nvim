@@ -18,6 +18,7 @@ local concat_chat = function(chat, message)
   end
 end
 
+-- TODO type this thing
 local Store = {}
 Store = {
   clear = function()

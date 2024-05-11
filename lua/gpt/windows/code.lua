@@ -216,6 +216,17 @@ function M.build_and_mount(selected_lines)
       end
     })
 
+    -- Ctrl-c to kill job
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-c>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        if Store.get_job() then
+          Store.get_job().die()
+        end
+      end
+    })
+
     -- q to exit -- TODO This is probably more personal config. Consider
     -- removing this before it goes live. Or making it optional or something
     -- else.

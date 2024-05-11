@@ -103,7 +103,7 @@ describe("The code window", function()
     assert.is_not.same(args.llm.system, nil)
   end)
 
-  it("includes the file type", function()
+  it("includes file type", function()
     -- return "lua" for filetype request
     stub(vim.api, "nvim_buf_get_option").returns("lua")
 
@@ -188,29 +188,6 @@ describe("The code window", function()
     assert.same({ "response to be saved in background", "additional response" }, right_lines)
   end)
 
-  -- TODO Actually, maybe we don't want to kill the job? Maybe it should just continue to
-  -- run and populate a store in the background?
-  pending("kills jobs and closes the window when q is pressed", function()
-    code_window.build_and_mount()
-    local s = stub(llm, "generate")
-    local die_called = false
-
-    s.returns({
-      die = function()
-        die_called = true
-      end
-    })
-
-    -- Make a request to start a job
-    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- press q
-    keys = vim.api.nvim_replace_termcodes('q', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    assert.is_true(die_called)
-  end)
 
   it("opens prepopulated w/ prior session when no text provided", function()
     Store.code.right.append("right content")
@@ -294,6 +271,28 @@ describe("The code window", function()
     assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+  end)
+
+  it("kills active job on <C-c>", function()
+    code_window.build_and_mount()
+    local s = stub(llm, "generate")
+    local die_called = false
+
+    s.returns({
+      die = function()
+        die_called = true
+      end
+    })
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- press ctrl-n
+    keys = vim.api.nvim_replace_termcodes('<C-c>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.is_true(die_called)
   end)
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()
