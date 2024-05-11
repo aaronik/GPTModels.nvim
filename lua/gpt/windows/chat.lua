@@ -38,7 +38,6 @@ local on_CR = function(input_bufnr, chat_bufnr)
     llm = {
       stream = true,
       messages = Store.chat.chat.read(),
-      model = "llama3"
     },
     on_read = function(_, message)
       Store.chat.chat.append(message)

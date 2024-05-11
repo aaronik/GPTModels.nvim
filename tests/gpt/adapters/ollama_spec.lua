@@ -18,7 +18,7 @@ describe("ollama.generate", function()
       -- right url in right place
       assert.equal(args.args[1], "http://localhost:11434/api/generate")
 
-      local llm_data_json = args.args[4]
+      local llm_data_json = args.args[3]
 
       ---@type LlmGenerateArgs | nil
       local llm_data = vim.fn.json_decode(llm_data_json)
@@ -27,6 +27,7 @@ describe("ollama.generate", function()
         error("vim.fn.json_decode returned unexpected nil")
       end
 
+      -- defaults to this
       assert.equal(llm_data.model, "llama3")
       assert.equal(llm_data.prompt, "pr0mpT")
       assert.equal(llm_data.stream, true)
@@ -35,7 +36,6 @@ describe("ollama.generate", function()
     ollama.generate({
       llm = {
         prompt = "pr0mpT",
-        model = "llama3",
         stream = true,
       },
       on_read = function() end,
@@ -58,7 +58,7 @@ describe("ollama.chat", function()
       -- right url in right place
       assert.equal(args.args[1], "http://localhost:11434/api/chat")
 
-      local llm_data_json = args.args[4]
+      local llm_data_json = args.args[3]
 
       ---@type LlmChatArgs | nil
       local llm_data = vim.fn.json_decode(llm_data_json)
@@ -74,7 +74,6 @@ describe("ollama.chat", function()
 
     ollama.chat({
       llm = {
-        model = "llama3",
         messages = messages,
         stream = true,
       },

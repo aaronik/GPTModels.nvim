@@ -68,7 +68,6 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
   local job = llm.generate({
     llm = {
-      model = "llama3",
       stream = true,
       prompt = prompt,
       system = system,

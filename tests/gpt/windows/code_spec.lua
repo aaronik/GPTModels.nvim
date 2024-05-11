@@ -363,4 +363,8 @@ describe("The code window", function()
     assert.same({ "left" }, left_lines)
     assert.same({ "right" }, right_lines)
   end)
+
+  it("puts json decoding errors in the right window", function()
+
+  end)
 end)
