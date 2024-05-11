@@ -88,15 +88,6 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
----@param autocmd_ids integer[]
-local function teardown(layout, autocmd_ids)
-  for _, id in ipairs(autocmd_ids) do
-    vim.api.nvim_del_autocmd(id)
-  end
-  -- TODO this might not need to be called, if so, remove
-  layout:unmount()
-end
-
 ---@param selected_lines string[] | nil
 function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
@@ -138,22 +129,22 @@ function M.build_and_mount(selected_lines)
   end
 
   local layout = Layout(
-    {
-      position = "50%",
-      relative = "editor",
-      size = {
-        width = "90%",
-        height = "90%",
-      },
-    },
-    Layout.Box({
-      Layout.Box({
-        Layout.Box(left_popup, { size = "50%" }),
-        Layout.Box(right_popup, { size = "50%" }),
-      }, { dir = "row", size = "80%" }),
-      Layout.Box(input_popup, { size = "22%" }),
-    }, { dir = "col" })
-  )
+        {
+          position = "50%",
+          relative = "editor",
+          size = {
+            width = "90%",
+            height = "90%",
+          },
+        },
+        Layout.Box({
+          Layout.Box({
+            Layout.Box(left_popup, { size = "50%" }),
+            Layout.Box(right_popup, { size = "50%" }),
+          }, { dir = "row", size = "80%" }),
+          Layout.Box(input_popup, { size = "22%" }),
+        }, { dir = "col" })
+      )
 
   -- For input, set <CR>
   vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
@@ -161,23 +152,14 @@ function M.build_and_mount(selected_lines)
   )
 
   -- For input, save to populate on next open
-  local insertleaveid = vim.api.nvim_create_autocmd({ "InsertLeave" }, {
-    pattern = "*",
-    callback = function()
+  input_popup:on("InsertLeave",
+    function()
       local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
       Store.code.input.clear()
       Store.code.input.append(table.concat(input_lines, "\n"))
-    end
-  })
-
-  -- When the window is closed
-  local bufleaveid
-  bufleaveid = vim.api.nvim_create_autocmd({ "BufWinLeave" }, {
-    pattern = "*",
-    callback = function()
-      teardown(layout, { insertleaveid, bufleaveid })
-    end
-  })
+    end,
+    { once = false }
+  )
 
   -- Further Keymaps
   local bufs = { left_popup.bufnr, right_popup.bufnr, input_popup.bufnr }
