@@ -2,7 +2,7 @@
 -- based on config or some state
 
 require('gpt.types')
-local adapter = require('gpt.adapters.openai')
+local Store = require('gpt.store')
 
 local M = {}
 
@@ -10,16 +10,18 @@ local M = {}
 ---@param args MakeGenerateRequestArgs
 ---@return Job
 M.generate = function(args)
-  -- This is where swapping out ollama for other supported llms will happen
-  return adapter.generate(args)
+  local provider = require('gpt.providers.' .. Store.llm_provider)
+  args.llm.model = Store.llm_model
+  return provider.generate(args)
 end
 
 --- Make request
 ---@param args MakeChatRequestArgs
 ---@return Job
 M.chat = function(args)
-  -- This is where swapping out ollama for other supported llms will happen
-  return adapter.chat(args)
+  local provider = require('gpt.providers.' .. Store.llm_provider)
+  args.llm.model = Store.llm_model
+  return provider.chat(args)
 end
 
 return M

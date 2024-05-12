@@ -4,7 +4,7 @@ require('gpt.types')
 local util = require("gpt.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
-local ollama = require('gpt.adapters.ollama')
+local ollama = require('gpt.providers.ollama')
 local cmd = require('gpt.cmd')
 
 describe("ollama.generate", function()

@@ -4,7 +4,7 @@ require('gpt.types')
 local util = require("gpt.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
-local openai = require('gpt.adapters.openai')
+local openai = require('gpt.providers.openai')
 local cmd = require('gpt.cmd')
 
 describe("openai.generate", function()

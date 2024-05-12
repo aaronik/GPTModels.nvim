@@ -14,3 +14,4 @@
 * Add files to chat / code
 * Add gpt-4 support
 * Add copilot support
+* Protect against opening windows many times?

@@ -76,7 +76,7 @@ end
 ---@param selected_text string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, chat_bufnr: integer, chat_winid: integer }
 function M.build_and_mount(selected_text)
-  local chat = Popup(com.build_common_popup_opts("Chat w/ "))
+  local chat = Popup(com.build_common_popup_opts("Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model))
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Input window is text with no syntax

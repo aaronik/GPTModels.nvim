@@ -93,8 +93,8 @@ end
 ---@param selected_lines string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_windid: integer }
 function M.build_and_mount(selected_lines)
-  local left_popup = Popup(com.build_common_popup_opts("Current"))
-  local right_popup = Popup(com.build_common_popup_opts("Code"))
+  local left_popup = Popup(com.build_common_popup_opts("Selected"))
+  local right_popup = Popup(com.build_common_popup_opts(Store.llm_provider .. "." .. Store.llm_model))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
