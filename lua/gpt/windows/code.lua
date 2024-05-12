@@ -94,8 +94,11 @@ end
 ---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_winid: integer }
 function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Selected"))
-  local right_popup = Popup(com.build_common_popup_opts(Store.llm_provider .. "." .. Store.llm_model))
+  local right_popup = Popup(com.build_common_popup_opts(com.model_display_name()))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
+
+  -- available controls are found at the bottom of the input popup
+  input_popup.border:set_text("bottom", " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
   Store.code.right.bufnr = right_popup.bufnr
@@ -206,7 +209,7 @@ function M.build_and_mount(selected_lines)
       end
     })
 
-    -- Ctrl-c to kill job
+    -- Ctrl-c to kill active job
     vim.api.nvim_buf_set_keymap(buf, "", "<C-c>", "", {
       noremap = true,
       silent = true,
@@ -233,11 +236,30 @@ function M.build_and_mount(selected_lines)
 
         local current_index = com.find_model_index(model_options)
         if not current_index then return end
-
         local selected_option = model_options[(current_index % #model_options) + 1]
-
         Store.set_llm(selected_option.provider, selected_option.model)
+        right_popup.border:set_text("top", com.model_display_name(), "center")
+      end
+    })
 
+    -- Ctrl-k to cycle forward through llms
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-k>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        ---@type { model: string, provider: string }[]
+        local model_options = {}
+
+        for provider, models in pairs(Store.llm_models) do
+          for _, model in ipairs(models) do
+            table.insert(model_options, { provider = provider, model = model })
+          end
+        end
+
+        local current_index = com.find_model_index(model_options)
+        if not current_index then return end
+        local selected_option = model_options[(current_index - 2) % #model_options + 1]
+        Store.set_llm(selected_option.provider, selected_option.model)
         right_popup.border:set_text("top", com.model_display_name(), "center")
       end
     })

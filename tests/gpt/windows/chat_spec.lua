@@ -5,6 +5,7 @@ local util = require("gpt.util")
 local assert = require("luassert")
 local chat_window = require('gpt.windows.chat')
 local stub = require('luassert.stub')
+local spy = require('luassert.spy')
 local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
 local Store = require('gpt.store')
@@ -50,7 +51,6 @@ describe("The Chat window", function()
     Store.chat.chat.append({ role = "assistant", content = content })
 
     local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
     local chat_bufnr = bufs.chat_bufnr
 
     local lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
@@ -155,6 +155,106 @@ describe("The Chat window", function()
     assert.is_true(contains_hello)
     assert.is_true(contains_1)
     assert.is_true(contains_2)
+  end)
+
+  it("clears all windows on <C-n>", function()
+    local chat = chat_window.build_and_mount()
+
+    -- Populate windows with some content
+    vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { "input content" })
+    vim.api.nvim_buf_set_lines(chat.chat_bufnr, 0, -1, true, { "chat content" })
+
+    -- Press <C-n>
+    local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Assert all windows are cleared
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true))
+  end)
+
+  it("cycles through available models with <C-j>", function()
+    chat_window.build_and_mount()
+
+    local snapshot = assert:snapshot()
+
+    local store_spy = spy.on(Store, "set_llm")
+
+    -- Press <C-j>
+    local ctrl_j = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
+    vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
+
+    assert.spy(store_spy).was_called(1)
+    local first_args = store_spy.calls[1].refs
+    assert.equal(type(first_args[1]), "string")
+    assert.equal(type(first_args[2]), "string")
+
+    -- Press <C-j> again
+    vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
+
+    assert.spy(store_spy).was_called(2)
+    local second_args = store_spy.calls[2].refs
+    assert.equal(type(second_args[1]), "string")
+    assert.equal(type(second_args[2]), "string")
+
+    -- Make sure the model is different, which it definitely should be.
+    -- The provider might be the same.
+    assert.is_not.equal(first_args[2], second_args[2])
+
+    snapshot:revert()
+  end)
+
+  it("cycles through available models with <C-k>", function()
+    chat_window.build_and_mount()
+
+    local snapshot = assert:snapshot()
+
+    local store_spy = spy.on(Store, "set_llm")
+
+    -- Press <C-k>
+    local ctrl_k = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
+    vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
+
+    assert.spy(store_spy).was_called(1)
+    local first_args = store_spy.calls[1].refs
+    assert.equal(type(first_args[1]), "string")
+    assert.equal(type(first_args[2]), "string")
+
+    -- Press <C-k> again
+    vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
+
+    assert.spy(store_spy).was_called(2)
+    local second_args = store_spy.calls[2].refs
+    assert.equal(type(second_args[1]), "string")
+    assert.equal(type(second_args[2]), "string")
+
+    -- Make sure the model is different, which it definitely should be.
+    -- The provider might be the same.
+    assert.is_not.equal(first_args[2], second_args[2])
+
+    snapshot:revert()
+  end)
+
+  it("kills active job on <C-c>", function()
+    chat_window.build_and_mount()
+    local s = stub(llm, "chat")
+    local die_called = false
+
+    s.returns({
+      die = function()
+        die_called = true
+      end
+    })
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- press ctrl-n
+    keys = vim.api.nvim_replace_termcodes('<C-c>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.is_true(die_called)
   end)
 
   pending("updates and resizes the nui window when the vim window resized", function()

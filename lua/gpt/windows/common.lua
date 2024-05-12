@@ -7,7 +7,7 @@ function M.build_common_popup_opts(title)
     border = {
       style = "rounded",
       text = {
-        top = " " .. title .. " ",
+        top = title,
         top_align = "center",
         bottom = "",
         bottom_align = "center",

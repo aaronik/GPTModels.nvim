@@ -79,6 +79,9 @@ function M.build_and_mount(selected_text)
   local chat = Popup(com.build_common_popup_opts("Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model))
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
+  -- available controls are found at the bottom of the input popup
+  input.border:set_text("bottom", " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
+
   -- Input window is text with no syntax
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
   vim.api.nvim_buf_set_option(input.bufnr, 'syntax', '')
@@ -144,6 +147,73 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function() on_s_tab(i, bufs) end,
+    })
+
+    -- Ctl-n to reset session
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-n>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        Store.chat.clear()
+        for _, bu in ipairs(bufs) do
+          vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
+        end
+      end
+    })
+
+    -- Ctrl-c to kill active job
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-c>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        if Store.get_job() then
+          Store.get_job().die()
+        end
+      end
+    })
+
+    -- Ctrl-j to cycle forward through llms
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-j>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        ---@type { model: string, provider: string }[]
+        local model_options = {}
+
+        for provider, models in pairs(Store.llm_models) do
+          for _, model in ipairs(models) do
+            table.insert(model_options, { provider = provider, model = model })
+          end
+        end
+
+        local current_index = com.find_model_index(model_options)
+        if not current_index then return end
+        local selected_option = model_options[(current_index % #model_options) + 1]
+        Store.set_llm(selected_option.provider, selected_option.model)
+        chat.border:set_text("top", "Chat w/" .. com.model_display_name(), "center")
+      end
+    })
+
+    -- Ctrl-k to cycle forward through llms
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-k>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        ---@type { model: string, provider: string }[]
+        local model_options = {}
+
+        for provider, models in pairs(Store.llm_models) do
+          for _, model in ipairs(models) do
+            table.insert(model_options, { provider = provider, model = model })
+          end
+        end
+
+        local current_index = com.find_model_index(model_options)
+        if not current_index then return end
+        local selected_option = model_options[(current_index - 2) % #model_options + 1]
+        Store.set_llm(selected_option.provider, selected_option.model)
+        chat.border:set_text("top", "Chat w/" .. com.model_display_name(), "center")
+      end
     })
 
     -- "q" exits from the thing
