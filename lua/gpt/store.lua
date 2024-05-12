@@ -1,4 +1,8 @@
----@param chat LlmMessage
+-- I want to use private/protected for _right, _input etc, but am not finding a way to make that play nice with this file.
+-- I really just want those _ prefixed fields to not be typewise accessible outside of this module.
+---@diagnostic disable: invisible
+
+---@param chat LlmMessage[]
 ---@param message LlmMessage
 local concat_chat = function(chat, message)
   -- If this is the first message of the session
@@ -18,8 +22,47 @@ local concat_chat = function(chat, message)
   end
 end
 
--- TODO type this thing
-local Store = {}
+---@class Pane
+---@field clear fun()
+---@field bufnr integer | nil
+---@field winid integer | nil
+
+---@class StrPane : Pane
+---@field append fun(text: string)
+---@field read fun(): string | nil
+
+---@class MessagePane : Pane
+---@field append fun(message: LlmMessage)
+---@field read fun(): LlmMessage[]
+
+---@class CodeWindow
+---@field clear fun()
+---@field right StrPane
+---@field left StrPane
+---@field input StrPane
+---@field private _right string
+---@field private _left string
+---@field private _input string
+
+---@class ChatWindow
+---@field clear fun()
+---@field input StrPane
+---@field chat MessagePane
+---@field private _input string
+---@field private _chat LlmMessage[]
+
+---@class Store
+---@field clear fun()
+---@field code CodeWindow
+---@field chat ChatWindow
+---@field register_job fun(job: Job)
+---@field get_job fun(): Job | nil
+---@field clear_job fun()
+---@field private _job Job | nil
+
+
+---@type Store
+local Store
 Store = {
   clear = function()
     Store.code.clear()
@@ -64,17 +107,14 @@ Store = {
   chat = {
     _input = "",
     input = {
-      ---@param text string
       append = function(text) Store.chat._input = Store.chat._input .. text end,
       read = function() return Store.chat._input end,
       clear = function() Store.chat._input = "" end
     },
 
-    ---@type LlmMessage[]
     _chat = {},
     chat = {
       read = function() return Store.chat._chat end,
-      ---@param message LlmMessage
       append = function(message) concat_chat(Store.chat._chat, message) end,
       clear = function() Store.chat._chat = {} end
     },
@@ -84,26 +124,19 @@ Store = {
       Store.chat.chat.clear()
     end
   },
+
+  register_job = function(job)
+    Store._job = job
+  end,
+
+  get_job = function()
+    return Store._job
+  end,
+
+  clear_job = function()
+    Store._job = nil
+  end
+
 }
-
-
--- Jobs --
-
----@param job Job
----@return nil
-Store.register_job = function(job)
-  Store._job = job
-end
-
----@return Job | nil
-Store.get_job = function()
-  return Store._job
-end
-
-Store.clear_job = function()
-  Store._job = nil
-end
-
--- Sessions --
 
 return Store
