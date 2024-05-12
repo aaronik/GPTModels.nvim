@@ -9,6 +9,8 @@ local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
 local Store = require('gpt.store')
 
+local skip = pending
+
 describe("The Chat window", function()
   before_each(function()
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
@@ -22,13 +24,15 @@ describe("The Chat window", function()
     stub(cmd, "exec")
   end)
 
-  it("returns buffer numbers", function()
-    local bufs = chat_window.build_and_mount()
-    assert.is_not(bufs.input_bufnr, nil)
-    assert.is_not(bufs.chat_bufnr, nil)
+  it("returns buffer numbers and winids", function()
+    local chat = chat_window.build_and_mount()
+    assert.is_not.equal(chat.input_bufnr, nil)
+    assert.is_not.equal(chat.chat_bufnr, nil)
+    assert.is_not.equal(chat.input_winid, nil)
+    assert.is_not.equal(chat.chat_winid, nil)
   end)
 
-  it("opens in input mode", function()
+  skip("opens in input mode", function()
     chat_window.build_and_mount()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)
     -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
@@ -96,7 +100,7 @@ describe("The Chat window", function()
     local input_bufnr = bufs.input_bufnr
     local chat_bufnr = bufs.chat_bufnr
 
-    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
@@ -151,5 +155,16 @@ describe("The Chat window", function()
     assert.is_true(contains_hello)
     assert.is_true(contains_1)
     assert.is_true(contains_2)
+  end)
+
+  pending("updates and resizes the nui window when the vim window resized", function()
+    local chat = chat_window.build_and_mount()
+
+
+    local nui_height = vim.api.nvim_win_get_height(chat_window.nui_win_id)
+    local nui_width = vim.api.nvim_win_get_width(chat_window.nui_win_id)
+
+    assert.equals(nui_height, 150)
+    assert.equals(nui_width, 150)
   end)
 end)

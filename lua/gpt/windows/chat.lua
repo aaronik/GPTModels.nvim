@@ -74,9 +74,9 @@ local function on_q(layout)
 end
 
 ---@param selected_text string[] | nil
----@return { input_bufnr: integer, chat_bufnr: integer }
+---@return { input_bufnr: integer, input_winid: integer, chat_bufnr: integer, chat_winid: integer }
 function M.build_and_mount(selected_text)
-  local chat = Popup(com.build_common_popup_opts("Chat"))
+  local chat = Popup(com.build_common_popup_opts("Chat w/ "))
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
   -- Input window is text with no syntax
@@ -127,9 +127,6 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
-  else
-    -- start window in insert mode
-    vim.api.nvim_command('startinsert')
   end
 
   -- keymaps
@@ -156,18 +153,13 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function() on_q(layout) end,
     })
-
-    -- vim.api.nvim_create_autocmd("BufLeave", {
-    --   buffer = buf,
-    --   callback = function()
-    --     on_q(layout)
-    --   end,
-    -- })
   end
 
   return {
     input_bufnr = input.bufnr,
-    chat_bufnr = chat.bufnr
+    input_winid = input.winid,
+    chat_bufnr = chat.bufnr,
+    chat_winid = chat.winid
   }
 end
 

@@ -19,6 +19,16 @@ describe("The code window", function()
     Store.clear()
   end)
 
+  it("returns buffer numbers and winids", function()
+    local code = code_window.build_and_mount()
+    assert.is_not.equal(code.input_bufnr, nil)
+    assert.is_not.equal(code.right_bufnr, nil)
+    assert.is_not.equal(code.left_bufnr, nil)
+    assert.is_not.equal(code.input_winid, nil)
+    assert.is_not.equal(code.right_winid, nil)
+    assert.is_not.equal(code.left_winid, nil)
+  end)
+
   it("places given provided text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
     local bufs = code_window.build_and_mount(given_lines)
@@ -364,7 +374,9 @@ describe("The code window", function()
     assert.same({ "right" }, right_lines)
   end)
 
-  it("puts json decoding errors in the right window", function()
+  it("puts json decoding errors in the right window as [ERROR] inline with what it was writing", function()
 
   end)
+
+
 end)

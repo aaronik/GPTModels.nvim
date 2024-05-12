@@ -77,7 +77,10 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       -- if the window is closed and reopened again while a response is streaming in,
       -- right_bufnr will be wrong, and it won't get repopulated.
       -- So we're assigning to ..right.bufnr every time the window opens.
-      safe_render_buffer_from_text(Store.code.right.bufnr, Store.code.right.read())
+      local right_content = Store.code.right.read()
+      if right_content then
+        safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+      end
     end,
     on_end = function()
       Store.clear_job()
@@ -88,6 +91,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 end
 
 ---@param selected_lines string[] | nil
+---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_windid: integer }
 function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Current"))
   local right_popup = Popup(com.build_common_popup_opts("Code"))
@@ -230,7 +234,10 @@ function M.build_and_mount(selected_lines)
   return {
     input_bufnr = input_popup.bufnr,
     left_bufnr = left_popup.bufnr,
-    right_bufnr = right_popup.bufnr
+    right_bufnr = right_popup.bufnr,
+    input_winid = input_popup.winid,
+    left_winid = left_popup.winid,
+    right_winid = right_popup.winid
   }
 end
 
