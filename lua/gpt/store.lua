@@ -58,16 +58,28 @@ end
 ---@field register_job fun(job: Job)
 ---@field get_job fun(): Job | nil
 ---@field clear_job fun()
+---@field llm_models { openai: string[], ollama: string[] }
 ---@field llm_provider string
 ---@field llm_model string
+---@field set_llm fun(provider: "openai" | "ollama", model: string)
 ---@field private _job Job | nil
 
 
 ---@type Store
 local Store
 Store = {
+  -- TODO: I can show the user a vertical list of options like openai.gpt-4-turbo, ollama.llama3, etc
+  llm_models = {
+    openai = { "gpt-4-turbo", "gpt-3.5-turbo" },
+    ollama = { "llama3", "mistral" },
+  },
   llm_provider = "openai",
   llm_model = "gpt-4-turbo",
+
+  set_llm = function (provider, model)
+    Store.llm_provider = provider
+    Store.llm_model = model
+  end,
 
   clear = function()
     Store.code.clear()

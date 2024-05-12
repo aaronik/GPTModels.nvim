@@ -19,7 +19,7 @@ describe("The code window", function()
     Store.clear()
   end)
 
-  it("returns buffer numbers and winids", function()
+  it("returns buffer numbers, winids", function()
     local code = code_window.build_and_mount()
     assert.is_not.equal(code.input_bufnr, nil)
     assert.is_not.equal(code.right_bufnr, nil)
@@ -31,16 +31,16 @@ describe("The code window", function()
 
   it("places given provided text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
-    local bufs = code_window.build_and_mount(given_lines)
-    local gotten_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+    local chat = code_window.build_and_mount(given_lines)
+    local gotten_lines = vim.api.nvim_buf_get_lines(chat.left_bufnr, 0, -1, true)
     assert.same(given_lines, gotten_lines)
   end)
 
   it("shifts through windows on <Tab>", function()
-    local bufs = code_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local left_bufnr = bufs.left_bufnr
-    local right_bufnr = bufs.right_bufnr
+    local chat = code_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local left_bufnr = chat.left_bufnr
+    local right_bufnr = chat.right_bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local left_win = vim.fn.bufwinid(left_bufnr)
@@ -60,10 +60,10 @@ describe("The code window", function()
   end)
 
   it("shifts through windows on <S-Tab>", function()
-    local bufs = code_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local left_bufnr = bufs.left_bufnr
-    local right_bufnr = bufs.right_bufnr
+    local chat = code_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local left_bufnr = chat.left_bufnr
+    local right_bufnr = chat.right_bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local left_win = vim.fn.bufwinid(left_bufnr)
@@ -83,7 +83,7 @@ describe("The code window", function()
   end)
 
   it("Places llm responses into right window", function()
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
     local s = stub(llm, "generate")
 
@@ -97,7 +97,7 @@ describe("The code window", function()
     args.on_read(nil, "line 1\nline 2")
 
     -- Those lines should be separated on newlines and placed into the right buf
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "line 1", "line 2" })
+    assert.same(vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true), { "line 1", "line 2" })
   end)
 
   it("includes a system prompt", function()
@@ -132,7 +132,7 @@ describe("The code window", function()
   end)
 
   it("Has a loading indicator", function()
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
     local s = stub(llm, "generate")
 
@@ -143,13 +143,13 @@ describe("The code window", function()
     local args = s.calls[1].refs[1]
 
     -- before on_response gets a response from the llm, the right window should show a loading indicator
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "Loading..." })
+    assert.same(vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true), { "Loading..." })
 
     -- simulate a response from the llm
     args.on_read(nil, "response line")
 
     -- After the response, the loading indicator should be replaced by the response
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "response line" })
+    assert.same(vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true), { "response line" })
   end)
 
   it("finishes jobs in the background when closed", function()
@@ -187,14 +187,14 @@ describe("The code window", function()
     args.on_read(nil, "response to be saved in background")
 
     -- Open up and ensure it's there now
-    local bufs = code_window.build_and_mount()
-    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+    local chat = code_window.build_and_mount()
+    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true))
 
     -- More reponse to still reopen window
     args.on_read(nil, "\nadditional response")
 
     -- Gets that response without reopening
-    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true)
     assert.same({ "response to be saved in background", "additional response" }, right_lines)
   end)
 
@@ -204,11 +204,11 @@ describe("The code window", function()
     Store.code.input.append("input content")
     Store.code.left.append("left content")
 
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
-    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(chat.left_bufnr, 0, -1, true)
 
     assert.same({ "right content" }, right_lines)
     assert.same({ "input content" }, input_lines)
@@ -220,11 +220,11 @@ describe("The code window", function()
     Store.code.input.append("input content")
     Store.code.left.append("left content")
 
-    local bufs = code_window.build_and_mount({ "provided text" })
+    local chat = code_window.build_and_mount({ "provided text" })
 
-    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(chat.left_bufnr, 0, -1, true)
 
     assert.same({ "" }, right_lines)
     assert.same({ "" }, input_lines)
@@ -232,7 +232,7 @@ describe("The code window", function()
   end)
 
   it("Replaces prior llm response with new one", function()
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
     local s = stub(llm, "generate")
 
@@ -248,7 +248,7 @@ describe("The code window", function()
     if args_first.on_end then args_first.on_end() end
 
     -- Response is shown
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "first response line" })
+    assert.same(vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true), { "first response line" })
 
     -- Input whatever
     keys = vim.api.nvim_replace_termcodes('xtesting second response<Esc><CR>', true, true, true)
@@ -262,25 +262,25 @@ describe("The code window", function()
     args_second.on_read(nil, "second response line")
 
     -- Second response replaced first response
-    assert.same(vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true), { "second response line" })
+    assert.same(vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true), { "second response line" })
   end)
 
   it("clears all windows on <C-n>", function()
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
     -- Populate windows with some content
-    vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { "input content" })
-    vim.api.nvim_buf_set_lines(bufs.left_bufnr, 0, -1, true, { "left content" })
-    vim.api.nvim_buf_set_lines(bufs.right_bufnr, 0, -1, true, { "right content" })
+    vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { "input content" })
+    vim.api.nvim_buf_set_lines(chat.left_bufnr, 0, -1, true, { "left content" })
+    vim.api.nvim_buf_set_lines(chat.right_bufnr, 0, -1, true, { "right content" })
 
     -- Press <C-n>
     local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Assert all windows are cleared
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true))
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true))
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.left_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true))
   end)
 
   it("kills active job on <C-c>", function()
@@ -307,10 +307,10 @@ describe("The code window", function()
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()
     local initial_input = "some initial input"
-    local bufs = code_window.build_and_mount()
+    local chat = code_window.build_and_mount()
 
     -- Populate input window with some content and enter normal mode
-    vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { initial_input })
+    vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { initial_input })
 
     -- Enter insert mode
     local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
@@ -325,9 +325,9 @@ describe("The code window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Reopen the window
-    bufs = code_window.build_and_mount()
+    chat = code_window.build_and_mount()
 
-    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
 
     assert.same({ initial_input }, input_lines)
   end)
@@ -336,10 +336,10 @@ describe("The code window", function()
     local llm_stub = stub(llm, "generate")
 
     -- left window is saved when it opens
-    local bufs = code_window.build_and_mount({ "left" })
+    local chat = code_window.build_and_mount({ "left" })
 
     -- Add user input
-    vim.api.nvim_buf_set_lines(bufs.input_bufnr, 0, -1, true, { "input" })
+    vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { "input" })
 
     -- Enter insert mode, so we can leave it
     local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
@@ -363,15 +363,52 @@ describe("The code window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Reopen the window
-    bufs = code_window.build_and_mount()
+    chat = code_window.build_and_mount()
 
-    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(bufs.left_bufnr, 0, -1, true)
-    local right_lines = vim.api.nvim_buf_get_lines(bufs.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(chat.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(chat.right_bufnr, 0, -1, true)
 
     assert.same({ "input" }, input_lines)
     assert.same({ "left" }, left_lines)
     assert.same({ "right" }, right_lines)
+  end)
+
+  -- TODO Test this more thoroughly.
+  -- * Put both in describe
+  -- * before each mocking of all providers, same as in llm_spec
+  -- * send request, assert provider from store is hit
+  -- * Press <C-j>
+  -- * assert store has changed provider
+  -- * send new request, assert new provider from store is hit
+  it("cycles through available models with <C-j>", function()
+    code_window.build_and_mount()
+
+    local store_stub = stub(Store, 'set_llm')
+
+    -- Press <C-j>
+    local keys = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    assert.stub(store_stub).was_called(1)
+    local args = store_stub.calls[1].refs
+    assert.equal(type(args[1]), "string")
+    assert.equal(type(args[2]), "string")
+  end)
+
+  pending("cycles through available models with <C-k>", function()
+    code_window.build_and_mount()
+
+    local store_stub = stub(Store, 'set_llm')
+
+    -- Press <C-j>
+    local keys = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    assert.stub(store_stub).was_called(1)
+    local args = store_stub.calls[1].refs
+    assert.equal(type(args[1]), "string")
+    assert.equal(type(args[2]), "string")
   end)
 
   it("puts json decoding errors in the right window as [ERROR] inline with what it was writing", function()

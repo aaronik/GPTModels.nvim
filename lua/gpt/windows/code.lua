@@ -91,7 +91,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 end
 
 ---@param selected_lines string[] | nil
----@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_windid: integer }
+---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_winid: integer }
 function M.build_and_mount(selected_lines)
   local left_popup = Popup(com.build_common_popup_opts("Selected"))
   local right_popup = Popup(com.build_common_popup_opts(Store.llm_provider .. "." .. Store.llm_model))
@@ -214,6 +214,31 @@ function M.build_and_mount(selected_lines)
         if Store.get_job() then
           Store.get_job().die()
         end
+      end
+    })
+
+    -- Ctrl-j to cycle forward through llms
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-j>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        ---@type { model: string, provider: string }[]
+        local model_options = {}
+
+        for provider, models in pairs(Store.llm_models) do
+          for _, model in ipairs(models) do
+            table.insert(model_options, { provider = provider, model = model })
+          end
+        end
+
+        local current_index = com.find_model_index(model_options)
+        if not current_index then return end
+
+        local selected_option = model_options[(current_index % #model_options) + 1]
+
+        Store.set_llm(selected_option.provider, selected_option.model)
+
+        right_popup.border:set_text("top", com.model_display_name(), "center")
       end
     })
 
