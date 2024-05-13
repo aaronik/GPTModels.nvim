@@ -112,7 +112,7 @@ function M.build_and_mount(selected_lines)
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- available controls are found at the bottom of the input popup
-  input_popup.border:set_text("bottom", " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
+  input_popup.border:set_text("bottom", " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear window | C-f add files | C-g clear files ", "center")
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
   Store.code.right.bufnr = right_popup.bufnr
@@ -256,7 +256,7 @@ function M.build_and_mount(selected_lines)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
         Store.set_llm(selected_option.provider, selected_option.model)
-        right_popup.border:set_text("top", com.model_display_name(), "center")
+        right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
       end
     })
 
@@ -278,7 +278,7 @@ function M.build_and_mount(selected_lines)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store.set_llm(selected_option.provider, selected_option.model)
-        right_popup.border:set_text("top", com.model_display_name(), "center")
+        right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
       end
     })
 
