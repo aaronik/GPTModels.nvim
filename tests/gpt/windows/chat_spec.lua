@@ -408,7 +408,6 @@ describe("The Chat window", function()
 
     ---@type MakeChatRequestArgs
     local args = llm_stub.calls[1].refs[1]
-    util.log(args)
 
     local long_content = ""
     for _ = 1, 1000, 1 do
@@ -419,11 +418,6 @@ describe("The Chat window", function()
       role = "assistant",
       content = long_content
     })
-
-    -- scrolls window to the bottom
-    -- vim.api.nvim_win_set_cursor(chat.chat_winid,
-    --   { vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat_winid)), 0 }
-    -- )
 
     local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat_winid))
     local win_height = vim.api.nvim_win_get_height(chat.chat_winid)

@@ -502,7 +502,47 @@ describe("The code window", function()
       end
     end
     assert.False(contains_system_with_file)
+  end)
 
+  it("automatically scrolls chat window when user is not in it", function()
+    local code = code_window.build_and_mount()
+
+    local llm_stub = stub(llm, "generate")
+
+    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
+    local args = llm_stub.calls[1].refs[1]
+
+    local long_content = ""
+    for _ = 1, 1000, 1 do
+      long_content = long_content .. "\n"
+    end
+
+    args.on_read(nil, long_content)
+
+    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
+    local win_height = vim.api.nvim_win_get_height(code.right_winid)
+    local expected_scroll = last_line - win_height + 1
+    local actual_scroll = vim.fn.line('w0', code.right_winid)
+
+    assert.equal(expected_scroll, actual_scroll)
+
+    -- Now press s-tab to get into the window
+    keys = vim.api.nvim_replace_termcodes('<S-Tab>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- Another big response
+    args.on_read(nil, long_content)
+
+    -- This time we should stay put
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
+    win_height = vim.api.nvim_win_get_height(code.right_winid)
+    expected_scroll = actual_scroll -- unchanged since last check
+    actual_scroll = vim.fn.line('w0', code.right_winid)
+
+    assert.equal(expected_scroll, actual_scroll)
   end)
 
   it("puts json decoding errors in the right window as [ERROR] inline with what it was writing", function()

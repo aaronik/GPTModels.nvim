@@ -40,7 +40,7 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
-local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
+local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
   local left_lines = vim.api.nvim_buf_get_lines(left_bufnr, 0, -1, false)
@@ -75,6 +75,13 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       local right_content = Store.code.right.read()
       if right_content then
         com.safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+      end
+
+      -- scroll window to the bottom if the window is valid and the user is not in it
+      if vim.api.nvim_win_is_valid(right_winid) and vim.api.nvim_get_current_win() ~= right_winid then
+        vim.api.nvim_win_set_cursor(right_winid,
+          { vim.api.nvim_buf_line_count(right_bufnr), 0 }
+        )
       end
     end,
     on_end = function()
@@ -171,7 +178,7 @@ function M.build_and_mount(selected_lines)
 
   -- For input, set <CR>
   vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
-    { noremap = true, silent = true, callback = function() on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr) end }
+    { noremap = true, silent = true, callback = function() on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr, right_popup.winid) end }
   )
 
   -- For input, save to populate on next open
