@@ -310,11 +310,8 @@ describe("The code window", function()
     local initial_input = "some initial input"
     local code = code_window.build_and_mount()
 
-    -- Populate input window with some content and enter normal mode
-    vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { initial_input })
-
     -- Enter insert mode
-    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
+    local keys = vim.api.nvim_replace_termcodes("i" .. initial_input, true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- <Esc> to trigger save

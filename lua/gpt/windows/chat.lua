@@ -93,9 +93,6 @@ function M.build_and_mount(selected_text)
   -- Chat in markdown
   vim.api.nvim_buf_set_option(chat.bufnr, 'filetype', 'markdown')
 
-  -- If there's a chat history, open with that.
-  render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
-
   vim.api.nvim_buf_set_keymap(
     input.bufnr,
     "n",
@@ -124,6 +121,16 @@ function M.build_and_mount(selected_text)
     layout:update()
   end)
 
+  -- For input, save to populate on next open
+  input:on("InsertLeave",
+    function()
+      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
+      Store.chat.input.clear()
+      Store.chat.input.append(table.concat(input_lines, "\n"))
+    end,
+    { once = false }
+  )
+
   layout:mount()
 
   -- Add text selection to input buf
@@ -137,6 +144,12 @@ function M.build_and_mount(selected_text)
     -- Go to bottom of input and enter insert mode
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
+  else
+    local input_content = Store.chat.input.read()
+    if input_content then com.safe_render_buffer_from_text(input.bufnr, input_content) end
+
+    -- If there's a chat history, open with that.
+    render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
   end
 
   -- keymaps

@@ -23,6 +23,8 @@ describe("The Chat window", function()
 
     -- stubbing cmd.exec prevents the llm call from happening
     stub(cmd, "exec")
+
+    Store.clear()
   end)
 
   it("returns buffer numbers and winids", function()
@@ -270,6 +272,30 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     assert.is_true(die_called)
+  end)
+
+  it("saves input text on InsertLeave and prepopulates on reopen", function()
+    local initial_input = "some initial input"
+    local chat = chat_window.build_and_mount()
+
+    -- Enter insert mode
+    local keys = vim.api.nvim_replace_termcodes("i" .. initial_input, true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <Esc> to trigger save
+    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Close the window with :q
+    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Reopen the window
+    chat = chat_window.build_and_mount()
+
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+
+    assert.same({ initial_input }, input_lines)
   end)
 
   pending("updates and resizes the nui window when the vim window resized", function()

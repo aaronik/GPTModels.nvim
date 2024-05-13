@@ -7,20 +7,6 @@ local Store  = require('gpt.store')
 
 local M      = {}
 
--- Render text to a buffer _if the buffer is still valid_,
--- so this is safe to call on potentially closed buffers.
----@param bufnr integer
----@param text string
-local function safe_render_buffer_from_text(bufnr, text)
-  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
-  local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
-
-  if buf_loaded and buf_valid then
-    local response_lines = vim.split(text or "", "\n")
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
-  end
-end
-
 ---@param filetype string
 ---@param input_text string
 ---@param code_text string
@@ -59,7 +45,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.code.right.clear()
 
   -- Loading indicator
-  safe_render_buffer_from_text(right_bufnr, "Loading...")
+  com.safe_render_buffer_from_text(right_bufnr, "Loading...")
 
   -- Nuke existing jobs
   if Store.get_job() then
@@ -79,7 +65,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       -- So we're assigning to ..right.bufnr every time the window opens.
       local right_content = Store.code.right.read()
       if right_content then
-        safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+        com.safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
       end
     end,
     on_end = function()
@@ -125,13 +111,13 @@ function M.build_and_mount(selected_lines)
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session
     local left_content = Store.code.left.read()
-    if left_content then safe_render_buffer_from_text(left_popup.bufnr, left_content) end
+    if left_content then com.safe_render_buffer_from_text(left_popup.bufnr, left_content) end
 
     local right_content = Store.code.right.read()
-    if right_content then safe_render_buffer_from_text(right_popup.bufnr, right_content) end
+    if right_content then com.safe_render_buffer_from_text(right_popup.bufnr, right_content) end
 
     local input_content = Store.code.input.read()
-    if input_content then safe_render_buffer_from_text(input_popup.bufnr, input_content) end
+    if input_content then com.safe_render_buffer_from_text(input_popup.bufnr, input_content) end
   end
 
   local layout = Layout(

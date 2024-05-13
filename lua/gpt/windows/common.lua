@@ -46,6 +46,20 @@ function M.model_display_name()
   return " " .. Store.llm_provider .. "." .. Store.llm_model .. " "
 end
 
+-- Render text to a buffer _if the buffer is still valid_,
+-- so this is safe to call on potentially closed buffers.
+---@param bufnr integer
+---@param text string
+function M.safe_render_buffer_from_text(bufnr, text)
+  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+
+  if buf_loaded and buf_valid then
+    local response_lines = vim.split(text or "", "\n")
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
+  end
+end
+
 return M
 
 -- Some memories, since I'm so new at this
