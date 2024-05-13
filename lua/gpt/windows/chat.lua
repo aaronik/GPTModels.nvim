@@ -9,7 +9,11 @@ local M = {}
 
 ---@param bufnr integer
 ---@param messages LlmMessage[]
-local render_buffer_from_messages = function(bufnr, messages)
+local safe_render_buffer_from_messages = function(bufnr, messages)
+  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+  if not (buf_loaded and buf_valid) then return end
+
   local lines = {}
   for _, message in ipairs(messages) do
     local message_content = vim.split(message.content, "\n")
@@ -32,7 +36,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
   Store.chat.chat.append({ role = "user", content = input_text })
-  render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
+  safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
 
   local jorb = llm.chat({
     llm = {
@@ -41,7 +45,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
     },
     on_read = function(_, message)
       Store.chat.chat.append(message)
-      render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
+      safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
     end,
     on_end = function()
       Store.clear_job()
@@ -63,16 +67,6 @@ local function on_s_tab(i, bufs)
   vim.api.nvim_set_current_win(next_win)
 end
 
--- TODO TEST
-local function on_q(layout)
-  local job = Store.get_job()
-  if job ~= nil then
-    job.die()
-    Store.clear_job()
-  end
-  layout:unmount()
-end
-
 ---@param selected_text string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, chat_bufnr: integer, chat_winid: integer }
 function M.build_and_mount(selected_text)
@@ -82,6 +76,9 @@ function M.build_and_mount(selected_text)
   -- available controls are found at the bottom of the input popup
   input.border:set_text("bottom",
     " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
+
+  -- Register new right bufnr for backgrounded llm responses still running to write into
+  Store.chat.chat.bufnr = chat.bufnr
 
   -- Input window is text with no syntax
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
@@ -127,6 +124,8 @@ function M.build_and_mount(selected_text)
       local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
       Store.chat.input.clear()
       Store.chat.input.append(table.concat(input_lines, "\n"))
+      util.log('after writing, store has:')
+      util.log(Store.chat.input.read())
     end,
     { once = false }
   )
@@ -145,11 +144,14 @@ function M.build_and_mount(selected_text)
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
   else
+    -- If there's saved input, render that
     local input_content = Store.chat.input.read()
+    util.log('input_content:')
+    util.log(input_content)
     if input_content then com.safe_render_buffer_from_text(input.bufnr, input_content) end
 
     -- If there's a chat history, open with that.
-    render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
+    safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
   end
 
   -- keymaps
@@ -191,7 +193,7 @@ function M.build_and_mount(selected_text)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               require('telescope.actions').close(prompt_bufnr)
-              callback(selection)
+              util.log(selection)
             end)
             return true
           end
@@ -259,7 +261,7 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function() on_q(layout) end,
+      callback = function() layout:unmount() end,
     })
   end
 

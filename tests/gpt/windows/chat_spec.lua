@@ -59,7 +59,7 @@ describe("The Chat window", function()
     assert.equal(content, lines[1])
   end)
 
-  it("clears the chat window when opened with selection", function ()
+  it("clears the chat window when opened with selection", function()
     -- Open it once without any selection
     local chat = chat_window.build_and_mount()
 
@@ -112,6 +112,19 @@ describe("The Chat window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
+  ---@param lines string[]
+  ---@param string string
+  local contains_line = function(lines, string)
+    local found_line = false
+    for _, line in ipairs(lines) do
+      if line == string then
+        found_line = true
+        break
+      end
+    end
+    return found_line
+  end
+
   it("Removes text from input and puts it in chat on <CR>", function()
     local chat = chat_window.build_and_mount()
     local input_bufnr = chat.input_bufnr
@@ -123,14 +136,7 @@ describe("The Chat window", function()
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
     -- ensure hello is one of the lines in chat buf
-    local contains_hello = false
-    for _, line in ipairs(chat_lines) do
-      if line == "hello" then
-        contains_hello = true
-        break
-      end
-    end
-    assert.is_true(contains_hello)
+    assert.is_true(contains_line(chat_lines, "hello"))
 
     -- ensure input is empty
     local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
@@ -161,17 +167,9 @@ describe("The Chat window", function()
     -- Now the chat buffer should have all the things
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
-    local contains_hello = false
-    local contains_1 = false
-    local contains_2 = false
-    for _, line in ipairs(chat_lines) do
-      if line == "hello" then contains_hello = true end
-      if line == "response text1" then contains_1 = true end
-      if line == "response text2" then contains_2 = true end
-    end
-    assert.is_true(contains_hello)
-    assert.is_true(contains_1)
-    assert.is_true(contains_2)
+    assert(contains_line(chat_lines, "hello"))
+    assert(contains_line(chat_lines, "response text1"))
+    assert(contains_line(chat_lines, "response text2"))
   end)
 
   it("clears all windows on <C-n>", function()
@@ -296,6 +294,54 @@ describe("The Chat window", function()
     local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
 
     assert.same({ initial_input }, input_lines)
+  end)
+
+  it("finishes jobs in the background when closed", function()
+    chat_window.build_and_mount()
+    local s = stub(llm, "chat")
+    local die_called = false
+
+    s.returns({
+      die = function()
+        die_called = true
+      end
+    })
+
+    -- Make a request to start a job
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- quit with :q
+    keys = vim.api.nvim_replace_termcodes('<Esc>:q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- -- quit with q
+    -- keys = vim.api.nvim_replace_termcodes('q', true, true, true)
+    -- vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    assert.is_not.True(die_called)
+
+    -- -- simulate hint of wait time for the nui windows to close
+    -- -- TODO This leads to errors about invalid windows. Gotta fix
+    -- vim.wait(10)
+
+    ---@type MakeChatRequestArgs
+    local args = s.calls[1].refs[1]
+
+    args.on_read(nil, { role = "assistant", content = "response to be saved in background" })
+
+    -- Open up and ensure it's there now
+    local chat = chat_window.build_and_mount()
+    assert(contains_line(vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true), "response to be saved in background" ))
+
+
+    -- More reponse to still reopen window
+    args.on_read(nil, { role = "assistant", content = "\nadditional response" })
+
+    -- Gets that response without reopening
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
+    assert(contains_line(chat_lines, "response to be saved in background" ))
+    assert(contains_line(chat_lines, "additional response" ))
   end)
 
   pending("updates and resizes the nui window when the vim window resized", function()
