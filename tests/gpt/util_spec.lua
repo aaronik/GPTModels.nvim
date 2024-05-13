@@ -4,6 +4,11 @@ local util = require("gpt.util")
 local assert = require("luassert")
 
 describe("util", function()
+  describe("contains_line", function()
+    assert(util.contains_line({ "has", "also" }, "has"))
+    assert.False(util.contains_line({ "doesnt" }, "has"))
+  end)
+
   describe("guid", function()
     it("never repeats", function()
       local guids = {}

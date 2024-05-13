@@ -6,15 +6,16 @@ local assert = require("luassert")
 
 describe("Store | setting / getting", function()
   before_each(function()
-    Store.chat.clear()
-    Store.code.clear()
+    Store.clear()
   end)
 
-  it("sets and gets", function()
+  it("sets and gets window content", function()
     Store.code.right.append("right")
     Store.code.right.append("right")
+
     Store.code.left.append("left")
     Store.code.left.append("left")
+
     Store.code.input.append("input")
     Store.code.input.append("input")
 
@@ -30,6 +31,17 @@ describe("Store | setting / getting", function()
 
     assert.equal("inputinput", Store.chat.input.read())
     assert.same({ { role = "assistant", content = "chatchat" } }, Store.chat.chat.read())
+  end)
+
+  it("sets and gets included files", function ()
+    Store.code.append_file("lua/gpt/windows/code.lua")
+    Store.code.append_file("lua/gpt/windows/chat.lua")
+
+    Store.chat.append_file("lua/gpt/windows/code.lua")
+    Store.chat.append_file("lua/gpt/windows/chat.lua")
+
+    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.code.get_files())
+    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.chat.get_files())
   end)
 end)
 

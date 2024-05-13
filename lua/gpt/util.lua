@@ -31,19 +31,18 @@ M.log = function(data)
   log_file:close()
 end
 
-
------Log to the file debug.log in the root. File can be watched for easier debugging.
------@param ... table | string
---M.log = function(...)
---  M.P(args)
---  local data = vim.inspect(args)
-
---  local log_file = io.open("./debug.log", "a")
---  if not log_file then error("No log file found! It should be debug.log in the root.") end
---  log_file:write(tostring(data) .. "\n")
---  log_file:flush() -- Ensure the output is written immediately
---  log_file:close()
---end
+---@param lines string[]
+---@param string string
+M.contains_line = function(lines, string)
+  local found_line = false
+  for _, line in ipairs(lines) do
+    if line == string then
+      found_line = true
+      break
+    end
+  end
+  return found_line
+end
 
 ---Found out in python you can do dict1 | dict2 to produce a merged dict. Wish lua had that.
 ---* shallow merge
@@ -73,10 +72,10 @@ M.merge_tables = function(t1, t2)
 end
 
 M.guid = function()
-  local template ='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-  return string.gsub(template, '[xy]', function (c)
-      local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
-      return string.format('%x', v)
+  local template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+  return string.gsub(template, '[xy]', function(c)
+    local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
+    return string.format('%x', v)
   end)
 end
 

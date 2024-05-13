@@ -10,9 +10,7 @@
 * Focus same buffer on nui exit
 * Prompt tests
 * Chat loading indicator
-* Add files to chat / code
 * Add copilot support
 * Protect against opening windows many times?
 * Auto scroll
-* Chat window remembers input state like code window does
 * One really big integration flow for each window

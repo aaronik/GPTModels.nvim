@@ -112,19 +112,6 @@ describe("The Chat window", function()
     assert.equal(vim.api.nvim_get_current_win(), input_win)
   end)
 
-  ---@param lines string[]
-  ---@param string string
-  local contains_line = function(lines, string)
-    local found_line = false
-    for _, line in ipairs(lines) do
-      if line == string then
-        found_line = true
-        break
-      end
-    end
-    return found_line
-  end
-
   it("Removes text from input and puts it in chat on <CR>", function()
     local chat = chat_window.build_and_mount()
     local input_bufnr = chat.input_bufnr
@@ -136,7 +123,7 @@ describe("The Chat window", function()
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
     -- ensure hello is one of the lines in chat buf
-    assert.is_true(contains_line(chat_lines, "hello"))
+    assert.is_true(util.contains_line(chat_lines, "hello"))
 
     -- ensure input is empty
     local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
@@ -167,9 +154,9 @@ describe("The Chat window", function()
     -- Now the chat buffer should have all the things
     local chat_lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
 
-    assert(contains_line(chat_lines, "hello"))
-    assert(contains_line(chat_lines, "response text1"))
-    assert(contains_line(chat_lines, "response text2"))
+    assert(util.contains_line(chat_lines, "hello"))
+    assert(util.contains_line(chat_lines, "response text1"))
+    assert(util.contains_line(chat_lines, "response text2"))
   end)
 
   it("clears all windows on <C-n>", function()
@@ -315,10 +302,6 @@ describe("The Chat window", function()
     keys = vim.api.nvim_replace_termcodes('<Esc>:q<CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
-    -- -- quit with q
-    -- keys = vim.api.nvim_replace_termcodes('q', true, true, true)
-    -- vim.api.nvim_feedkeys(keys, 'mtx', false)
-
     assert.is_not.True(die_called)
 
     -- -- simulate hint of wait time for the nui windows to close
@@ -332,7 +315,7 @@ describe("The Chat window", function()
 
     -- Open up and ensure it's there now
     local chat = chat_window.build_and_mount()
-    assert(contains_line(vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true), "response to be saved in background" ))
+    assert(util.contains_line(vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true), "response to be saved in background"))
 
 
     -- More reponse to still reopen window
@@ -340,16 +323,82 @@ describe("The Chat window", function()
 
     -- Gets that response without reopening
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
-    assert(contains_line(chat_lines, "response to be saved in background" ))
-    assert(contains_line(chat_lines, "additional response" ))
+    assert(util.contains_line(chat_lines, "response to be saved in background"))
+    assert(util.contains_line(chat_lines, "additional response"))
   end)
 
-  pending("updates and resizes the nui window when the vim window resized", function()
+  it("includes files on <C-f> and clears them on <C-g>", function()
     local chat = chat_window.build_and_mount()
 
+    -- I'm only stubbing this because it's so hard to test. One time out of hundreds
+    -- I was able to get the test to reflect a picked file. I don't know if there's some
+    -- async magic or what but I can't make it work. Tried vim.wait forever.
+    local find_files = stub(require('telescope.builtin'), "find_files")
 
-    local nui_height = vim.api.nvim_win_get_height(chat_window.nui_win_id)
-    local nui_width = vim.api.nvim_win_get_width(chat_window.nui_win_id)
+    -- For down the line of this crazy stubbing exercise
+    local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
+    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
+
+    -- And just make sure there are no closing errors
+    stub(require('telescope.actions'), "close")
+
+    -- Press ctl-f to open the telescope picker
+    local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
+
+    -- Press enter to select the first file, was Makefile in testing
+    local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    -- Simulate finding a file
+    assert.stub(find_files).was_called(1)
+    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+
+    -- Now we'll check what was given to llm.chat
+    local chat_stub = stub(llm, "chat")
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeChatRequestArgs
+    local args = chat_stub.calls[1].refs[1]
+
+    -- Does the request now contain a system message with the file
+    local contains_system_with_file = false
+    for _, message in ipairs(args.llm.messages) do
+      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.True(contains_system_with_file)
+
+    -- Now we'll make sure C-g clears the files
+    local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeChatRequestArgs
+    args = chat_stub.calls[2].refs[1]
+
+    -- Does the request now contain a system message with the file
+    contains_system_with_file = false
+    for _, message in ipairs(args.llm.messages) do
+      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.False(contains_system_with_file)
+
+  end)
+
+  pending("updates and resizes the nui window when the vim window resized TODO", function()
+    local chat = chat_window.build_and_mount()
+
+    local nui_height = vim.api.nvim_win_get_height(chat.chat_winid)
+    local nui_width = vim.api.nvim_win_get_width(chat.chat_winid)
 
     assert.equals(nui_height, 150)
     assert.equals(nui_width, 150)

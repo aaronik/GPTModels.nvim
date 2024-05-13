@@ -38,10 +38,24 @@ local on_CR = function(input_bufnr, chat_bufnr)
   Store.chat.chat.append({ role = "user", content = input_text })
   safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
 
+  local file_messages = {}
+  for _, filename in ipairs(Store.chat.get_files()) do
+    local file = io.open(filename, "r")
+    if not file then break end
+    local content = file:read("*all")
+    file:close()
+
+    table.insert(file_messages, {
+      role = "system",
+      content = filename .. ":\n\n" .. content
+    })
+  end
+  local messages = util.merge_tables(Store.chat.chat.read(), file_messages)
+
   local jorb = llm.chat({
     llm = {
       stream = true,
-      messages = Store.chat.chat.read(),
+      messages = messages,
     },
     on_read = function(_, message)
       Store.chat.chat.append(message)
@@ -67,15 +81,38 @@ local function on_s_tab(i, bufs)
   vim.api.nvim_set_current_win(next_win)
 end
 
+---@param input any -- this is a popup, wish they were typed
+local function set_input_text(input)
+  local files = Store.chat.get_files()
+  if #files == 0 then
+    input.border:set_text(
+      "top",
+      " Prompt ",
+      "center"
+    )
+  else
+    local files_string = table.concat(files, ", ")
+
+    input.border:set_text(
+      "top",
+      " Prompt + " .. files_string .. " ",
+      "center"
+    )
+  end
+end
+
 ---@param selected_text string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, chat_bufnr: integer, chat_winid: integer }
 function M.build_and_mount(selected_text)
   local chat = Popup(com.build_common_popup_opts("Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model))
-  local input = Popup(com.build_common_popup_opts("Prompt"))
+  local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
   -- available controls are found at the bottom of the input popup
-  input.border:set_text("bottom",
-    " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
+  input.border:set_text(
+    "bottom",
+    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear window | C-f add files | C-g clear files ",
+    "center"
+  )
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
   Store.chat.chat.bufnr = chat.bufnr
@@ -124,8 +161,6 @@ function M.build_and_mount(selected_text)
       local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
       Store.chat.input.clear()
       Store.chat.input.append(table.concat(input_lines, "\n"))
-      util.log('after writing, store has:')
-      util.log(Store.chat.input.read())
     end,
     { once = false }
   )
@@ -146,12 +181,13 @@ function M.build_and_mount(selected_text)
   else
     -- If there's saved input, render that
     local input_content = Store.chat.input.read()
-    util.log('input_content:')
-    util.log(input_content)
     if input_content then com.safe_render_buffer_from_text(input.bufnr, input_content) end
 
     -- If there's a chat history, open with that.
     safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
+
+    -- Get the files back
+    set_input_text(input)
   end
 
   -- keymaps
@@ -180,6 +216,7 @@ function M.build_and_mount(selected_text)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
+        set_input_text(input)
       end
     })
 
@@ -188,16 +225,28 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        require('telescope.builtin').find_files({
+        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+        require('telescope.builtin').find_files(util.merge_tables(theme, {
           attach_mappings = function(_, map)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
+              Store.chat.append_file(selection[1])
+              set_input_text(input)
               require('telescope.actions').close(prompt_bufnr)
-              util.log(selection)
             end)
             return true
           end
-        })
+        }))
+      end
+    })
+
+    -- Ctl-g to clear files
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-g>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        Store.chat.clear_files()
+        set_input_text(input)
       end
     })
 

@@ -35,20 +35,23 @@ end
 ---@field append fun(message: LlmMessage)
 ---@field read fun(): LlmMessage[]
 
----@class CodeWindow
+---@class Window
 ---@field clear fun()
----@field right StrPane
----@field left StrPane
 ---@field input StrPane
----@field private _right string
----@field private _left string
+---@field append_file fun(filename: string)
+---@field get_files fun(): string[]
+---@field clear_files fun()
+---@field private _files string[]
 ---@field private _input string
 
----@class ChatWindow
----@field clear fun()
----@field input StrPane
+---@class CodeWindow : Window
+---@field right StrPane
+---@field left StrPane
+---@field private _right string
+---@field private _left string
+
+---@class ChatWindow : Window
 ---@field chat MessagePane
----@field private _input string
 ---@field private _chat LlmMessage[]
 
 ---@class Store
@@ -73,8 +76,8 @@ Store = {
     openai = { "gpt-4-turbo", "gpt-3.5-turbo" },
     ollama = { "llama3", "mistral" },
   },
-  llm_provider = "openai",
-  llm_model = "gpt-4-turbo",
+  llm_provider = "ollama",
+  llm_model = "llama3",
 
   set_llm = function (provider, model)
     Store.llm_provider = provider
@@ -115,10 +118,16 @@ Store = {
       clear = function() Store.code._input = "" end
     },
 
+    _files = {},
+    append_file = function(filename) table.insert(Store.code._files, filename) end,
+    get_files = function() return Store.code._files end,
+    clear_files = function() Store.code._files = {} end,
+
     clear = function()
       Store.code.right.clear()
       Store.code.left.clear()
       Store.code.input.clear()
+      Store.code.clear_files()
     end
   },
   chat = {
@@ -136,9 +145,15 @@ Store = {
       clear = function() Store.chat._chat = {} end
     },
 
+    _files = {},
+    append_file = function(filename) table.insert(Store.chat._files, filename) end,
+    get_files = function() return Store.chat._files end,
+    clear_files = function() Store.chat._files = {} end,
+
     clear = function()
       Store.chat.input.clear()
       Store.chat.chat.clear()
+      Store.chat.clear_files()
     end
   },
 
