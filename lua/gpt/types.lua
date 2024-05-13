@@ -6,7 +6,7 @@
 ---@field content string
 
 ---@class LlmGenerateArgs
----@field system string | nil
+---@field system string[] | nil
 ---@field model string | nil
 ---@field stream boolean
 ---@field prompt string

@@ -10,7 +10,7 @@ local M      = {}
 ---@param filetype string
 ---@param input_text string
 ---@param code_text string
----@return string, string
+---@return string, string[]
 local code_prompt = function(filetype, input_text, code_text)
   local prompt_string = ""
   prompt_string = prompt_string .. "%s\n\n"
@@ -26,7 +26,16 @@ local code_prompt = function(filetype, input_text, code_text)
   system_string = system_string .. "Do not explain the code.\n"
   system_string = system_string .. "Do not use backticks. Do not include ``` at all.\n"
 
-  local system = string.format(system_string, input_text, code_text)
+  local system = { string.format(system_string, input_text, code_text) }
+
+  for _, filename in ipairs(Store.code.get_files()) do
+    local file = io.open(filename, "r")
+    if not file then break end
+    local content = file:read("*all")
+    file:close()
+
+    table.insert(system, filename .. ":\n" .. content .. "\n\n")
+  end
 
   return prompt, system
 end
@@ -76,6 +85,25 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
+---@param input any -- this is a popup, wish they were typed
+local function set_input_text(input)
+  local files = Store.code.get_files()
+  if #files == 0 then
+    input.border:set_text(
+      "top",
+      " Prompt ",
+      "center"
+    )
+  else
+    local files_string = table.concat(files, ", ")
+    input.border:set_text(
+      "top",
+      " Prompt + " .. files_string .. " ",
+      "center"
+    )
+  end
+end
+
 ---@param selected_lines string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_winid: integer }
 function M.build_and_mount(selected_lines)
@@ -118,6 +146,9 @@ function M.build_and_mount(selected_lines)
 
     local input_content = Store.code.input.read()
     if input_content then com.safe_render_buffer_from_text(input_popup.bufnr, input_content) end
+
+    -- Get the files back
+    set_input_text(input_popup)
   end
 
   local layout = Layout(
@@ -192,6 +223,7 @@ function M.build_and_mount(selected_lines)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
+        set_input_text(input_popup)
       end
     })
 
@@ -247,6 +279,36 @@ function M.build_and_mount(selected_lines)
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store.set_llm(selected_option.provider, selected_option.model)
         right_popup.border:set_text("top", com.model_display_name(), "center")
+      end
+    })
+
+    -- Ctl-f to include files
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-f>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+        require('telescope.builtin').find_files(util.merge_tables(theme, {
+          attach_mappings = function(_, map)
+            map('i', '<CR>', function(prompt_bufnr)
+              local selection = require('telescope.actions.state').get_selected_entry()
+              Store.code.append_file(selection[1])
+              set_input_text(input_popup)
+              require('telescope.actions').close(prompt_bufnr)
+            end)
+            return true
+          end
+        }))
+      end
+    })
+
+    -- Ctl-g to clear files
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-g>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        Store.code.clear_files()
+        set_input_text(input_popup)
       end
     })
 

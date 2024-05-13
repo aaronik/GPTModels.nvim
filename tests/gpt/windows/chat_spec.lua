@@ -165,6 +165,7 @@ describe("The Chat window", function()
     -- Populate windows with some content
     vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { "input content" })
     vim.api.nvim_buf_set_lines(chat.chat_bufnr, 0, -1, true, { "chat content" })
+    Store.chat.append_file("docs/gpt.txt")
 
     -- Press <C-n>
     local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
@@ -173,6 +174,9 @@ describe("The Chat window", function()
     -- Assert all windows are cleared
     assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true))
+
+    -- And the store of included files
+    assert.same({}, Store.chat.get_files())
   end)
 
   it("cycles through available models with <C-j>", function()
@@ -328,7 +332,7 @@ describe("The Chat window", function()
   end)
 
   it("includes files on <C-f> and clears them on <C-g>", function()
-    local chat = chat_window.build_and_mount()
+    chat_window.build_and_mount()
 
     -- I'm only stubbing this because it's so hard to test. One time out of hundreds
     -- I was able to get the test to reflect a picked file. I don't know if there's some

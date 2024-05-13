@@ -92,7 +92,6 @@ local function set_input_text(input)
     )
   else
     local files_string = table.concat(files, ", ")
-
     input.border:set_text(
       "top",
       " Prompt + " .. files_string .. " ",

@@ -29,7 +29,8 @@ describe("openai.generate", function()
 
       assert.equal("gpt-4-turbo", llm_data.model)
       assert.equal(nil, llm_data.prompt)
-      assert.same({ { role = "system", content = "system" }, { role = "user", content = "pr0mpT" } }, llm_data.messages)
+      ---@diagnostic disable-next-line: undefined-field
+      assert.same({ { role = "user", content = "pr0mpT" }, { role = "system", content = "system" } }, llm_data.messages)
       assert.equal(true, llm_data.stream)
 
       -- Ensure OPENAI_API_KEY is passed in correctly
@@ -44,11 +45,11 @@ describe("openai.generate", function()
 
     openai.generate({
       llm = {
-        system = "system",
+        system = { "system" },
         prompt = "pr0mpT",
         stream = true,
       },
-      on_read = function(err, message)
+      on_read = function(_, message)
         assert.same("hi from llm", message)
       end,
     })
@@ -90,7 +91,7 @@ describe("openai.chat", function()
       'data: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":"both"},"logprobs":null,"finish_reason":null}]}'
 
       sample_llm_response = sample_llm_response ..
-      '\n\ndata: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":" halves"},"logprobs":null,"finish_reason":null}]}\n\n'
+          '\n\ndata: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":" halves"},"logprobs":null,"finish_reason":null}]}\n\n'
 
       -- This is how it comes in from openai for whatever reason. Note role needs to be injected most of the time
       exec_args.onread(nil, sample_llm_response)
@@ -107,7 +108,7 @@ describe("openai.chat", function()
         messages = messages,
         stream = true,
       },
-      on_read = function(err, message)
+      on_read = function(_, message)
         if count == 0 then
           assert.same({ content = "both", role = "assistant" }, message)
           count = count + 1
@@ -118,7 +119,7 @@ describe("openai.chat", function()
       end,
     })
 
-    vim.wait(50, function ()
+    vim.wait(50, function()
       return finished
     end)
 

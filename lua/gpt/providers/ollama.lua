@@ -15,6 +15,11 @@ M.generate = function(args)
         args.llm.model = "llama3"
     end
 
+    if args.llm.system then
+        ---@diagnostic disable-next-line: assign-type-mismatch -- do some last minute munging to get it happy for ollama
+        args.llm.system = table.concat(args.llm.system, "\n\n")
+    end
+
     local curl_args = {
         url,
         "--data",

@@ -74,10 +74,17 @@ M.generate = function(args)
 
     -- openai changes their stuff around a bit, and now there's no prompt, only messages
     ---@type LlmMessage[]
+    ---@diagnostic disable-next-line: inject-field
     args.llm.messages = {
-        { role = "system", content = args.llm.system or "" },
-        { role = "user",   content = args.llm.prompt }
+        { role = "user", content = args.llm.prompt }
     }
+
+    for _, system_string in ipairs(args.llm.system or {}) do
+        table.insert(args.llm.messages, {
+            role = "system",
+            content = system_string
+        })
+    end
 
     args.llm.prompt = nil
     args.llm.system = nil

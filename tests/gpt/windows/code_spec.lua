@@ -273,6 +273,7 @@ describe("The code window", function()
     vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { "input content" })
     vim.api.nvim_buf_set_lines(code.left_bufnr, 0, -1, true, { "left content" })
     vim.api.nvim_buf_set_lines(code.right_bufnr, 0, -1, true, { "right content" })
+    Store.code.append_file("docs/gpt.txt")
 
     -- Press <C-n>
     local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
@@ -282,6 +283,9 @@ describe("The code window", function()
     assert.same({ '' }, vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+
+    -- And the store of included files
+    assert.same({}, Store.code.get_files())
   end)
 
   it("kills active job on <C-c>", function()
@@ -432,6 +436,73 @@ describe("The code window", function()
     assert.is_not.equal(first_args[2], second_args[2])
 
     snapshot:revert()
+  end)
+
+  it("includes files on <C-f> and clears them on <C-g>", function()
+    code_window.build_and_mount()
+
+    -- I'm only stubbing this because it's so hard to test. One time out of hundreds
+    -- I was able to get the test to reflect a picked file. I don't know if there's some
+    -- async magic or what but I can't make it work. Tried vim.wait forever.
+    local find_files = stub(require('telescope.builtin'), "find_files")
+
+    -- For down the line of this crazy stubbing exercise
+    local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
+    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
+
+    -- And just make sure there are no closing errors
+    stub(require('telescope.actions'), "close")
+
+    -- Press ctl-f to open the telescope picker
+    local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
+
+    -- Press enter to select the first file, was Makefile in testing
+    local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    -- Simulate finding a file
+    assert.stub(find_files).was_called(1)
+    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+
+    -- Now we'll check what was given to llm.generate
+    local generate_stub = stub(llm, "generate")
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
+    local args = generate_stub.calls[1].refs[1]
+
+    -- Does the request now contain a system string with the file
+    local contains_system_with_file = false
+    for _, system_string in ipairs(args.llm.system) do
+      if system_string.match(system_string, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.True(contains_system_with_file)
+
+    -- Now we'll make sure C-g clears the files
+    local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeGenerateRequestArgs
+    args = generate_stub.calls[2].refs[1]
+
+    -- Does the request now contain a system string with the file
+    contains_system_with_file = false
+    for _, system_string in ipairs(args.llm.system) do
+      if system_string.match(system_string, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.False(contains_system_with_file)
+
   end)
 
   it("puts json decoding errors in the right window as [ERROR] inline with what it was writing", function()
