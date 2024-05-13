@@ -41,8 +41,8 @@ describe("The Chat window", function()
   end)
 
   it("puts selected text into input buffer and puts newline under it", function()
-    local bufs = chat_window.build_and_mount({ "selected text" })
-    local input_lines = vim.api.nvim_buf_get_lines(bufs.input_bufnr, 0, -1, true)
+    local chat = chat_window.build_and_mount({ "selected text" })
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
     assert.same({ "selected text", "" }, input_lines)
   end)
 
@@ -50,17 +50,32 @@ describe("The Chat window", function()
     local content = "window should open with this content populated"
     Store.chat.chat.append({ role = "assistant", content = content })
 
-    local bufs = chat_window.build_and_mount()
-    local chat_bufnr = bufs.chat_bufnr
+    local chat = chat_window.build_and_mount()
+    local chat_bufnr = chat.chat_bufnr
 
     local lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
     assert.equal(content, lines[1])
   end)
 
+  it("clears the chat window when opened with selection", function ()
+    -- Open it once without any selection
+    local chat = chat_window.build_and_mount()
+
+    -- Send a message
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- chat buffer now has our line
+
+    chat = chat_window.build_and_mount({ "selected line" })
+    assert.same({ "selected line", "" }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
+    assert.same({ "" }, vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true))
+  end)
+
   it("shifts through windows on <Tab>", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
+    local chat = chat_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local chat_bufnr = chat.chat_bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local chat_win = vim.fn.bufwinid(chat_bufnr)
@@ -77,9 +92,9 @@ describe("The Chat window", function()
   end)
 
   it("shifts through windows on <S-Tab>", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
+    local chat = chat_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local chat_bufnr = chat.chat_bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local chat_win = vim.fn.bufwinid(chat_bufnr)
@@ -96,9 +111,9 @@ describe("The Chat window", function()
   end)
 
   it("Removes text from input and puts it in chat on <CR>", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
+    local chat = chat_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local chat_bufnr = chat.chat_bufnr
 
     local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
@@ -121,9 +136,9 @@ describe("The Chat window", function()
   end)
 
   it("Places llm response into chat window", function()
-    local bufs = chat_window.build_and_mount()
-    local input_bufnr = bufs.input_bufnr
-    local chat_bufnr = bufs.chat_bufnr
+    local chat = chat_window.build_and_mount()
+    local input_bufnr = chat.input_bufnr
+    local chat_bufnr = chat.chat_bufnr
 
     -- stub llm call
     local s = stub(llm, "chat")

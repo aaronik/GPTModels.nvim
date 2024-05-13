@@ -80,7 +80,8 @@ function M.build_and_mount(selected_text)
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
   -- available controls are found at the bottom of the input popup
-  input.border:set_text("bottom", " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
+  input.border:set_text("bottom",
+    " [S-]Tab cycle window focus | C-{j,k} cycle models | C-c cancel request | C-n clear window ", "center")
 
   -- Input window is text with no syntax
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
@@ -125,9 +126,15 @@ function M.build_and_mount(selected_text)
 
   layout:mount()
 
- -- Add text selection to input buf
+  -- Add text selection to input buf
   if selected_text then
+    -- clear chat window
+    vim.api.nvim_buf_set_lines(chat.bufnr, 0, -1, true, {})
+
+    -- add selection to input
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
+
+    -- Go to bottom of input and enter insert mode
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
   end
@@ -158,6 +165,24 @@ function M.build_and_mount(selected_text)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
+      end
+    })
+
+    -- Ctl-f to include files
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-f>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        require('telescope.builtin').find_files({
+          attach_mappings = function(_, map)
+            map('i', '<CR>', function(prompt_bufnr)
+              local selection = require('telescope.actions.state').get_selected_entry()
+              require('telescope.actions').close(prompt_bufnr)
+              callback(selection)
+            end)
+            return true
+          end
+        })
       end
     })
 
