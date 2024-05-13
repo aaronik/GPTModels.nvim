@@ -7,10 +7,12 @@
 
 ## TODO
 
+* Make a readme fr
+* Error handling for ollama and openai providers
 * Focus same buffer on nui exit
+* Auto scroll
 * Prompt tests
 * Chat loading indicator
 * Add copilot support
 * Protect against opening windows many times?
-* Auto scroll
 * One really big integration flow for each window

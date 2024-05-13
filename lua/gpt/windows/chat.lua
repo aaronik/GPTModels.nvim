@@ -28,7 +28,7 @@ end
 
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
-local on_CR = function(input_bufnr, chat_bufnr)
+local on_CR = function(input_bufnr, chat_bufnr, chat_winid)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
 
@@ -60,6 +60,13 @@ local on_CR = function(input_bufnr, chat_bufnr)
     on_read = function(_, message)
       Store.chat.chat.append(message)
       safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
+
+      -- scroll window to the bottom if the window is valid and the user is not in it
+      if vim.api.nvim_win_is_valid(chat_winid) and vim.api.nvim_get_current_win() ~= chat_winid then
+        vim.api.nvim_win_set_cursor(chat_winid,
+          { vim.api.nvim_buf_line_count(chat_bufnr), 0 }
+        )
+      end
     end,
     on_end = function()
       Store.clear_job()
@@ -131,7 +138,7 @@ function M.build_and_mount(selected_text)
     "n",
     "<CR>",
     "",
-    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, chat.bufnr) end }
+    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, chat.bufnr, chat.winid) end }
   )
 
   local layout = Layout(
