@@ -57,8 +57,19 @@ local on_CR = function(input_bufnr, chat_bufnr, chat_winid)
       stream = true,
       messages = messages,
     },
-    on_read = function(_, message)
-      Store.chat.chat.append(message)
+    on_read = function(err, message)
+      -- Show errors to users. Inline is convenient for now.
+      if err then
+        Store.chat.chat.append({ role = "assistant", content = err })
+        safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
+        return
+      end
+
+      -- No response _and_ no error? Weird. Happens though.
+      if message then
+        Store.chat.chat.append(message)
+      end
+
       safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
 
       -- scroll to the bottom if the window's still open and the user is not in it

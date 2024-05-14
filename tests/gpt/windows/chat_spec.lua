@@ -445,6 +445,34 @@ describe("The Chat window", function()
     assert.equal(expected_scroll, actual_scroll)
   end)
 
+  it("handles llm errors gracefully", function()
+    local chat = chat_window.build_and_mount()
+
+    local llm_stub = stub(llm, "chat")
+
+    local keys = vim.api.nvim_replace_termcodes('iwahoo<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    ---@type MakeChatRequestArgs
+    local args = llm_stub.calls[1].refs[1]
+
+    args.on_read("llm-error", nil)
+
+    local found_match = false
+    local right_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
+    for _, line in ipairs(right_lines) do
+      if string.match(line, "llm%-error") then
+        found_match = true
+      end
+    end
+    assert(found_match)
+
+    -- This would mean the provider called on_read with no error and no response
+    -- Happens sometimes with openai, probably my fault. Just testing to make
+    -- sure it doesn't error.
+    args.on_read(nil, nil)
+  end)
+
   pending("updates and resizes the nui window when the vim window resized TODO", function()
     local chat = chat_window.build_and_mount()
 

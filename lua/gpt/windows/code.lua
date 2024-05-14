@@ -87,9 +87,9 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
         return
       end
 
-      -- No response _and_ no error? Weird
+      -- No response _and_ no error? Weird. Happens though.
       if not response then
-        Store.code.right.append('[EMPTY]')
+        Store.code.right.append('')
       else
         Store.code.right.append(response)
       end

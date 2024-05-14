@@ -567,18 +567,10 @@ describe("The code window", function()
     end
     assert(found_match)
 
-    -- This shouldn't happen but just in case, we want to see '[EMPTY]'
     -- This would mean the provider called on_read with no error and no response
+    -- Happens sometimes with openai, probably my fault. Just testing to make
+    -- sure it doesn't error.
     args.on_read(nil, nil)
-
-    found_match = false
-    right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-    for _, line in ipairs(right_lines) do
-      if string.match(line, '%[EMPTY%]') then
-        found_match = true
-      end
-    end
-    assert(found_match)
 
   end)
 end)
