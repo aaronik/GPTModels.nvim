@@ -588,7 +588,7 @@ describe("The code window", function()
   end)
 
   it("handles llm errors gracefully", function()
-    local code = code_window.build_and_mount()
+    code_window.build_and_mount()
 
     local llm_stub = stub(llm, "generate")
 
@@ -598,16 +598,12 @@ describe("The code window", function()
     ---@type MakeGenerateRequestArgs
     local args = llm_stub.calls[1].refs[1]
 
+    local log_stub = stub(util, "log")
+
     args.on_read("llm-error", nil)
 
-    local found_match = false
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-    for _, line in ipairs(right_lines) do
-      if string.match(line, "llm%-error") then
-        found_match = true
-      end
-    end
-    assert(found_match)
+    -- Populate a log file with mostly json decode errors I'm sure
+    assert.stub(log_stub).was_called(1)
 
     -- This would mean the provider called on_read with no error and no response
     -- Happens sometimes with openai, probably my fault. Just testing to make

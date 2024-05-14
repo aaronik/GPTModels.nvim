@@ -78,12 +78,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
       system = system,
     },
     on_read = function(err, response)
-      -- Show errors to users. Inline is convenient for now.
-      if err then
-        Store.code.right.append(err)
-        safe_render_right_text_from_store()
-        return
-      end
+      if err then return util.log(err) end
 
       -- No response _and_ no error? Weird. Happens though.
       if not response then

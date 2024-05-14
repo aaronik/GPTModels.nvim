@@ -95,10 +95,6 @@ describe("ollama.generate", function()
 
     vim.wait(20)
 
-    ---@type MakeGenerateRequestArgs
-    local exec_args = exec_stub.calls[1].refs[1]
-    util.log(exec_args)
-
     assert.stub(on_read_stub).was_called(0)
   end)
 end)
@@ -191,10 +187,6 @@ describe("ollama.chat", function()
     assert.stub(exec_stub).was_called(1)
 
     vim.wait(20)
-
-    ---@type MakeChatRequestArgs
-    local exec_args = exec_stub.calls[1].refs[1]
-    util.log(exec_args)
 
     assert.stub(on_read_stub).was_called(0)
   end)
