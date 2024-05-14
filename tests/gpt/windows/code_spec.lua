@@ -586,6 +586,24 @@ describe("The code window", function()
     actual_scroll = vim.fn.line('w0', code.right_winid)
 
     assert.equal(expected_scroll, actual_scroll)
+
+    -- Now we'll close the window to later reopen it
+    keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- reopen the closed window
+    code = code_window.build_and_mount()
+
+    -- more long responses come in from the llm
+    args.on_read(nil, long_content)
+
+    -- and now ensure the autoscrolling continues to happen
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
+    win_height = vim.api.nvim_win_get_height(code.right_winid)
+    expected_scroll = last_line - win_height + 1
+    actual_scroll = vim.fn.line('w0', code.right_winid)
+
+    assert.equal(expected_scroll, actual_scroll)
   end)
 
   it("handles llm errors gracefully", function()

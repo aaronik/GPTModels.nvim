@@ -50,7 +50,7 @@ local function safe_render_right_text_from_store()
   end
 end
 
-local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
+local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
   local left_lines = vim.api.nvim_buf_get_lines(left_bufnr, 0, -1, false)
@@ -91,9 +91,10 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
+      local right_winid = Store.code.right.winid or 1
       if vim.api.nvim_win_is_valid(right_winid) and vim.api.nvim_get_current_win() ~= right_winid then
         vim.api.nvim_win_set_cursor(
-          right_winid, { vim.api.nvim_buf_line_count(right_bufnr), 0 }
+          right_winid, { vim.api.nvim_buf_line_count(Store.code.right.bufnr), 0 }
         )
       end
     end,
@@ -197,8 +198,7 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr,
-          right_popup.winid)
+        on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr)
       end
     }
   )
@@ -368,6 +368,9 @@ function M.build_and_mount(selected_lines)
   end
 
   layout:mount()
+
+  -- Now that the layout is mounted, the window is assigned, and we'll use the winid later
+  Store.code.right.winid = right_popup.winid
 
   return {
     input_bufnr = input_popup.bufnr,
