@@ -8,7 +8,6 @@
 ## TODO
 
 * Use ctrl-w + hjkl to move between windows
-* Defend against errant util.logs by handling error when the file doesn't exist
 * code needs C-y and something to bring changes into left pane
 * Rename to something better than GPT. Models? TwoModel? Maybe GPT is good?
 * Make a readme fr

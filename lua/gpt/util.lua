@@ -25,7 +25,17 @@ M.log = function(data)
   end
 
   local log_file = io.open("./debug.log", "a")
-  if not log_file then error("No log file found! It should be debug.log in the root.") end
+
+  -- Guard against no log file by making one
+  if not log_file then
+    log_file = io.open("./debug.log", "w+")
+  end
+
+  -- If that failed and there still isn't one, swallow the error.
+  -- This is a utility for development, it should never cause issues
+  -- during real use.
+  if not log_file then return end
+
   log_file:write(tostring(data) .. "\n")
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
