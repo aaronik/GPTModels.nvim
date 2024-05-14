@@ -8,7 +8,6 @@ local M = {}
 ---@param json string
 ---@return string | nil, LlmMessage[] | nil
 local parse_llm_response = function(json)
-
     -- replace \r\n with just \n
     json = string.gsub(json, "\r\n", "\n")
 
@@ -17,9 +16,10 @@ local parse_llm_response = function(json)
     json_lines = vim.tbl_filter(function(line) return line ~= "" end, json_lines)
 
     -- Then, for some reason all their lines start with data: . Just the string, not json. Weird.
-    -- TODO This needs to only be done if the line actually starts with data: . Sometimes it doesn't
     for i, line in ipairs(json_lines) do
-        json_lines[i] = line:sub(7)
+        if line:sub(1, 5) == "data:" then
+            json_lines[i] = line:sub(7)
+        end
     end
 
     ---@type LlmMessage[]
@@ -35,7 +35,7 @@ local parse_llm_response = function(json)
         ---@type boolean, { choices: { delta: LlmMessage }[] } | nil
         local status_ok, data = pcall(vim.fn.json_decode, line)
         if not status_ok or not data or not data.choices or not data.choices[1].delta then
-            return "JSON decode or schema error for LLM response!  " .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
+            return " [JSON decode or schema error for LLM response]: " .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
         end
 
         if not data.choices[1].delta.role then
