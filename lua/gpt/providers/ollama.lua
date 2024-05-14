@@ -32,8 +32,14 @@ M.generate = function(args)
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, json)
-            if err then error(err) end
+            if err then return args.on_read(err) end
             if not json then return end
+
+            -- A strange case where a final message returned by ollama often has a decoding issue,
+            -- but doesn't have any content. So it's getting dropped
+            if string.match(json, '"done":true') then
+                return
+            end
 
             ---@type boolean, { response: string } | nil
             local status_ok, data = pcall(vim.fn.json_decode, json)
@@ -75,8 +81,14 @@ M.chat = function(args)
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, json)
-            if err then error(err) end
+            if err then return args.on_read(err) end
             if not json then return end
+
+            -- A strange case where a final message returned by ollama often has a decoding issue,
+            -- but doesn't have any content. So it's getting dropped
+            if string.match(json, '"done":true') then
+                return
+            end
 
             -- split, and trim empty lines
             local json_lines = vim.split(json, "\n")

@@ -66,6 +66,41 @@ describe("ollama.generate", function()
 
     assert.stub(s).was_called(1)
   end)
+
+  -- This was giving these huge error messages to the right pane after every response
+  it("gracefully handles a weird final message with no content", function()
+    local weird_json =
+    '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","response":"","done":true,"context":[128006,9125],"total_duration":5058894333,"load_duration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
+
+    local exec_stub = stub(cmd, "exec")
+
+    exec_stub.invokes(function(exec_args)
+      exec_args.onread(nil, weird_json)
+    end)
+
+    local generate_args = {
+      llm = {
+        system = { "system" },
+        prompt = "pr0mpT",
+        stream = true,
+      },
+      on_read = function() end,
+    }
+
+    local on_read_stub = stub(generate_args, "on_read")
+
+    ollama.generate(generate_args)
+
+    assert.stub(exec_stub).was_called(1)
+
+    vim.wait(20)
+
+    ---@type MakeGenerateRequestArgs
+    local exec_args = exec_stub.calls[1].refs[1]
+    util.log(exec_args)
+
+    assert.stub(on_read_stub).was_called(0)
+  end)
 end)
 
 describe("ollama.chat", function()
@@ -75,7 +110,7 @@ describe("ollama.chat", function()
     local s = stub(cmd, "exec")
 
     s.invokes(function(data)
-    ---@type ExecArgs
+      ---@type ExecArgs
       local args = data
 
       -- right url in right place
@@ -127,5 +162,40 @@ describe("ollama.chat", function()
     })
 
     assert.stub(s).was_called(1)
+  end)
+
+  -- This was giving these huge error messages to the right pane after every response
+  it("gracefully handles a weird final message with no content", function()
+    local weird_json =
+    '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","response":"","done":true,"context":[128006,9125],"total_duration":5058894333,"load_duration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
+
+    local exec_stub = stub(cmd, "exec")
+
+    exec_stub.invokes(function(exec_args)
+      exec_args.onread(nil, weird_json)
+    end)
+
+    ---@type MakeChatRequestArgs
+    local chat_args = {
+      llm = {
+        system = "system",
+        stream = true,
+      },
+      on_read = function() end,
+    }
+
+    local on_read_stub = stub(chat_args, "on_read")
+
+    ollama.chat(chat_args)
+
+    assert.stub(exec_stub).was_called(1)
+
+    vim.wait(20)
+
+    ---@type MakeChatRequestArgs
+    local exec_args = exec_stub.calls[1].refs[1]
+    util.log(exec_args)
+
+    assert.stub(on_read_stub).was_called(0)
   end)
 end)

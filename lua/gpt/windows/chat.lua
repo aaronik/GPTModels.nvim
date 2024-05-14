@@ -23,9 +23,6 @@ local safe_render_buffer_from_messages = function(bufnr, messages)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
 end
 
--- TODO when window is closed call job:shutdown()
--- TODO auto-scroll (lua fn for ctl-e?) when focus is not in chat window
-
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
 local on_CR = function(input_bufnr, chat_bufnr, chat_winid)
