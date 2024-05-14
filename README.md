@@ -10,10 +10,8 @@
 * Use ctrl-w + hjkl to move between windows
 * Defend against errant util.logs by handling error when the file doesn't exist
 * code needs C-y and something to bring changes into left pane
-* In the tests, there're some commented out vim.wait(20)s, masking invalid window errors. Fix'em
 * Rename to something better than GPT. Models? TwoModel? Maybe GPT is good?
 * Make a readme fr
-* Error handling for ollama and openai providers
 * Focus same buffer on nui exit?
 * Prompt tests?
 * Chat loading indicator?

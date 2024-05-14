@@ -180,6 +180,9 @@ describe("The code window", function()
 
     -- -- simulate hint of wait time for the nui windows to close
     -- -- TODO This leads to errors about invalid windows. Gotta fix
+    -- -- 5/13/24 inspected this and believe it's an issue with nui.
+    -- -- It's happening in the nui function called
+    -- -- apply_workaround_for_float_relative_position_issue_18925
     -- vim.wait(10)
 
     ---@type MakeGenerateRequestArgs

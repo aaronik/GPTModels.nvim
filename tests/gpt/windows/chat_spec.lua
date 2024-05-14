@@ -310,6 +310,7 @@ describe("The Chat window", function()
 
     -- -- simulate hint of wait time for the nui windows to close
     -- -- TODO This leads to errors about invalid windows. Gotta fix
+    -- -- Might be nui issue, see code_spec
     -- vim.wait(10)
 
     ---@type MakeChatRequestArgs
