@@ -384,7 +384,7 @@ describe("The code window", function()
 
     -- For down the line of this crazy stubbing exercise
     local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
+    get_selected_entry.returns({ "README.md", index = 1 }) -- typical response
 
     -- And just make sure there are no closing errors
     stub(require('telescope.actions'), "close")
@@ -416,7 +416,8 @@ describe("The code window", function()
     -- Does the request now contain a system string with the file
     local contains_system_with_file = false
     for _, system_string in ipairs(args.llm.system) do
-      if system_string.match(system_string, "doc/gpt.txt") then
+      util.log(system_string)
+      if system_string.match(system_string, "README.md") then
         contains_system_with_file = true
       end
     end
@@ -433,7 +434,7 @@ describe("The code window", function()
     -- Does the request now contain a system string with the file
     contains_system_with_file = false
     for _, system_string in ipairs(args.llm.system) do
-      if system_string.match(system_string, "doc/gpt.txt") then
+      if system_string.match(system_string, "README.md") then
         contains_system_with_file = true
       end
     end

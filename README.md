@@ -1,4 +1,4 @@
-# GPTModels - an LLM AI plugin for neovim
+# GPTModels.nvim - an LLM AI plugin for neovim
 
 An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on **stability** and **user experience**.
 
@@ -11,14 +11,14 @@ An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on 
 
 This plugin offers two commands:
 
-* `:GPTCode` - open a window designed to iterate on selections of code
+* `:GPTModelsCode` - open a window designed to iterate on selections of code
       <details>
-        <summary>See example of :GPTCode</summary>
+        <summary>See example of :GPTModelsCode</summary>
         <img width="1271" alt="image of :GPTChat window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/3e642a48-ce56-4295-a5fa-368b523bab2e">
       </details>
-* `:GPTChat` - open a chat window, like ChatGPT
+* `:GPTModelsChat` - open a chat window, like ChatGPT
       <details>
-        <summary>See example of :GPTChat</summary>
+        <summary>See example of :GPTModelsChat</summary>
         <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
       </details>
 
@@ -40,7 +40,22 @@ The chat window is great for having a free form conversation.
 * **Stability** - This was written TDD, and always will be. It uses emmylua types as best as I could figure out how to use them. It should be pretty stable, with everything tested thoroughly.
 * **Opens prepopulated with prior sessions** - both windows open with your last session. The plugin makes it easy to iterate on a message.
 
+### Installation
+
+lazy:
+
+```lua
+{
+  'Aaronik/GPTModels.nvim',
+  dependencies = {
+    "MunifTanjim/nui.nvim",
+    "nvim-telescope/telescope.nvim"
+  }
+}
+```
+
 ### Thanks
+
 Big thanks to @jackMort for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
 
 #### TODO
@@ -56,4 +71,7 @@ Big thanks to @jackMort for the inspiration for the code window. I used [jackMor
 * Protect against opening windows many times?
 * One really big integration flow for each window
 * Figure out how to test nui border text and test all the titles
+
+#### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
+* Sometimes, especially with openai, there are responses that don't conform to json, and responses where json is split between multiple. Both providers should handle that stuff more robustly.

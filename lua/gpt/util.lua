@@ -25,20 +25,15 @@ M.log = function(data)
   end
 
   local data_path = vim.fn.stdpath("data") .. "/gptmodels"
-  P(vim.fn.isdirectory(data_path))
   if vim.fn.isdirectory(data_path) == 0 then
-    P('calling mkdir')
     vim.fn.mkdir(data_path, "p")
   end
-  P(data_path)
   local log_file = io.open(data_path .. "/debug.log", "a")
 
   -- Guard against no log file by making one
   if not log_file then
     log_file = io.open(data_path .. "/debug.log", "w+")
   end
-
-  P(log_file)
 
   -- If that failed and there still isn't one, swallow the error.
   -- This is a utility for development, it should never cause issues

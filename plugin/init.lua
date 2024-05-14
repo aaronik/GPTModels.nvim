@@ -4,34 +4,34 @@
 
 local util = require('gpt.util')
 
-function InvokeGptCode(opts, preview_ns, preview_buffer)
+function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
   local gpt_opts = {
     visual_mode = opts.count ~= -1
   }
 
-  -- TODO use regular require
+  -- For development only
   -- util.R('gpt').code(gpt_opts);
   require('gpt').code(gpt_opts)
 end
 
-function InvokeGptChat(opts, preview_ns, preview_buffer)
+function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
   local gpt_opts = {
     visual_mode = opts.count ~= -1
   }
 
-  -- TODO use regular require
+  -- For development only
   -- util.R('gpt').chat(gpt_opts);
   require('gpt').chat(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(
-  "GPTCode",
-  InvokeGptCode,
+  "GPTModelsCode",
+  InvokeGptModelsCode,
   { nargs = "?", range = "%", addr = "lines" }
 )
 
 vim.api.nvim_create_user_command(
-  "GPTChat",
-  InvokeGptChat,
+  "GPTModelsChat",
+  InvokeGptModelsChat,
   { nargs = "?", range = "%", addr = "lines" }
 )

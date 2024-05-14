@@ -273,7 +273,7 @@ describe("The Chat window", function()
 
     -- For down the line of this crazy stubbing exercise
     local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
+    get_selected_entry.returns({ "README.md", index = 1 }) -- typical response
 
     -- And just make sure there are no closing errors
     stub(require('telescope.actions'), "close")
@@ -305,7 +305,7 @@ describe("The Chat window", function()
     -- Does the request now contain a system message with the file
     local contains_system_with_file = false
     for _, message in ipairs(args.llm.messages) do
-      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+      if message.role == "system" and message.content.match(message.content, "README.md") then
         contains_system_with_file = true
       end
     end
@@ -322,7 +322,7 @@ describe("The Chat window", function()
     -- Does the request now contain a system message with the file
     contains_system_with_file = false
     for _, message in ipairs(args.llm.messages) do
-      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+      if message.role == "system" and message.content.match(message.content, "README.md") then
         contains_system_with_file = true
       end
     end
