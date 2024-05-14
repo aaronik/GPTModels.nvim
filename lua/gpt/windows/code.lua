@@ -40,8 +40,6 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
--- TODO after having abstracted this, I don't think it's necessary.
--- Leaving it until the next visit
 local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.

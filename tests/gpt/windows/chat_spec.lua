@@ -386,7 +386,7 @@ describe("The Chat window", function()
     assert.is_not.True(die_called)
 
     -- -- simulate hint of wait time for the nui windows to close
-    -- -- TODO This leads to errors about invalid windows. Gotta fix
+    -- -- This leads to errors about invalid windows.
     -- -- Might be nui issue, see code_spec
     -- vim.wait(10)
 
@@ -485,13 +485,26 @@ describe("The Chat window", function()
     args.on_read(nil, nil)
   end)
 
+  -- Having a lot of trouble testing this.
   pending("updates and resizes the nui window when the vim window resized TODO", function()
     local chat = chat_window.build_and_mount()
 
     local nui_height = vim.api.nvim_win_get_height(chat.chat_winid)
     local nui_width = vim.api.nvim_win_get_width(chat.chat_winid)
 
-    assert.equals(nui_height, 150)
-    assert.equals(nui_width, 150)
+    local og_nui_height = nui_height
+    local og_nui_width = nui_width
+
+    -- Resize the Vim window
+    vim.api.nvim_win_set_width(0, 200)
+    vim.api.nvim_win_set_height(0, 300)
+
+    vim.wait(20)
+
+    nui_height = vim.api.nvim_win_get_height(chat.chat_winid)
+    nui_width = vim.api.nvim_win_get_width(chat.chat_winid)
+
+    assert.not_equals(og_nui_height, nui_height)
+    assert.not_equals(og_nui_width, nui_width)
   end)
 end)

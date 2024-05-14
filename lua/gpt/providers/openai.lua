@@ -30,7 +30,6 @@ local parse_llm_response = function(json)
             break
         end
 
-        -- TODO This is not how to handle errors.
         -- Just return the error.
         ---@type boolean, { choices: { delta: LlmMessage }[] } | nil
         local status_ok, data = pcall(vim.fn.json_decode, line)

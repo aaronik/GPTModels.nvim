@@ -71,7 +71,6 @@ end
 ---@type Store
 local Store
 Store = {
-  -- TODO: I can show the user a vertical list of options like openai.gpt-4-turbo, ollama.llama3, etc
   llm_models = {
     openai = { "gpt-4-turbo", "gpt-3.5-turbo" },
     ollama = { "llama3", "mistral" },
