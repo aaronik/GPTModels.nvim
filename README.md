@@ -1,3 +1,5 @@
+<img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple">
+
 # GPTModels.nvim - an LLM AI plugin for neovim
 
 An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on **stability** and **user experience**.
