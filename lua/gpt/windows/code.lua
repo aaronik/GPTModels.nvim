@@ -140,7 +140,7 @@ function M.build_and_mount(selected_lines)
 
   -- available controls are found at the bottom of the input popup
   input_popup.border:set_text("bottom",
-    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
+    " q quit | [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
     "center")
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
@@ -363,9 +363,7 @@ function M.build_and_mount(selected_lines)
       end
     })
 
-    -- q to exit -- TODO This is probably more personal config. Consider
-    -- removing this before it goes live. Or making it optional or something
-    -- else.
+    -- q to exit
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
@@ -373,6 +371,7 @@ function M.build_and_mount(selected_lines)
         layout:unmount()
       end,
     })
+
   end
 
   layout:mount()

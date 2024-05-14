@@ -263,6 +263,83 @@ describe("The Chat window", function()
     assert.is_true(die_called)
   end)
 
+  it("includes files on <C-f> and clears them on <C-g>", function()
+    chat_window.build_and_mount()
+
+    -- I'm only stubbing this because it's so hard to test. One time out of hundreds
+    -- I was able to get the test to reflect a picked file. I don't know if there's some
+    -- async magic or what but I can't make it work. Tried vim.wait forever.
+    local find_files = stub(require('telescope.builtin'), "find_files")
+
+    -- For down the line of this crazy stubbing exercise
+    local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
+    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
+
+    -- And just make sure there are no closing errors
+    stub(require('telescope.actions'), "close")
+
+    -- Press ctl-f to open the telescope picker
+    local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
+
+    -- Press enter to select the first file, was Makefile in testing
+    local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    -- Simulate finding a file
+    assert.stub(find_files).was_called(1)
+    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+
+    -- Now we'll check what was given to llm.chat
+    local chat_stub = stub(llm, "chat")
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeChatRequestArgs
+    local args = chat_stub.calls[1].refs[1]
+
+    -- Does the request now contain a system message with the file
+    local contains_system_with_file = false
+    for _, message in ipairs(args.llm.messages) do
+      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.True(contains_system_with_file)
+
+    -- Now we'll make sure C-g clears the files
+    local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
+    vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
+    vim.api.nvim_feedkeys(cr, 'mtx', false)
+
+    ---@type MakeChatRequestArgs
+    args = chat_stub.calls[2].refs[1]
+
+    -- Does the request now contain a system message with the file
+    contains_system_with_file = false
+    for _, message in ipairs(args.llm.messages) do
+      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
+        contains_system_with_file = true
+      end
+    end
+    assert.False(contains_system_with_file)
+  end)
+
+  it("closes the window on q", function()
+    local chat = chat_window.build_and_mount()
+
+    -- Send a request
+    local q_key = vim.api.nvim_replace_termcodes("q", true, true, true)
+    vim.api.nvim_feedkeys(q_key, 'mtx', true)
+
+    -- assert window was closed
+    assert.False(vim.api.nvim_win_is_valid(chat.input_winid))
+  end)
+
   it("saves input text on InsertLeave and prepopulates on reopen", function()
     local initial_input = "some initial input"
     local chat = chat_window.build_and_mount()
@@ -331,72 +408,6 @@ describe("The Chat window", function()
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
     assert(util.contains_line(chat_lines, "response to be saved in background"))
     assert(util.contains_line(chat_lines, "additional response"))
-  end)
-
-  it("includes files on <C-f> and clears them on <C-g>", function()
-    chat_window.build_and_mount()
-
-    -- I'm only stubbing this because it's so hard to test. One time out of hundreds
-    -- I was able to get the test to reflect a picked file. I don't know if there's some
-    -- async magic or what but I can't make it work. Tried vim.wait forever.
-    local find_files = stub(require('telescope.builtin'), "find_files")
-
-    -- For down the line of this crazy stubbing exercise
-    local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry.returns({ "doc/gpt.txt", index = 1 }) -- typical response
-
-    -- And just make sure there are no closing errors
-    stub(require('telescope.actions'), "close")
-
-    -- Press ctl-f to open the telescope picker
-    local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
-    vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
-
-    -- Press enter to select the first file, was Makefile in testing
-    local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    -- Simulate finding a file
-    assert.stub(find_files).was_called(1)
-    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
-    local map = stub()
-    map.invokes(function(_, _, cb)
-      cb(9999) -- this will call get_selected_entry internally
-    end)
-    attach_mappings(nil, map)
-
-    -- Now we'll check what was given to llm.chat
-    local chat_stub = stub(llm, "chat")
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    ---@type MakeChatRequestArgs
-    local args = chat_stub.calls[1].refs[1]
-
-    -- Does the request now contain a system message with the file
-    local contains_system_with_file = false
-    for _, message in ipairs(args.llm.messages) do
-      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
-        contains_system_with_file = true
-      end
-    end
-    assert.True(contains_system_with_file)
-
-    -- Now we'll make sure C-g clears the files
-    local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
-    vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    ---@type MakeChatRequestArgs
-    args = chat_stub.calls[2].refs[1]
-
-    -- Does the request now contain a system message with the file
-    contains_system_with_file = false
-    for _, message in ipairs(args.llm.messages) do
-      if message.role == "system" and message.content.match(message.content, "doc/gpt.txt") then
-        contains_system_with_file = true
-      end
-    end
-    assert.False(contains_system_with_file)
   end)
 
   it("automatically scrolls chat window when user is not in it", function()

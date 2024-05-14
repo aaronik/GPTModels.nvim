@@ -125,7 +125,7 @@ function M.build_and_mount(selected_text)
   -- available controls are found at the bottom of the input popup
   input.border:set_text(
     "bottom",
-    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files ",
+    " q quit | [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files ",
     "center"
   )
 
@@ -321,12 +321,12 @@ function M.build_and_mount(selected_text)
     })
 
     -- "q" exits from the thing
-    -- TODO remove or test
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
       callback = function() layout:unmount() end,
     })
+
   end
 
   return {

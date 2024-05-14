@@ -17,6 +17,7 @@ local parse_llm_response = function(json)
     json_lines = vim.tbl_filter(function(line) return line ~= "" end, json_lines)
 
     -- Then, for some reason all their lines start with data: . Just the string, not json. Weird.
+    -- TODO This needs to only be done if the line actually starts with data: . Sometimes it doesn't
     for i, line in ipairs(json_lines) do
         json_lines[i] = line:sub(7)
     end

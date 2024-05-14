@@ -467,7 +467,17 @@ describe("The code window", function()
 
     -- And not in the right pane
     assert.same({ "" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+  end)
 
+  it("closes the window on q", function()
+    local code = code_window.build_and_mount()
+
+    -- Send a request
+    local q_key = vim.api.nvim_replace_termcodes("q", true, true, true)
+    vim.api.nvim_feedkeys(q_key, 'mtx', true)
+
+    -- assert window was closed
+    assert.False(vim.api.nvim_win_is_valid(code.input_winid))
   end)
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()
