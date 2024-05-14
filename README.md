@@ -44,6 +44,11 @@ The chat window is great for having a free form conversation.
 
 ### Installation
 
+First, install [Ollama](https://ollama.com/).
+Then ensure your local environment has `OPENAI_API_KEY` set.
+
+Then, in your favorite package manager:
+
 lazy:
 
 ```lua
@@ -55,6 +60,8 @@ lazy:
   }
 }
 ```
+
+_(P.S. If you're using another package manager and have this set up, please open a PR or let me know in an issue and I'll add that here!)_
 
 ### Thanks
 
