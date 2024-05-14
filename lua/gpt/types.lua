@@ -19,12 +19,12 @@
 
 ---@class MakeGenerateRequestArgs
 ---@field llm LlmGenerateArgs
----@field on_read fun(err: string | nil, response: string)
+---@field on_read fun(err: string | nil, response: string | nil)
 ---@field on_end function | nil
 
 ---@class MakeChatRequestArgs
 ---@field llm LlmChatArgs
----@field on_read fun(err: string | nil, message: LlmMessage)
+---@field on_read fun(err: string | nil, message: LlmMessage | nil)
 ---@field on_end function | nil
 
 ---@class Job

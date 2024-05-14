@@ -61,7 +61,8 @@ local on_CR = function(input_bufnr, chat_bufnr, chat_winid)
       Store.chat.chat.append(message)
       safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
 
-      -- scroll window to the bottom if the window is valid and the user is not in it
+      -- scroll to the bottom if the window's still open and the user is not in it
+      -- (If they're in it, the priority is for them to be able to nav around and yank)
       if vim.api.nvim_win_is_valid(chat_winid) and vim.api.nvim_get_current_win() ~= chat_winid then
         vim.api.nvim_win_set_cursor(chat_winid,
           { vim.api.nvim_buf_line_count(chat_bufnr), 0 }

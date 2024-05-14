@@ -35,9 +35,10 @@ M.generate = function(args)
             if err then error(err) end
             if not json then return end
 
+            ---@type boolean, { response: string } | nil
             local status_ok, data = pcall(vim.fn.json_decode, json)
             if not status_ok or not data then
-                error("Error decoding json: " .. json)
+                args.on_read("Error decoding json: " .. json, "")
             end
             args.on_read(nil, data.response)
         end),
@@ -82,11 +83,10 @@ M.chat = function(args)
             for _, line in ipairs(json_lines) do
                 local status_ok, data = pcall(vim.fn.json_decode, line)
                 if not status_ok or not data then
-                    data = { message = { role = "assistant", content = "JSON decode error for LLM response!  " .. json } }
-                    -- error("error decoding LLM json: " .. line)
+                    return args.on_read("JSON decode error for LLM response!  " .. json, { role = "assistant", content = "error" })
                 end
-                -- data is large, data.resposne is the text we're looking for
-                args.on_read(nil, data.message) -- for chat
+
+                args.on_read(nil, data.message)
             end
         end),
         -- TODO Test that this doesn't throw when on_end isn't passed in

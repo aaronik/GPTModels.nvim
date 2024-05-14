@@ -1,11 +1,11 @@
-local util   = require('gpt.util')
-local com    = require('gpt.windows.common')
-local Layout = require("nui.layout")
-local Popup  = require("nui.popup")
-local llm    = require('gpt.llm')
-local Store  = require('gpt.store')
+local util        = require('gpt.util')
+local com         = require('gpt.windows.common')
+local Layout      = require("nui.layout")
+local Popup       = require("nui.popup")
+local llm         = require('gpt.llm')
+local Store       = require('gpt.store')
 
-local M      = {}
+local M           = {}
 
 ---@param filetype string
 ---@param input_text string
@@ -40,6 +40,18 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
+-- TODO after having abstracted this, I don't think it's necessary.
+-- Leaving it until the next visit
+local function safe_render_right_content_from_store()
+  -- if the window is closed and reopened again while a response is streaming in,
+  -- right_bufnr will be wrong, and it won't get repopulated.
+  -- So we're assigning to ..right.bufnr every time the window opens.
+  local right_content = Store.code.right.read()
+  if right_content then
+    com.safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+  end
+end
+
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
@@ -67,20 +79,28 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
       prompt = prompt,
       system = system,
     },
-    on_read = function(_, response)
-      Store.code.right.append(response)
-      -- if the window is closed and reopened again while a response is streaming in,
-      -- right_bufnr will be wrong, and it won't get repopulated.
-      -- So we're assigning to ..right.bufnr every time the window opens.
-      local right_content = Store.code.right.read()
-      if right_content then
-        com.safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+    on_read = function(err, response)
+      -- Show errors to users. Inline is convenient for now.
+      if err then
+        Store.code.right.append(err)
+        safe_render_right_content_from_store()
+        return
       end
 
-      -- scroll window to the bottom if the window is valid and the user is not in it
+      -- No response _and_ no error? Weird
+      if not response then
+        Store.code.right.append('[EMPTY]')
+      else
+        Store.code.right.append(response)
+      end
+
+      safe_render_right_content_from_store()
+
+      -- scroll to the bottom if the window's still open and the user is not in it
+      -- (If they're in it, the priority is for them to be able to nav around and yank)
       if vim.api.nvim_win_is_valid(right_winid) and vim.api.nvim_get_current_win() ~= right_winid then
-        vim.api.nvim_win_set_cursor(right_winid,
-          { vim.api.nvim_buf_line_count(right_bufnr), 0 }
+        vim.api.nvim_win_set_cursor(
+          right_winid, { vim.api.nvim_buf_line_count(right_bufnr), 0 }
         )
       end
     end,
@@ -119,7 +139,9 @@ function M.build_and_mount(selected_lines)
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- available controls are found at the bottom of the input popup
-  input_popup.border:set_text("bottom", " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear window | C-f add files | C-g clear files ", "center")
+  input_popup.border:set_text("bottom",
+    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear window | C-f add files | C-g clear files ",
+    "center")
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
   Store.code.right.bufnr = right_popup.bufnr
@@ -178,7 +200,14 @@ function M.build_and_mount(selected_lines)
 
   -- For input, set <CR>
   vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
-    { noremap = true, silent = true, callback = function() on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr, right_popup.winid) end }
+    {
+      noremap = true,
+      silent = true,
+      callback = function()
+        on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr,
+          right_popup.winid)
+      end
+    }
   )
 
   -- For input, save to populate on next open
