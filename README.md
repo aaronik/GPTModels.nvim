@@ -1,4 +1,6 @@
-<img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple">
+<span><img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple"></span>
+<a href="https://www.vim.org/"><img src="https://img.shields.io/badge/VIM-%2311AB00.svg?style=for-the-badge&amp;logo=vim&amp;logoColor=white" alt="Vim"></a>
+<a href="https://neovim.io/"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim"></a>
 
 # GPTModels.nvim - an LLM AI plugin for neovim
 
