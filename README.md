@@ -1,6 +1,6 @@
 # GPTModels - an LLM AI plugin for neovim
 
-An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on stability and user experience.
+An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on **stability** and **user experience**.
 
 * **Test first development** - This plugin focuses on clean, stable code. All features are well tested.
 * **Developer UX in mind** - The goal is a simple, ergonomic interface. It's meant to be easy to pick up, not requiring any memorization. The tool "gets out of your way".
@@ -11,11 +11,19 @@ An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on 
 
 This plugin offers two commands:
 
-* `:GPTChat` - open a chat window, like ChatGPT
 * `:GPTCode` - open a window designed to iterate on selections of code
+      <details>
+        <summary>See example of :GPTCode</summary>
+        <img width="1271" alt="image of :GPTChat window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/3e642a48-ce56-4295-a5fa-368b523bab2e">
+      </details>
+* `:GPTChat` - open a chat window, like ChatGPT
+      <details>
+        <summary>See example of :GPTChat</summary>
+        <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
+      </details>
 
-The chat window is great for having a free form conversation.
 The code window is great for iterating on a selection of code.
+The chat window is great for having a free form conversation.
 
 ---
 
