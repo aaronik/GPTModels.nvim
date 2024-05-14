@@ -202,7 +202,6 @@ describe("The code window", function()
     assert.same({ "response to be saved in background", "additional response" }, right_lines)
   end)
 
-
   it("opens prepopulated w/ prior session when no text provided", function()
     Store.code.right.append("right content")
     Store.code.input.append("input content")

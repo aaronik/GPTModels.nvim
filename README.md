@@ -1,29 +1,41 @@
-# LLM plugin for neovim
+# GPTModels - an LLM AI plugin for neovim
 
-This plugin has two different windows designed to integrate LLM AI into your workflow.
+An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on stability and user experience.
 
 * **Test first development** - This plugin focuses on clean, stable code. All features are well tested.
 * **Developer UX in mind** - The goal is a simple, ergonomic interface. It's meant to be easy to pick up, not requiring any memorization. The tool "gets out of your way".
 
 ---
 
-### This plugin offers two commands:
+### Usage
+
+This plugin offers two commands:
 
 * `:GPTChat` - open a chat window, like ChatGPT
 * `:GPTCode` - open a window designed to iterate on selections of code
 
+The chat window is great for having a free form conversation.
+The code window is great for iterating on a selection of code.
+
 ---
 
-### Features:
+### Features
 
+* **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it super simple to switch between different models. I often get "second opinions" on code I'm getting LLM help with.
+* **File inclusion** - The plugin uses telescope for a super clean file picker, and includes the files in the messages to the llm.
 * **Background processing** - close the window while the AI responds, open the window and the response will be there.
+* **Selection inclusion** - Both windows, when opened with selected text, bring that selected text into the window for inclusion in your llm request. Opening with a selection clears the old session automatically.
+* **Filetype inclusion** - The file's extension is included in llm requests so you don't have to specify what kind of code it is when supplying smaller amounts of code
+* **Request cancellation** - I often send a request to gpt-4 and then immediately realize I missed something critical and want to make the request again. This plugin offers Ctrl-c in that situation and immediately kills the job. That way you can save time and tokens, and stay more in the flow.
+* **Super simple key commands** - Key commands are clearly labeled without you needing to toggle any windows.
+* **UX in mind** - It's hard to enumerate the little things, but I hope and think you'll notice them as you use the plugin. Examples include keeping sessions across close in both windows, saving the prompt window after you type stuff before you send the request, so you can slowly build up the request, scrolls on llm responses unless you're in the window, so you can interact with the response before it's finished.
+* **Stability** - This was written TDD, and always will be. It uses emmylua types as best as I could figure out how to use them. It should be pretty stable, with everything tested thoroughly.
+* **Opens prepopulated with prior sessions** - both windows open with your last session. The plugin makes it easy to iterate on a message.
 
-### * Supports Ollama, OpenAI
+### Thanks
+Big thanks to @jackMort for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
 
-* Kills request process when window is closed
-* OR Finishes requests safely in background!
-
-## TODO
+#### TODO
 
 * Use ctrl-w + hjkl to move between windows
 * code needs C-y?
