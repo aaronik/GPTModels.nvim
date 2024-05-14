@@ -40,6 +40,8 @@ M.generate = function(args)
             if not status_ok or not data then
                 args.on_read("Error decoding json: " .. json, "")
             end
+
+            ---@diagnostic disable-next-line: need-check-nil
             args.on_read(nil, data.response)
         end),
         onexit = vim.schedule_wrap(function()
@@ -83,7 +85,7 @@ M.chat = function(args)
             for _, line in ipairs(json_lines) do
                 local status_ok, data = pcall(vim.fn.json_decode, line)
                 if not status_ok or not data then
-                    return args.on_read("JSON decode error for LLM response!  " .. json, { role = "assistant", content = "error" })
+                    return args.on_read("JSON decode error for LLM response!  " .. json)
                 end
 
                 args.on_read(nil, data.message)

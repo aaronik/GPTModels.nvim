@@ -286,7 +286,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
         Store.set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", "Chat w/" .. com.model_display_name(), "center")
+        chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
       end
     })
 
@@ -308,7 +308,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store.set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", "Chat w/" .. com.model_display_name(), "center")
+        chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
       end
     })
 

@@ -5,12 +5,9 @@ require('gpt.types')
 local M = {}
 
 -- Both endpoints will use the same onread, since it's actually the same endpoint for openai
----@param err string | nil
----@param json string | nil
----@return LlmMessage[] | nil
-local parse_llm_response = function(err, json)
-    if err then error(err) end
-    if not json then return end
+---@param json string
+---@return string | nil, LlmMessage[] | nil
+local parse_llm_response = function(json)
 
     -- replace \r\n with just \n
     json = string.gsub(json, "\r\n", "\n")
@@ -32,16 +29,12 @@ local parse_llm_response = function(err, json)
             break
         end
 
+        -- TODO This is not how to handle errors.
+        -- Just return the error.
         ---@type boolean, { choices: { delta: LlmMessage }[] } | nil
         local status_ok, data = pcall(vim.fn.json_decode, line)
         if not status_ok or not data or not data.choices or not data.choices[1].delta then
-            data = {
-                choices = {
-                    delta = {
-                        { role = "assistant", content = "JSON decode or schema error for LLM response!  " .. line .. ":\n" .. vim.inspect(data) .. "\n\n" }
-                    }
-                }
-            }
+            return "JSON decode or schema error for LLM response!  " .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
         end
 
         if not data.choices[1].delta.role then
@@ -55,7 +48,7 @@ local parse_llm_response = function(err, json)
         table.insert(messages, data.choices[1].delta)
     end
 
-    return messages
+    return nil, messages
 end
 
 -- curl -X POST -H "Authorization: Bearer $OPENAI_API_KEY" -H "Content-Type: application/json" -d '{
@@ -105,10 +98,18 @@ M.generate = function(args)
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, response)
-            if err then return args.on_read(err, "") end
+            if err then return args.on_read(err, nil) end
+            if not response then return end
 
-            local messages = parse_llm_response(err, response)
-            if not messages then return end
+            local parse_error, messages = parse_llm_response(response)
+
+            if parse_error then
+                return args.on_read(parse_error)
+            end
+
+            if not messages then
+                return
+            end
 
             for _, message in ipairs(messages) do
                 args.on_read(nil, message.content)
@@ -149,10 +150,18 @@ M.chat = function(args)
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, json)
-            if err then return args.on_read(err, { role = "assistant", content = err }) end
+            if err then return args.on_read(err, nil) end
+            if not json then return end
 
-            local messages = parse_llm_response(err, json)
-            if not messages then return end
+            local parse_error, messages = parse_llm_response(json)
+
+            if parse_error then
+                return args.on_read(parse_error)
+            end
+
+            if not messages then
+                return
+            end
 
             for _, message in ipairs(messages) do
                 args.on_read(nil, message)

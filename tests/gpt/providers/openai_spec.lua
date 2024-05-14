@@ -56,6 +56,29 @@ describe("openai.generate", function()
 
     assert.stub(s).was_called(1)
   end)
+
+  it("gracefully handles errors to on_read", function()
+    local s = stub(cmd, "exec")
+
+    s.invokes(function(data)
+      local exec_args = data
+      exec_args.onread("error", nil)
+    end)
+
+    openai.generate({
+      llm = {
+        system = { "system" },
+        prompt = "pr0mpT",
+        stream = true,
+      },
+      on_read = function(error, message)
+        assert.equal("error", error)
+        assert.is_nil(message)
+      end,
+    })
+
+    assert.stub(s).was_called(1)
+  end)
 end)
 
 describe("openai.chat", function()
@@ -127,5 +150,28 @@ describe("openai.chat", function()
     assert.True(finished)
 
     assert.stub(cmd_stub).was_called(1)
+  end)
+
+  it("gracefully handles errors to on_read", function()
+    local s = stub(cmd, "exec")
+
+    s.invokes(function(data)
+      local exec_args = data
+      exec_args.onread("error", nil)
+    end)
+
+    openai.chat({
+      llm = {
+        messages = { role = "system", content = "yo" },
+        prompt = "pr0mpT",
+        stream = true,
+      },
+      on_read = function(error, message)
+        assert.equal("error", error)
+        assert.is_nil(message)
+      end,
+    })
+
+    assert.stub(s).was_called(1)
   end)
 end)
