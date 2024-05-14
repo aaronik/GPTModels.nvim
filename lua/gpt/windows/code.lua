@@ -42,13 +42,13 @@ end
 
 -- TODO after having abstracted this, I don't think it's necessary.
 -- Leaving it until the next visit
-local function safe_render_right_content_from_store()
+local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.
   -- So we're assigning to ..right.bufnr every time the window opens.
-  local right_content = Store.code.right.read()
-  if right_content then
-    com.safe_render_buffer_from_text(Store.code.right.bufnr, right_content)
+  local right_text = Store.code.right.read()
+  if right_text then
+    com.safe_render_buffer_from_text(Store.code.right.bufnr, right_text)
   end
 end
 
@@ -83,7 +83,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
       -- Show errors to users. Inline is convenient for now.
       if err then
         Store.code.right.append(err)
-        safe_render_right_content_from_store()
+        safe_render_right_text_from_store()
         return
       end
 
@@ -94,7 +94,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
         Store.code.right.append(response)
       end
 
-      safe_render_right_content_from_store()
+      safe_render_right_text_from_store()
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
@@ -113,7 +113,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr, right_winid)
 end
 
 ---@param input any -- this is a popup, wish they were typed
-local function set_input_text(input)
+local function set_input_border_text(input)
   local files = Store.code.get_files()
   if #files == 0 then
     input.border:set_text(
@@ -134,13 +134,13 @@ end
 ---@param selected_lines string[] | nil
 ---@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_winid: integer }
 function M.build_and_mount(selected_lines)
-  local left_popup = Popup(com.build_common_popup_opts("Selected"))
+  local left_popup = Popup(com.build_common_popup_opts("On Deck"))
   local right_popup = Popup(com.build_common_popup_opts(com.model_display_name()))
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- available controls are found at the bottom of the input popup
   input_popup.border:set_text("bottom",
-    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear window | C-f add files | C-g clear files ",
+    " [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
     "center")
 
   -- Register new right bufnr for backgrounded llm responses still running to write into
@@ -170,14 +170,14 @@ function M.build_and_mount(selected_lines)
     local left_content = Store.code.left.read()
     if left_content then com.safe_render_buffer_from_text(left_popup.bufnr, left_content) end
 
-    local right_content = Store.code.right.read()
-    if right_content then com.safe_render_buffer_from_text(right_popup.bufnr, right_content) end
+    local right_text = Store.code.right.read()
+    if right_text then com.safe_render_buffer_from_text(right_popup.bufnr, right_text) end
 
     local input_content = Store.code.input.read()
     if input_content then com.safe_render_buffer_from_text(input_popup.bufnr, input_content) end
 
     -- Get the files back
-    set_input_text(input_popup)
+    set_input_border_text(input_popup)
   end
 
   local layout = Layout(
@@ -259,7 +259,7 @@ function M.build_and_mount(selected_lines)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        set_input_text(input_popup)
+        set_input_border_text(input_popup)
       end
     })
 
@@ -329,7 +329,7 @@ function M.build_and_mount(selected_lines)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               Store.code.append_file(selection[1])
-              set_input_text(input_popup)
+              set_input_border_text(input_popup)
               require('telescope.actions').close(prompt_bufnr)
             end)
             return true
@@ -344,7 +344,22 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store.code.clear_files()
-        set_input_text(input_popup)
+        set_input_border_text(input_popup)
+      end
+    })
+
+    -- Ctl-x to clear files
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-x>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        local right_text = Store.code.right.read()
+        if not right_text then return end
+        Store.code.left.clear()
+        Store.code.left.append(right_text)
+        Store.code.right.clear()
+        com.safe_render_buffer_from_text(right_popup.bufnr, Store.code.right.read() or "")
+        com.safe_render_buffer_from_text(left_popup.bufnr, Store.code.left.read() or "")
       end
     })
 

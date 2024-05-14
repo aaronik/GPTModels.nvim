@@ -313,72 +313,6 @@ describe("The code window", function()
     assert.is_true(die_called)
   end)
 
-  it("saves input text on InsertLeave and prepopulates on reopen", function()
-    local initial_input = "some initial input"
-    local code = code_window.build_and_mount()
-
-    -- Enter insert mode
-    local keys = vim.api.nvim_replace_termcodes("i" .. initial_input, true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- <Esc> to trigger save
-    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- Close the window with :q
-    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- Reopen the window
-    code = code_window.build_and_mount()
-
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
-
-    assert.same({ initial_input }, input_lines)
-  end)
-
-  it("saves state of all three windows and prepopulates them on reopen", function()
-    local llm_stub = stub(llm, "generate")
-
-    -- left window is saved when it opens
-    local code = code_window.build_and_mount({ "left" })
-
-    -- Add user input
-    vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { "input" })
-
-    -- Enter insert mode, so we can leave it
-    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- <Esc> triggers save
-    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- <CR> triggers llm call
-    keys = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- right window is saved when an llm response comes in
-    ---@type MakeGenerateRequestArgs
-    local args = llm_stub.calls[1].refs[1]
-    args.on_read(nil, "right")
-
-    -- Close the window with :q
-    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- Reopen the window
-    code = code_window.build_and_mount()
-
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-
-    assert.same({ "input" }, input_lines)
-    assert.same({ "left" }, left_lines)
-    assert.same({ "right" }, right_lines)
-  end)
-
   it("cycles through available models with <C-j>", function()
     code_window.build_and_mount()
 
@@ -507,6 +441,102 @@ describe("The code window", function()
     assert.False(contains_system_with_file)
   end)
 
+  it("transfers contents of right pane to left pane on <C-x> (xfer)", function()
+    local code = code_window.build_and_mount()
+
+    local generate_stub = stub(llm, "generate")
+
+    -- Send a request
+    local init_keys = vim.api.nvim_replace_termcodes("itransfer panes<Esc><CR>", true, true, true)
+    vim.api.nvim_feedkeys(init_keys, 'mtx', true)
+
+    ---@type MakeGenerateRequestArgs
+    local args = generate_stub.calls[1].refs[1]
+
+    -- Get some stuff into the right pane, this will get transfered around
+    args.on_read(nil, "xfer")
+
+    -- It's in the right pane, see?
+    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+
+    -- Send a request
+    local xfer_keys = vim.api.nvim_replace_termcodes("<C-x>", true, true, true)
+    vim.api.nvim_feedkeys(xfer_keys, 'mtx', true)
+
+    -- Now it's in the left pane
+    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true))
+
+    -- And not in the right pane
+    assert.same({ "" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+
+  end)
+
+  it("saves input text on InsertLeave and prepopulates on reopen", function()
+    local initial_input = "some initial input"
+    local code = code_window.build_and_mount()
+
+    -- Enter insert mode
+    local keys = vim.api.nvim_replace_termcodes("i" .. initial_input, true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <Esc> to trigger save
+    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Close the window with :q
+    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Reopen the window
+    code = code_window.build_and_mount()
+
+    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
+
+    assert.same({ initial_input }, input_lines)
+  end)
+
+  it("saves state of all three windows and prepopulates them on reopen", function()
+    local llm_stub = stub(llm, "generate")
+
+    -- left window is saved when it opens
+    local code = code_window.build_and_mount({ "left" })
+
+    -- Add user input
+    vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { "input" })
+
+    -- Enter insert mode, so we can leave it
+    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <Esc> triggers save
+    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- <CR> triggers llm call
+    keys = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- right window is saved when an llm response comes in
+    ---@type MakeGenerateRequestArgs
+    local args = llm_stub.calls[1].refs[1]
+    args.on_read(nil, "right")
+
+    -- Close the window with :q
+    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', true)
+
+    -- Reopen the window
+    code = code_window.build_and_mount()
+
+    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
+
+    assert.same({ "input" }, input_lines)
+    assert.same({ "left" }, left_lines)
+    assert.same({ "right" }, right_lines)
+  end)
+
   it("automatically scrolls chat window when user is not in it", function()
     local code = code_window.build_and_mount()
 
@@ -574,6 +604,5 @@ describe("The code window", function()
     -- Happens sometimes with openai, probably my fault. Just testing to make
     -- sure it doesn't error.
     args.on_read(nil, nil)
-
   end)
 end)

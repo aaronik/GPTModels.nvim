@@ -8,8 +8,8 @@
 ## TODO
 
 * Use ctrl-w + hjkl to move between windows
-* code needs C-y and something to bring changes into left pane
-* Rename to something better than GPT. Models? TwoModel? Maybe GPT is good?
+* code needs C-y?
+* Rename to something better than GPT. Models? TwoModel? Maybe GPT is good? AIModels?
 * Make a readme fr
 * Focus same buffer on nui exit?
 * Prompt tests?
@@ -18,3 +18,4 @@
 * Protect against opening windows many times?
 * One really big integration flow for each window
 * Figure out how to test nui border text and test all the titles
+* If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
