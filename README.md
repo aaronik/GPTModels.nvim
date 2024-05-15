@@ -96,7 +96,7 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
-* Use ctrl-w + hjkl to move between windows
+* set pane to text wrap
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out
@@ -110,3 +110,4 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
 * Sometimes, especially with openai, there are responses that don't conform to json, and responses where json is split between multiple. Both providers should handle that stuff more robustly.
+* Attached file, did something? closed window maybe, then opened with new selection, file didn't appear visually but was sent to llm

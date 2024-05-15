@@ -59,6 +59,18 @@ function M.safe_render_buffer_from_text(bufnr, text)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
 end
 
+-- Render text to a buffer _if the buffer is still valid_,
+-- so this is safe to call on potentially closed buffers.
+---@param bufnr integer
+---@param lines string[]
+function M.safe_render_buffer_from_lines(bufnr, lines)
+  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+  if not (buf_loaded and buf_valid) then return end
+
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
+end
+
 return M
 
 -- Some memories, since I'm so new at this

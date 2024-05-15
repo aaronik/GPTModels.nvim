@@ -24,18 +24,18 @@ describe("The code window", function()
 
   it("returns buffer numbers, winids", function()
     local code = code_window.build_and_mount()
-    assert.is_not.equal(code.input_bufnr, nil)
-    assert.is_not.equal(code.right_bufnr, nil)
-    assert.is_not.equal(code.left_bufnr, nil)
-    assert.is_not.equal(code.input_winid, nil)
-    assert.is_not.equal(code.right_winid, nil)
-    assert.is_not.equal(code.left_winid, nil)
+    assert.is_not.equal(code.input.bufnr, nil)
+    assert.is_not.equal(code.right.bufnr, nil)
+    assert.is_not.equal(code.left.bufnr, nil)
+    assert.is_not.equal(code.input.winid, nil)
+    assert.is_not.equal(code.right.winid, nil)
+    assert.is_not.equal(code.left.winid, nil)
   end)
 
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
     local code = code_window.build_and_mount(given_lines)
-    local gotten_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
+    local gotten_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
     assert.same(given_lines, gotten_lines)
   end)
 
@@ -74,9 +74,9 @@ describe("The code window", function()
 
     assert(die_called)
 
-    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
     assert.same(second_given_lines, left_lines)
     assert.same({ "" }, right_lines)
     assert.same({ "" }, input_lines)
@@ -84,9 +84,9 @@ describe("The code window", function()
 
   it("shifts through windows on <Tab>", function()
     local code = code_window.build_and_mount()
-    local input_bufnr = code.input_bufnr
-    local left_bufnr = code.left_bufnr
-    local right_bufnr = code.right_bufnr
+    local input_bufnr = code.input.bufnr
+    local left_bufnr = code.left.bufnr
+    local right_bufnr = code.right.bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local left_win = vim.fn.bufwinid(left_bufnr)
@@ -107,9 +107,9 @@ describe("The code window", function()
 
   it("shifts through windows on <S-Tab>", function()
     local code = code_window.build_and_mount()
-    local input_bufnr = code.input_bufnr
-    local left_bufnr = code.left_bufnr
-    local right_bufnr = code.right_bufnr
+    local input_bufnr = code.input.bufnr
+    local left_bufnr = code.left.bufnr
+    local right_bufnr = code.right.bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local left_win = vim.fn.bufwinid(left_bufnr)
@@ -143,7 +143,7 @@ describe("The code window", function()
     args.on_read(nil, "line 1\nline 2")
 
     -- Those lines should be separated on newlines and placed into the right buf
-    assert.same(vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true), { "line 1", "line 2" })
+    assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "line 1", "line 2" })
   end)
 
   it("includes a system prompt", function()
@@ -189,13 +189,13 @@ describe("The code window", function()
     local args = s.calls[1].refs[1]
 
     -- before on_response gets a response from the llm, the right window should show a loading indicator
-    assert.same(vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true), { "Loading..." })
+    assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "Loading..." })
 
     -- simulate a response from the llm
     args.on_read(nil, "response line")
 
     -- After the response, the loading indicator should be replaced by the response
-    assert.same(vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true), { "response line" })
+    assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "response line" })
   end)
 
   it("finishes jobs in the background when closed", function()
@@ -240,13 +240,13 @@ describe("The code window", function()
 
     -- Open up and ensure it's there now
     local code = code_window.build_and_mount()
-    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
 
     -- More reponse to still reopen window
     args.on_read(nil, "\nadditional response")
 
     -- Gets that response without reopening
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     assert.same({ "response to be saved in background", "additional response" }, right_lines)
   end)
 
@@ -257,9 +257,9 @@ describe("The code window", function()
 
     local code = code_window.build_and_mount({ "provided text" })
 
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
 
     assert.same({ "" }, right_lines)
     assert.same({ "" }, input_lines)
@@ -283,7 +283,7 @@ describe("The code window", function()
     if args_first.on_end then args_first.on_end() end
 
     -- Response is shown
-    assert.same(vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true), { "first response line" })
+    assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "first response line" })
 
     -- Input whatever
     keys = vim.api.nvim_replace_termcodes('xtesting second response<Esc><CR>', true, true, true)
@@ -297,16 +297,16 @@ describe("The code window", function()
     args_second.on_read(nil, "second response line")
 
     -- Second response replaced first response
-    assert.same(vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true), { "second response line" })
+    assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "second response line" })
   end)
 
   it("clears all windows on <C-n>", function()
     local code = code_window.build_and_mount()
 
     -- Populate windows with some content
-    vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { "input content" })
-    vim.api.nvim_buf_set_lines(code.left_bufnr, 0, -1, true, { "left content" })
-    vim.api.nvim_buf_set_lines(code.right_bufnr, 0, -1, true, { "right content" })
+    vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input content" })
+    vim.api.nvim_buf_set_lines(code.left.bufnr, 0, -1, true, { "left content" })
+    vim.api.nvim_buf_set_lines(code.right.bufnr, 0, -1, true, { "right content" })
     Store.code.append_file("docs/gpt.txt")
 
     -- Press <C-n>
@@ -314,9 +314,9 @@ describe("The code window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Assert all windows are cleared
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true))
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true))
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
 
     -- And the store of included files
     assert.same({}, Store.code.get_files())
@@ -489,17 +489,17 @@ describe("The code window", function()
     args.on_read(nil, "xfer")
 
     -- It's in the right pane, see?
-    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
 
     -- Send a request
     local xfer_keys = vim.api.nvim_replace_termcodes("<C-x>", true, true, true)
     vim.api.nvim_feedkeys(xfer_keys, 'mtx', true)
 
     -- Now it's in the left pane
-    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true))
+    assert.same({ "xfer" }, vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true))
 
     -- And not in the right pane
-    assert.same({ "" }, vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true))
+    assert.same({ "" }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
   end)
 
   it("closes the window on q", function()
@@ -509,8 +509,9 @@ describe("The code window", function()
     local q_key = vim.api.nvim_replace_termcodes("q", true, true, true)
     vim.api.nvim_feedkeys(q_key, 'mtx', true)
 
-    -- assert window was closed
-    assert.False(vim.api.nvim_win_is_valid(code.input_winid))
+    -- assert window was closed, which apparently this means in nui
+    assert.is_nil(code.input.bufnr)
+    assert.is_nil(code.input.winid)
   end)
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()
@@ -532,7 +533,7 @@ describe("The code window", function()
     -- Reopen the window
     code = code_window.build_and_mount()
 
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
 
     assert.same({ initial_input }, input_lines)
   end)
@@ -544,7 +545,7 @@ describe("The code window", function()
     local code = code_window.build_and_mount({ "left" })
 
     -- Add user input
-    vim.api.nvim_buf_set_lines(code.input_bufnr, 0, -1, true, { "input" })
+    vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input" })
 
     -- Enter insert mode, so we can leave it
     local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
@@ -570,9 +571,9 @@ describe("The code window", function()
     -- Reopen the window
     code = code_window.build_and_mount()
 
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
+    local left_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
 
     assert.same({ "input" }, input_lines)
     assert.same({ "left" }, left_lines)
@@ -597,10 +598,10 @@ describe("The code window", function()
 
     args.on_read(nil, long_content)
 
-    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
-    local win_height = vim.api.nvim_win_get_height(code.right_winid)
+    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
+    local win_height = vim.api.nvim_win_get_height(code.right.winid)
     local expected_scroll = last_line - win_height + 1
-    local actual_scroll = vim.fn.line('w0', code.right_winid)
+    local actual_scroll = vim.fn.line('w0', code.right.winid)
 
     assert.equal(expected_scroll, actual_scroll)
 
@@ -612,10 +613,10 @@ describe("The code window", function()
     args.on_read(nil, long_content)
 
     -- This time we should stay put
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
-    win_height = vim.api.nvim_win_get_height(code.right_winid)
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
+    win_height = vim.api.nvim_win_get_height(code.right.winid)
     expected_scroll = actual_scroll -- unchanged since last check
-    actual_scroll = vim.fn.line('w0', code.right_winid)
+    actual_scroll = vim.fn.line('w0', code.right.winid)
 
     assert.equal(expected_scroll, actual_scroll)
 
@@ -630,10 +631,10 @@ describe("The code window", function()
     args.on_read(nil, long_content)
 
     -- and now ensure the autoscrolling continues to happen
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right_winid))
-    win_height = vim.api.nvim_win_get_height(code.right_winid)
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
+    win_height = vim.api.nvim_win_get_height(code.right.winid)
     expected_scroll = last_line - win_height + 1
-    actual_scroll = vim.fn.line('w0', code.right_winid)
+    actual_scroll = vim.fn.line('w0', code.right.winid)
 
     assert.equal(expected_scroll, actual_scroll)
   end)

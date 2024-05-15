@@ -40,14 +40,51 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
+---@param input NuiPopup -- this is a popup, wish they were typed
+local function set_input_border_text(input)
+  local files = Store.code.get_files()
+  if #files == 0 then
+    input.border:set_text(
+      "top",
+      " Prompt ",
+      "center"
+    )
+  else
+    local files_string = table.concat(files, ", ")
+    input.border:set_text(
+      "top",
+      " Prompt + " .. files_string .. " ",
+      "center"
+    )
+  end
+end
+
 local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.
   -- So we're assigning to ..right.bufnr every time the window opens.
   local right_text = Store.code.right.read()
   if right_text then
-    com.safe_render_buffer_from_text(Store.code.right.bufnr, right_text)
+    com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
   end
+end
+
+-- Render the whole code window from the Store, respecting closed windows/buffers
+local function safe_render_from_store()
+  local left_text = Store.code.left.read()
+  local left_buf = Store.code.left.popup.bufnr or -1
+  if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
+
+  local right_text = Store.code.right.read()
+  local right_buf = Store.code.right.popup.bufnr or -1
+  if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
+
+  local input_text = Store.code.input.read()
+  local input_buf = Store.code.input.popup.bufnr or -1
+  if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
+
+  -- Get the files back
+  set_input_border_text(Store.code.input.popup)
 end
 
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
@@ -91,10 +128,10 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
-      local right_winid = Store.code.right.winid or 1
+      local right_winid = Store.code.right.popup.winid or 1
       if vim.api.nvim_win_is_valid(right_winid) and vim.api.nvim_get_current_win() ~= right_winid then
         vim.api.nvim_win_set_cursor(
-          right_winid, { vim.api.nvim_buf_line_count(Store.code.right.bufnr), 0 }
+          right_winid, { vim.api.nvim_buf_line_count(Store.code.right.popup.bufnr), 0 }
         )
       end
     end,
@@ -106,30 +143,14 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store.register_job(job)
 end
 
----@param input any -- this is a popup, wish they were typed
-local function set_input_border_text(input)
-  local files = Store.code.get_files()
-  if #files == 0 then
-    input.border:set_text(
-      "top",
-      " Prompt ",
-      "center"
-    )
-  else
-    local files_string = table.concat(files, ", ")
-    input.border:set_text(
-      "top",
-      " Prompt + " .. files_string .. " ",
-      "center"
-    )
-  end
-end
-
 ---@param selected_lines string[] | nil
----@return { input_bufnr: integer, input_winid: integer, right_bufnr: integer, right_winid: integer, left_bufnr: integer, left_winid: integer }
+---@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
 function M.build_and_mount(selected_lines)
+  ---@type NuiPopup
   local left_popup = Popup(com.build_common_popup_opts("On Deck"))
+  ---@type NuiPopup
   local right_popup = Popup(com.build_common_popup_opts(com.model_display_name()))
+  ---@type NuiPopup
   local input_popup = Popup(com.build_common_popup_opts("Prompt"))
 
   -- available controls are found at the bottom of the input popup
@@ -137,8 +158,10 @@ function M.build_and_mount(selected_lines)
     " q quit | [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
     "center")
 
-  -- Register new right bufnr for backgrounded llm responses still running to write into
-  Store.code.right.bufnr = right_popup.bufnr
+  -- Register popups with store
+  Store.code.right.popup = right_popup
+  Store.code.left.popup = left_popup
+  Store.code.input.popup = input_popup
 
   -- Turn off syntax highlighting for input buffer.
   vim.api.nvim_buf_set_option(input_popup.bufnr, 'filetype', 'txt')
@@ -170,17 +193,7 @@ function M.build_and_mount(selected_lines)
   else
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session
-    local left_content = Store.code.left.read()
-    if left_content then com.safe_render_buffer_from_text(left_popup.bufnr, left_content) end
-
-    local right_text = Store.code.right.read()
-    if right_text then com.safe_render_buffer_from_text(right_popup.bufnr, right_text) end
-
-    local input_content = Store.code.input.read()
-    if input_content then com.safe_render_buffer_from_text(input_popup.bufnr, input_content) end
-
-    -- Get the files back
-    set_input_border_text(input_popup)
+    safe_render_from_store()
   end
 
   local layout = Layout(
@@ -218,8 +231,7 @@ function M.build_and_mount(selected_lines)
       local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
       Store.code.input.clear()
       Store.code.input.append(table.concat(input_lines, "\n"))
-    end,
-    { once = false }
+    end
   )
 
   -- recalculate nui window when vim window resizes
@@ -377,16 +389,10 @@ function M.build_and_mount(selected_lines)
 
   layout:mount()
 
-  -- Now that the layout is mounted, the window is assigned, and we'll use the winid later
-  Store.code.right.winid = right_popup.winid
-
   return {
-    input_bufnr = input_popup.bufnr,
-    left_bufnr = left_popup.bufnr,
-    right_bufnr = right_popup.bufnr,
-    input_winid = input_popup.winid,
-    left_winid = left_popup.winid,
-    right_winid = right_popup.winid
+    input = input_popup,
+    right = right_popup,
+    left = left_popup
   }
 end
 

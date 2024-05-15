@@ -62,14 +62,14 @@ local on_CR = function(input_bufnr, chat_bufnr)
         Store.chat.chat.append(message)
       end
 
-      safe_render_buffer_from_messages(Store.chat.chat.bufnr, Store.chat.chat.read())
+      safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat.read())
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
-      local chat_winid = Store.chat.chat.winid or 1 -- nonsense winid, it shouldn't ever be nil
+      local chat_winid = Store.chat.chat.popup.winid or 1 -- nonsense winid, it shouldn't ever be nil
       if vim.api.nvim_win_is_valid(chat_winid) and vim.api.nvim_get_current_win() ~= chat_winid then
         vim.api.nvim_win_set_cursor(chat_winid,
-          { vim.api.nvim_buf_line_count(Store.chat.chat.bufnr), 0 }
+          { vim.api.nvim_buf_line_count(Store.chat.chat.popup.bufnr), 0 }
         )
       end
     end,
@@ -113,9 +113,11 @@ local function set_input_text(input)
 end
 
 ---@param selected_text string[] | nil
----@return { input_bufnr: integer, input_winid: integer, chat_bufnr: integer, chat_winid: integer }
+---@return { input: NuiPopup, chat: NuiPopup }
 function M.build_and_mount(selected_text)
+  ---@type NuiPopup
   local chat = Popup(com.build_common_popup_opts("Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model))
+  ---@type NuiPopup
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
   -- available controls are found at the bottom of the input popup
@@ -125,8 +127,9 @@ function M.build_and_mount(selected_text)
     "center"
   )
 
-  -- Register new right bufnr for backgrounded llm responses still running to write into
-  Store.chat.chat.bufnr = chat.bufnr
+  -- Register popups with store
+  Store.chat.chat.popup = chat
+  Store.chat.input.popup = input
 
   -- Input window is text with no syntax
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
@@ -172,14 +175,10 @@ function M.build_and_mount(selected_text)
       local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
       Store.chat.input.clear()
       Store.chat.input.append(table.concat(input_lines, "\n"))
-    end,
-    { once = false }
+    end
   )
 
   layout:mount()
-
-  -- Now that the layout is mounted, the window is assigned, and we'll use the winid later
-  Store.chat.chat.winid = chat.winid
 
   -- Add text selection to input buf
   if selected_text then
@@ -337,10 +336,8 @@ function M.build_and_mount(selected_text)
   end
 
   return {
-    input_bufnr = input.bufnr,
-    input_winid = input.winid,
-    chat_bufnr = chat.bufnr,
-    chat_winid = chat.winid
+    input = input,
+    chat = chat
   }
 end
 

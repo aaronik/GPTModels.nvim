@@ -24,8 +24,7 @@ end
 
 ---@class Pane
 ---@field clear fun()
----@field bufnr integer | nil
----@field winid integer | nil
+---@field popup NuiPopup
 
 ---@class StrPane : Pane
 ---@field append fun(text: string)
@@ -67,6 +66,7 @@ end
 ---@field set_llm fun(provider: "openai" | "ollama", model: string)
 ---@field private _job Job | nil
 
+-- TODO store should store lines (string[]) instead of string. More neovim centric data structure. Less munging.
 
 ---@type Store
 local Store
@@ -91,10 +91,6 @@ Store = {
   code = {
     _right = "",
     right = {
-      -- NOTE: If this pattern becomes useful, make it nicer. Right now it's like an unofficial hack.
-      ---@type integer | nil
-      bufnr = nil,
-
       ---@param text string
       append = function(text) Store.code._right = Store.code._right .. text end,
       read = function() return Store.code._right end,

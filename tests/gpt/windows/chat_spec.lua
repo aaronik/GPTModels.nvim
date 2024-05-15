@@ -29,10 +29,8 @@ describe("The Chat window", function()
 
   it("returns buffer numbers and winids", function()
     local chat = chat_window.build_and_mount()
-    assert.is_not.equal(chat.input_bufnr, nil)
-    assert.is_not.equal(chat.chat_bufnr, nil)
-    assert.is_not.equal(chat.input_winid, nil)
-    assert.is_not.equal(chat.chat_winid, nil)
+    assert.is_not.equal(chat.input, nil)
+    assert.is_not.equal(chat.chat, nil)
   end)
 
   skip("opens in input mode", function()
@@ -44,7 +42,7 @@ describe("The Chat window", function()
 
   it("puts selected text into input buffer and puts newline under it", function()
     local chat = chat_window.build_and_mount({ "selected text" })
-    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
     assert.same({ "selected text", "" }, input_lines)
   end)
 
@@ -53,7 +51,7 @@ describe("The Chat window", function()
     Store.chat.chat.append({ role = "assistant", content = content })
 
     local chat = chat_window.build_and_mount()
-    local chat_bufnr = chat.chat_bufnr
+    local chat_bufnr = chat.chat.bufnr
 
     local lines = vim.api.nvim_buf_get_lines(chat_bufnr, 0, -1, true)
     assert.equal(content, lines[1])
@@ -94,16 +92,16 @@ describe("The Chat window", function()
 
     assert(die_called)
 
-    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
     assert.same({ "" }, chat_lines)
     assert.same({ "second", "" }, input_lines)
   end)
 
   it("shifts through windows on <Tab>", function()
     local chat = chat_window.build_and_mount()
-    local input_bufnr = chat.input_bufnr
-    local chat_bufnr = chat.chat_bufnr
+    local input_bufnr = chat.input.bufnr
+    local chat_bufnr = chat.chat.bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local chat_win = vim.fn.bufwinid(chat_bufnr)
@@ -121,8 +119,8 @@ describe("The Chat window", function()
 
   it("shifts through windows on <S-Tab>", function()
     local chat = chat_window.build_and_mount()
-    local input_bufnr = chat.input_bufnr
-    local chat_bufnr = chat.chat_bufnr
+    local input_bufnr = chat.input.bufnr
+    local chat_bufnr = chat.chat.bufnr
 
     local input_win = vim.fn.bufwinid(input_bufnr)
     local chat_win = vim.fn.bufwinid(chat_bufnr)
@@ -140,8 +138,8 @@ describe("The Chat window", function()
 
   it("Removes text from input and puts it in chat on <CR>", function()
     local chat = chat_window.build_and_mount()
-    local input_bufnr = chat.input_bufnr
-    local chat_bufnr = chat.chat_bufnr
+    local input_bufnr = chat.input.bufnr
+    local chat_bufnr = chat.chat.bufnr
 
     local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
@@ -158,8 +156,8 @@ describe("The Chat window", function()
 
   it("Places llm response into chat window", function()
     local chat = chat_window.build_and_mount()
-    local input_bufnr = chat.input_bufnr
-    local chat_bufnr = chat.chat_bufnr
+    local input_bufnr = chat.input.bufnr
+    local chat_bufnr = chat.chat.bufnr
 
     -- stub llm call
     local s = stub(llm, "chat")
@@ -189,8 +187,8 @@ describe("The Chat window", function()
     local chat = chat_window.build_and_mount()
 
     -- Populate windows with some content
-    vim.api.nvim_buf_set_lines(chat.input_bufnr, 0, -1, true, { "input content" })
-    vim.api.nvim_buf_set_lines(chat.chat_bufnr, 0, -1, true, { "chat content" })
+    vim.api.nvim_buf_set_lines(chat.input.bufnr, 0, -1, true, { "input content" })
+    vim.api.nvim_buf_set_lines(chat.chat.bufnr, 0, -1, true, { "chat content" })
     Store.chat.append_file("docs/gpt.txt")
 
     -- Press <C-n>
@@ -198,8 +196,8 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys(keys, 'mtx', true)
 
     -- Assert all windows are cleared
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
-    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true))
+    assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true))
 
     -- And the store of included files
     assert.same({}, Store.chat.get_files())
@@ -363,7 +361,8 @@ describe("The Chat window", function()
     vim.api.nvim_feedkeys(q_key, 'mtx', true)
 
     -- assert window was closed
-    assert.False(vim.api.nvim_win_is_valid(chat.input_winid))
+    assert.is_nil(chat.input.winid)
+    assert.is_nil(chat.input.bufnr)
   end)
 
   it("saves input text on InsertLeave and prepopulates on reopen", function()
@@ -385,7 +384,7 @@ describe("The Chat window", function()
     -- Reopen the window
     chat = chat_window.build_and_mount()
 
-    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
 
     assert.same({ initial_input }, input_lines)
   end)
@@ -423,7 +422,7 @@ describe("The Chat window", function()
 
     -- Open up and ensure it's there now
     local chat = chat_window.build_and_mount()
-    assert(util.contains_line(vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true),
+    assert(util.contains_line(vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true),
       "response to be saved in background"))
 
 
@@ -431,7 +430,7 @@ describe("The Chat window", function()
     args.on_read(nil, { role = "assistant", content = "\nadditional response" })
 
     -- Gets that response without reopening
-    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert(util.contains_line(chat_lines, "response to be saved in background"))
     assert(util.contains_line(chat_lines, "additional response"))
   end)
@@ -457,10 +456,10 @@ describe("The Chat window", function()
       content = long_content
     })
 
-    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat_winid))
-    local win_height = vim.api.nvim_win_get_height(chat.chat_winid)
+    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat.winid))
+    local win_height = vim.api.nvim_win_get_height(chat.chat.winid)
     local expected_scroll = last_line - win_height + 1
-    local actual_scroll = vim.fn.line('w0', chat.chat_winid)
+    local actual_scroll = vim.fn.line('w0', chat.chat.winid)
 
     assert.equal(expected_scroll, actual_scroll)
 
@@ -475,10 +474,10 @@ describe("The Chat window", function()
     })
 
     -- This time we should stay put
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat_winid))
-    win_height = vim.api.nvim_win_get_height(chat.chat_winid)
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat.winid))
+    win_height = vim.api.nvim_win_get_height(chat.chat.winid)
     expected_scroll = actual_scroll -- unchanged since last check
-    actual_scroll = vim.fn.line('w0', chat.chat_winid)
+    actual_scroll = vim.fn.line('w0', chat.chat.winid)
 
     assert.equal(expected_scroll, actual_scroll)
 
@@ -496,10 +495,10 @@ describe("The Chat window", function()
     })
 
     -- and now ensure the autoscrolling continues to happen
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat_winid))
-    win_height = vim.api.nvim_win_get_height(chat.chat_winid)
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat.winid))
+    win_height = vim.api.nvim_win_get_height(chat.chat.winid)
     expected_scroll = last_line - win_height + 1
-    actual_scroll = vim.fn.line('w0', chat.chat_winid)
+    actual_scroll = vim.fn.line('w0', chat.chat.winid)
 
     assert.equal(expected_scroll, actual_scroll)
   end)
@@ -532,8 +531,8 @@ describe("The Chat window", function()
   pending("updates and resizes the nui window when the vim window resized TODO", function()
     local chat = chat_window.build_and_mount()
 
-    local nui_height = vim.api.nvim_win_get_height(chat.chat_winid)
-    local nui_width = vim.api.nvim_win_get_width(chat.chat_winid)
+    local nui_height = vim.api.nvim_win_get_height(chat.chat.winid)
+    local nui_width = vim.api.nvim_win_get_width(chat.chat.winid)
 
     local og_nui_height = nui_height
     local og_nui_width = nui_width
@@ -544,8 +543,8 @@ describe("The Chat window", function()
 
     vim.wait(20)
 
-    nui_height = vim.api.nvim_win_get_height(chat.chat_winid)
-    nui_width = vim.api.nvim_win_get_width(chat.chat_winid)
+    nui_height = vim.api.nvim_win_get_height(chat.chat.winid)
+    nui_width = vim.api.nvim_win_get_width(chat.chat.winid)
 
     assert.not_equals(og_nui_height, nui_height)
     assert.not_equals(og_nui_width, nui_width)
