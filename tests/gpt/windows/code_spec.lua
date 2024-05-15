@@ -39,7 +39,7 @@ describe("The code window", function()
     assert.same(given_lines, gotten_lines)
   end)
 
-  it("clears all windows and kills job when opened with selected text", function()
+  it("clears all windows, kills job, and clears files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
     local code = code_window.build_and_mount(first_given_lines) -- populate left pane
@@ -56,6 +56,7 @@ describe("The code window", function()
       end
     })
 
+    -- Send a request
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
 
@@ -64,22 +65,31 @@ describe("The code window", function()
 
     args.on_read(nil, "some content") -- populate right pane
 
+    -- add files
+    Store.code:append_file("README.md")
+
     -- close the window
     keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
 
     local second_given_lines = { "second" }
 
+    -- reopen window with new selection
     code = code_window.build_and_mount(second_given_lines)
 
+    -- old job got killed
     assert(die_called)
 
+    -- all panes got cleared, left has new selection
     local left_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
     assert.same(second_given_lines, left_lines)
     assert.same({ "" }, right_lines)
     assert.same({ "" }, input_lines)
+
+    -- files were removed
+    assert.same({}, Store.code:get_files())
   end)
 
   it("shifts through windows on <Tab>", function()
@@ -580,7 +590,7 @@ describe("The code window", function()
     assert.same({ "right" }, right_lines)
   end)
 
-  it("automatically scrolls chat window when user is not in it", function()
+  it("automatically scrolls right window when user is not in it", function()
     local code = code_window.build_and_mount()
 
     local llm_stub = stub(llm, "generate")

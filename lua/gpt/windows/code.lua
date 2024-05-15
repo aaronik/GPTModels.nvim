@@ -190,6 +190,8 @@ function M.build_and_mount(selected_lines)
     end
     Store.code.input:clear()
     Store.code.right:clear()
+
+    Store.code:clear_files()
   else
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session

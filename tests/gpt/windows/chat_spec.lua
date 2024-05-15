@@ -57,7 +57,7 @@ describe("The Chat window", function()
     assert.equal(content, lines[1])
   end)
 
-  it("clears all windows and kills job when opened with selected text", function()
+  it("clears all windows, kills job, removes files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
     local chat = chat_window.build_and_mount(first_given_lines) -- populate input a bit
@@ -74,6 +74,7 @@ describe("The Chat window", function()
       end
     })
 
+    -- Send a request
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
 
@@ -82,20 +83,29 @@ describe("The Chat window", function()
 
     args.on_read(nil, { role = "assistant", content = "some content" }) -- populate chat pane
 
+    -- add files
+    Store.chat:append_file("README.md")
+
     -- close the window
     keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
 
     local second_given_lines = { "second" }
 
+    -- reopen window with new selection
     chat = chat_window.build_and_mount(second_given_lines)
 
+    -- old job got killed
     assert(die_called)
 
+    -- both panes got cleared, input has new selection
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
     assert.same({ "" }, chat_lines)
     assert.same({ "second", "" }, input_lines)
+
+    -- files were removed
+    assert.same({}, Store.chat:get_files())
   end)
 
   it("shifts through windows on <Tab>", function()

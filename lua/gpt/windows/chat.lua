@@ -193,7 +193,10 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_lines(chat.bufnr, 0, -1, true, {})
     Store.chat.chat:clear()
 
-    -- add selection to input
+    -- clear files
+    Store.chat:clear_files()
+
+    -- clear / add selection to input
     Store.chat.input:clear()
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
 
