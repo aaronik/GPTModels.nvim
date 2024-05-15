@@ -66,6 +66,30 @@ lazy:
 
 _(P.S. If you're using another package manager and have this set up, please open a PR or let me know in an issue and I'll add that here!)_
 
+#### Mapping
+
+Here are some examples of how to map these -- this is what I use, `<leader>a` for the code window and `<leader>c` for the chat
+
+in `init.lua`:
+```lua
+-- Both visual and normal mode for each, so you can open with selection or without.
+vim.api.nvim_set_keymap('v', '<leader>a', ':GPTModelsCode<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>a', ':GPTModelsCode<CR>', { noremap = true })
+
+vim.api.nvim_set_keymap('v', '<leader>c', ':GPTModelsChat<CR>', { noremap = true })
+vim.api.nvim_set_keymap('n', '<leader>c', ':GPTModelsChat<CR>', { noremap = true })
+```
+
+in `.vimrc`:
+```vim
+" Or if you prefer using the traditional way
+nnoremap <leader>a :GPTModelsCode<CR>
+vnoremap <leader>a :GPTModelsCode<CR>
+
+nnoremap <leader>c :GPTModelsChat<CR>
+vnoremap <leader>c :GPTModelsChat<CR>
+```
+
 ### Thanks
 
 Big thanks to @jackMort for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
