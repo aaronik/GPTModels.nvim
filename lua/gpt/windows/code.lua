@@ -28,7 +28,7 @@ local code_prompt = function(filetype, input_text, code_text)
 
   local system = { string.format(system_string, input_text, code_text) }
 
-  for _, filename in ipairs(Store.code.get_files()) do
+  for _, filename in ipairs(Store.code:get_files()) do
     local file = io.open(filename, "r")
     if not file then break end
     local content = file:read("*all")
@@ -42,7 +42,7 @@ end
 
 ---@param input NuiPopup -- this is a popup, wish they were typed
 local function set_input_border_text(input)
-  local files = Store.code.get_files()
+  local files = Store.code:get_files()
   if #files == 0 then
     input.border:set_text(
       "top",
@@ -63,7 +63,7 @@ local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.
   -- So we're assigning to ..right.bufnr every time the window opens.
-  local right_text = Store.code.right.read()
+  local right_text = Store.code.right:read()
   if right_text then
     com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
   end
@@ -71,15 +71,15 @@ end
 
 -- Render the whole code window from the Store, respecting closed windows/buffers
 local function safe_render_from_store()
-  local left_text = Store.code.left.read()
+  local left_text = Store.code.left:read()
   local left_buf = Store.code.left.popup.bufnr or -1
   if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
 
-  local right_text = Store.code.right.read()
+  local right_text = Store.code.right:read()
   local right_buf = Store.code.right.popup.bufnr or -1
   if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
 
-  local input_text = Store.code.input.read()
+  local input_text = Store.code.input:read()
   local input_buf = Store.code.input.popup.bufnr or -1
   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
@@ -98,14 +98,14 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   local prompt, system = code_prompt(filetype, input_text, left_text)
 
   -- Clear the right window so the next response doesn't append to the previous one
-  Store.code.right.clear()
+  Store.code.right:clear()
 
   -- Loading indicator
   com.safe_render_buffer_from_text(right_bufnr, "Loading...")
 
   -- Nuke existing jobs
-  if Store.get_job() then
-    Store.get_job().die()
+  if Store:get_job() then
+    Store:get_job().die()
   end
 
   local job = llm.generate({
@@ -119,9 +119,9 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
       -- No response _and_ no error? Weird. Happens though.
       if not response then
-        Store.code.right.append('')
+        Store.code.right:append('')
       else
-        Store.code.right.append(response)
+        Store.code.right:append(response)
       end
 
       safe_render_right_text_from_store()
@@ -136,11 +136,11 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       end
     end,
     on_end = function()
-      Store.clear_job()
+      Store:clear_job()
     end
   })
 
-  Store.register_job(job)
+  Store:register_job(job)
 end
 
 ---@param selected_lines string[] | nil
@@ -179,17 +179,17 @@ function M.build_and_mount(selected_lines)
     vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_lines)
 
     -- On open, save the text to the store, so next open contains that text
-    Store.code.left.clear()
-    Store.code.left.append(table.concat(selected_lines, "\n"))
+    Store.code.left:clear()
+    Store.code.left:append(table.concat(selected_lines, "\n"))
 
     -- If selected lines are given, it's like a new session, so we'll nuke all else
-    local extent_job = Store.get_job()
+    local extent_job = Store:get_job()
     if extent_job then
       extent_job.die()
       vim.wait(100, function() return extent_job.done() end)
     end
-    Store.code.input.clear()
-    Store.code.right.clear()
+    Store.code.input:clear()
+    Store.code.right:clear()
   else
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session
@@ -229,8 +229,8 @@ function M.build_and_mount(selected_lines)
   input_popup:on("InsertLeave",
     function()
       local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
-      Store.code.input.clear()
-      Store.code.input.append(table.concat(input_lines, "\n"))
+      Store.code.input:clear()
+      Store.code.input:append(table.concat(input_lines, "\n"))
     end
   )
 
@@ -269,7 +269,7 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        Store.code.clear()
+        Store.code:clear()
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
@@ -282,8 +282,8 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        if Store.get_job() then
-          Store.get_job().die()
+        if Store:get_job() then
+          Store:get_job().die()
         end
       end
     })
@@ -305,7 +305,7 @@ function M.build_and_mount(selected_lines)
         local current_index = com.find_model_index(model_options)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
-        Store.set_llm(selected_option.provider, selected_option.model)
+        Store:set_llm(selected_option.provider, selected_option.model)
         right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
       end
     })
@@ -327,7 +327,7 @@ function M.build_and_mount(selected_lines)
         local current_index = com.find_model_index(model_options)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
-        Store.set_llm(selected_option.provider, selected_option.model)
+        Store:set_llm(selected_option.provider, selected_option.model)
         right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
       end
     })
@@ -342,7 +342,7 @@ function M.build_and_mount(selected_lines)
           attach_mappings = function(_, map)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
-              Store.code.append_file(selection[1])
+              Store.code:append_file(selection[1])
               set_input_border_text(input_popup)
               require('telescope.actions').close(prompt_bufnr)
             end)
@@ -357,7 +357,7 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        Store.code.clear_files()
+        Store.code:clear_files()
         set_input_border_text(input_popup)
       end
     })
@@ -367,13 +367,13 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        local right_text = Store.code.right.read()
+        local right_text = Store.code.right:read()
         if not right_text then return end
-        Store.code.left.clear()
-        Store.code.left.append(right_text)
-        Store.code.right.clear()
-        com.safe_render_buffer_from_text(right_popup.bufnr, Store.code.right.read() or "")
-        com.safe_render_buffer_from_text(left_popup.bufnr, Store.code.left.read() or "")
+        Store.code.left:clear()
+        Store.code.left:append(right_text)
+        Store.code.right:clear()
+        com.safe_render_buffer_from_text(right_popup.bufnr, Store.code.right:read() or "")
+        com.safe_render_buffer_from_text(left_popup.bufnr, Store.code.left:read() or "")
       end
     })
 

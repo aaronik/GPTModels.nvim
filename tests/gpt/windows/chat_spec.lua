@@ -24,7 +24,7 @@ describe("The Chat window", function()
     -- stubbing cmd.exec prevents the llm call from happening
     stub(cmd, "exec")
 
-    Store.clear()
+    Store:clear()
   end)
 
   it("returns buffer numbers and winids", function()
@@ -48,7 +48,7 @@ describe("The Chat window", function()
 
   it("opens with last chat", function()
     local content = "window should open with this content populated"
-    Store.chat.chat.append({ role = "assistant", content = content })
+    Store.chat.chat:append({ role = "assistant", content = content })
 
     local chat = chat_window.build_and_mount()
     local chat_bufnr = chat.chat.bufnr
@@ -189,7 +189,7 @@ describe("The Chat window", function()
     -- Populate windows with some content
     vim.api.nvim_buf_set_lines(chat.input.bufnr, 0, -1, true, { "input content" })
     vim.api.nvim_buf_set_lines(chat.chat.bufnr, 0, -1, true, { "chat content" })
-    Store.chat.append_file("docs/gpt.txt")
+    Store.chat:append_file("docs/gpt.txt")
 
     -- Press <C-n>
     local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
@@ -200,7 +200,7 @@ describe("The Chat window", function()
     assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true))
 
     -- And the store of included files
-    assert.same({}, Store.chat.get_files())
+    assert.same({}, Store.chat:get_files())
   end)
 
   it("cycles through available models with <C-j>", function()
@@ -216,20 +216,20 @@ describe("The Chat window", function()
 
     assert.spy(store_spy).was_called(1)
     local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[1]), "string")
     assert.equal(type(first_args[2]), "string")
+    assert.equal(type(first_args[3]), "string")
 
     -- Press <C-j> again
     vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
 
     assert.spy(store_spy).was_called(2)
     local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[1]), "string")
     assert.equal(type(second_args[2]), "string")
+    assert.equal(type(second_args[3]), "string")
 
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
-    assert.is_not.equal(first_args[2], second_args[2])
+    assert.is_not.equal(first_args[3], second_args[3])
 
     snapshot:revert()
   end)
@@ -247,20 +247,20 @@ describe("The Chat window", function()
 
     assert.spy(store_spy).was_called(1)
     local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[1]), "string")
     assert.equal(type(first_args[2]), "string")
+    assert.equal(type(first_args[3]), "string")
 
     -- Press <C-k> again
     vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
 
     assert.spy(store_spy).was_called(2)
     local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[1]), "string")
     assert.equal(type(second_args[2]), "string")
+    assert.equal(type(second_args[3]), "string")
 
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
-    assert.is_not.equal(first_args[2], second_args[2])
+    assert.is_not.equal(first_args[3], second_args[3])
 
     snapshot:revert()
   end)

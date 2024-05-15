@@ -32,11 +32,11 @@ local on_CR = function(input_bufnr, chat_bufnr)
   -- Clear input buf
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
-  Store.chat.chat.append({ role = "user", content = input_text })
-  safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat.read())
+  Store.chat.chat:append({ role = "user", content = input_text })
+  safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
 
   local file_messages = {}
-  for _, filename in ipairs(Store.chat.get_files()) do
+  for _, filename in ipairs(Store.chat:get_files()) do
     local file = io.open(filename, "r")
     if not file then break end
     local content = file:read("*all")
@@ -47,7 +47,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
       content = filename .. ":\n\n" .. content
     })
   end
-  local messages = util.merge_tables(Store.chat.chat.read(), file_messages)
+  local messages = util.merge_tables(Store.chat.chat:read(), file_messages)
 
   local jorb = llm.chat({
     llm = {
@@ -59,10 +59,10 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
       -- No response _and_ no error? Weird. Happens though.
       if message then
-        Store.chat.chat.append(message)
+        Store.chat.chat:append(message)
       end
 
-      safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat.read())
+      safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat:read())
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
@@ -74,11 +74,11 @@ local on_CR = function(input_bufnr, chat_bufnr)
       end
     end,
     on_end = function()
-      Store.clear_job()
+      Store:clear_job()
     end
   })
 
-  Store.register_job(jorb)
+  Store:register_job(jorb)
 end
 
 local function on_tab(i, bufs)
@@ -95,7 +95,7 @@ end
 
 ---@param input any -- this is a popup, wish they were typed
 local function set_input_text(input)
-  local files = Store.chat.get_files()
+  local files = Store.chat:get_files()
   if #files == 0 then
     input.border:set_text(
       "top",
@@ -173,8 +173,8 @@ function M.build_and_mount(selected_text)
   input:on("InsertLeave",
     function()
       local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
-      Store.chat.input.clear()
-      Store.chat.input.append(table.concat(input_lines, "\n"))
+      Store.chat.input:clear()
+      Store.chat.input:append(table.concat(input_lines, "\n"))
     end
   )
 
@@ -183,7 +183,7 @@ function M.build_and_mount(selected_text)
   -- Add text selection to input buf
   if selected_text then
     -- If selected lines are given, it's like a new session, so we'll nuke all else
-    local extent_job = Store.get_job()
+    local extent_job = Store:get_job()
     if extent_job then
       extent_job.die()
       vim.wait(100, function() return extent_job.done() end)
@@ -191,10 +191,10 @@ function M.build_and_mount(selected_text)
 
     -- clear chat window
     vim.api.nvim_buf_set_lines(chat.bufnr, 0, -1, true, {})
-    Store.chat.chat.clear()
+    Store.chat.chat:clear()
 
     -- add selection to input
-    Store.chat.input.clear()
+    Store.chat.input:clear()
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
 
     -- Go to bottom of input and enter insert mode
@@ -202,11 +202,11 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_feedkeys(keys, 'mtx', true)
   else
     -- If there's saved input, render that
-    local input_content = Store.chat.input.read()
+    local input_content = Store.chat.input:read()
     if input_content then com.safe_render_buffer_from_text(input.bufnr, input_content) end
 
     -- If there's a chat history, open with that.
-    safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat.read())
+    safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat:read())
 
     -- Get the files back
     set_input_text(input)
@@ -234,7 +234,7 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        Store.chat.clear()
+        Store.chat:clear()
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
@@ -252,7 +252,7 @@ function M.build_and_mount(selected_text)
           attach_mappings = function(_, map)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
-              Store.chat.append_file(selection[1])
+              Store.chat:append_file(selection[1])
               set_input_text(input)
               require('telescope.actions').close(prompt_bufnr)
             end)
@@ -267,7 +267,7 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        Store.chat.clear_files()
+        Store.chat:clear_files()
         set_input_text(input)
       end
     })
@@ -277,8 +277,8 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        if Store.get_job() then
-          Store.get_job().die()
+        if Store:get_job() then
+          Store:get_job().die()
         end
       end
     })
@@ -300,7 +300,7 @@ function M.build_and_mount(selected_text)
         local current_index = com.find_model_index(model_options)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
-        Store.set_llm(selected_option.provider, selected_option.model)
+        Store:set_llm(selected_option.provider, selected_option.model)
         chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
       end
     })
@@ -322,7 +322,7 @@ function M.build_and_mount(selected_text)
         local current_index = com.find_model_index(model_options)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
-        Store.set_llm(selected_option.provider, selected_option.model)
+        Store:set_llm(selected_option.provider, selected_option.model)
         chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
       end
     })

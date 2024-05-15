@@ -23,54 +23,56 @@ local concat_chat = function(chat, message)
 end
 
 ---@class Pane
----@field clear fun()
+---@field clear fun(self: StrPane | LinesPane | MessagePane)
 ---@field popup NuiPopup
 
 ---@class StrPane : Pane
----@field append fun(text: string)
----@field read fun(): string | nil
+---@field append fun(self: StrPane, text: string)
+---@field read fun(self: StrPane): string | nil
+---@field private _text string
+
+---@class LinesPane : Pane
+---@field append fun(self: LinesPane, lines: string[])
+---@field read fun(self: LinesPane): string[] | nil
+---@field private _lines string[]
 
 ---@class MessagePane : Pane
----@field append fun(message: LlmMessage)
----@field read fun(): LlmMessage[]
+---@field append fun(self: MessagePane, message: LlmMessage)
+---@field read fun(self: MessagePane): LlmMessage[]
+---@field private _messages LlmMessage[]
 
 ---@class Window
----@field clear fun()
+---@field clear fun(self: ChatWindow | CodeWindow)
 ---@field input StrPane
----@field append_file fun(filename: string)
----@field get_files fun(): string[]
----@field clear_files fun()
+---@field append_file fun(self: Window, filename: string)
+---@field get_files fun(self: Window): string[]
+---@field clear_files fun(self: Window)
 ---@field private _files string[]
----@field private _input string
 
 ---@class CodeWindow : Window
 ---@field right StrPane
 ---@field left StrPane
----@field private _right string
----@field private _left string
 
 ---@class ChatWindow : Window
 ---@field chat MessagePane
----@field private _chat LlmMessage[]
 
 ---@class Store
----@field clear fun()
+---@field clear fun(self: Store,)
 ---@field code CodeWindow
 ---@field chat ChatWindow
----@field register_job fun(job: Job)
----@field get_job fun(): Job | nil
----@field clear_job fun()
+---@field register_job fun(self: Store, job: Job)
+---@field get_job fun(self: Store): Job | nil
+---@field clear_job fun(self: Store)
 ---@field llm_models { openai: string[], ollama: string[] }
 ---@field llm_provider string
 ---@field llm_model string
----@field set_llm fun(provider: "openai" | "ollama", model: string)
+---@field set_llm fun(self: Store, provider: "openai" | "ollama", model: string)
 ---@field private _job Job | nil
 
 -- TODO store should store lines (string[]) instead of string. More neovim centric data structure. Less munging.
 
 ---@type Store
-local Store
-Store = {
+local Store = {
   llm_models = {
     openai = { "gpt-4-turbo", "gpt-3.5-turbo" },
     ollama = { "llama3", "mistral" },
@@ -78,90 +80,87 @@ Store = {
   llm_provider = "ollama",
   llm_model = "llama3",
 
-  set_llm = function (provider, model)
-    Store.llm_provider = provider
-    Store.llm_model = model
+  set_llm = function (self, provider, model)
+    self.llm_provider = provider
+    self.llm_model = model
   end,
 
-  clear = function()
-    Store.code.clear()
-    Store.chat.clear()
+  clear = function(self)
+    self.code:clear()
+    self.chat:clear()
   end,
 
   code = {
-    _right = "",
     right = {
-      ---@param text string
-      append = function(text) Store.code._right = Store.code._right .. text end,
-      read = function() return Store.code._right end,
-      clear = function() Store.code._right = "" end
+      _text = "",
+      append = function(self, text) self._text = self._text .. text end,
+      read = function(self) return self._text end,
+      clear = function(self) self._text = "" end
     },
 
-    _left = "",
     left = {
-      ---@param text string
-      append = function(text) Store.code._left = Store.code._left .. text end,
-      read = function() return Store.code._left end,
-      clear = function() Store.code._left = "" end
+    _text = "",
+      append = function(self, text) self._text = self._text .. text end,
+      read = function(self) return self._text end,
+      clear = function(self) self._text = "" end
     },
 
-    _input = "",
     input = {
-      ---@param text string
-      append = function(text) Store.code._input = Store.code._input .. text end,
-      read = function() return Store.code._input end,
-      clear = function() Store.code._input = "" end
+      _text = "",
+      append = function(self, text) self._text = self._text .. text end,
+      read = function(self) return self._text end,
+      clear = function(self) self._text = "" end
     },
 
     _files = {},
-    append_file = function(filename) table.insert(Store.code._files, filename) end,
-    get_files = function() return Store.code._files end,
-    clear_files = function() Store.code._files = {} end,
+    append_file = function(self, filename) table.insert(self._files, filename) end,
+    get_files = function(self) return self._files end,
+    clear_files = function(self) self._files = {} end,
 
-    clear = function()
-      Store.code.right.clear()
-      Store.code.left.clear()
-      Store.code.input.clear()
-      Store.code.clear_files()
+    clear = function(self)
+      self.right:clear()
+      self.left:clear()
+      self.input:clear()
+      self:clear_files()
     end
   },
   chat = {
-    _input = "",
     input = {
-      append = function(text) Store.chat._input = Store.chat._input .. text end,
-      read = function() return Store.chat._input end,
-      clear = function() Store.chat._input = "" end
+      _text = "",
+      append = function(self, text) self._text = self._text .. text end,
+      read = function(self) return self._text end,
+      clear = function(self) self._text = "" end
     },
 
-    _chat = {},
     chat = {
-      read = function() return Store.chat._chat end,
-      append = function(message) concat_chat(Store.chat._chat, message) end,
-      clear = function() Store.chat._chat = {} end
+      _messages = {},
+      read = function(self) return self._messages end,
+      append = function(self, message) concat_chat(self._messages, message) end,
+      clear = function(self) self._messages = {} end
     },
 
     _files = {},
-    append_file = function(filename) table.insert(Store.chat._files, filename) end,
-    get_files = function() return Store.chat._files end,
-    clear_files = function() Store.chat._files = {} end,
+    append_file = function(self, filename) table.insert(self._files, filename) end,
+    get_files = function(self) return self._files end,
+    clear_files = function(self) self._files = {} end,
 
-    clear = function()
-      Store.chat.input.clear()
-      Store.chat.chat.clear()
-      Store.chat.clear_files()
+    clear = function(self)
+      self.input:clear()
+      self.chat:clear()
+      self:clear_files()
     end
   },
 
-  register_job = function(job)
-    Store._job = job
+  register_job = function(self, job)
+    self._job = job
   end,
 
-  get_job = function()
-    return Store._job
+  get_job = function(self)
+    return self._job
   end,
 
-  clear_job = function()
-    Store._job = nil
+  clear_job = function(self)
+    self._job = nil
   end
 
 }

@@ -17,7 +17,7 @@ describe("The code window", function()
 
     stub(cmd, "exec")
 
-    Store.clear()
+    Store:clear()
 
     -- TODO need to create/reset luassert sessions here
   end)
@@ -251,9 +251,9 @@ describe("The code window", function()
   end)
 
   it("does not open prepopulated w/ prior session when text is provided", function()
-    Store.code.right.append("right content")
-    Store.code.input.append("input content")
-    Store.code.left.append("left content")
+    Store.code.right:append("right content")
+    Store.code.input:append("input content")
+    Store.code.left:append("left content")
 
     local code = code_window.build_and_mount({ "provided text" })
 
@@ -307,7 +307,7 @@ describe("The code window", function()
     vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input content" })
     vim.api.nvim_buf_set_lines(code.left.bufnr, 0, -1, true, { "left content" })
     vim.api.nvim_buf_set_lines(code.right.bufnr, 0, -1, true, { "right content" })
-    Store.code.append_file("docs/gpt.txt")
+    Store.code:append_file("docs/gpt.txt")
 
     -- Press <C-n>
     local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
@@ -319,7 +319,7 @@ describe("The code window", function()
     assert.same({ '' }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
 
     -- And the store of included files
-    assert.same({}, Store.code.get_files())
+    assert.same({}, Store.code:get_files())
   end)
 
   it("kills active job on <C-c>", function()
@@ -357,16 +357,16 @@ describe("The code window", function()
 
     assert.spy(store_spy).was_called(1)
     local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[1]), "string")
     assert.equal(type(first_args[2]), "string")
+    assert.equal(type(first_args[3]), "string")
 
     -- Press <C-j> again
     vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
 
     assert.spy(store_spy).was_called(2)
     local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[1]), "string")
     assert.equal(type(second_args[2]), "string")
+    assert.equal(type(second_args[3]), "string")
 
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
@@ -388,20 +388,20 @@ describe("The code window", function()
 
     assert.spy(store_spy).was_called(1)
     local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[1]), "string")
     assert.equal(type(first_args[2]), "string")
+    assert.equal(type(first_args[3]), "string")
 
     -- Press <C-k> again
     vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
 
     assert.spy(store_spy).was_called(2)
     local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[1]), "string")
     assert.equal(type(second_args[2]), "string")
+    assert.equal(type(second_args[3]), "string")
 
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
-    assert.is_not.equal(first_args[2], second_args[2])
+    assert.is_not.equal(first_args[3], second_args[3])
 
     snapshot:revert()
   end)
