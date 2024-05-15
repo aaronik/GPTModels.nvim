@@ -71,6 +71,17 @@ end
 
 -- TODO store should store lines (string[]) instead of string. More neovim centric data structure. Less munging.
 
+---@return StrPane
+local function build_strpane()
+  ---@type StrPane
+  return {
+    _text = "",
+    append = function(self, text) self._text = self._text .. text end,
+    read = function(self) return self._text end,
+    clear = function(self) self._text = "" end
+  }
+end
+
 ---@type Store
 local Store = {
   llm_models = {
@@ -80,7 +91,7 @@ local Store = {
   llm_provider = "ollama",
   llm_model = "llama3",
 
-  set_llm = function (self, provider, model)
+  set_llm = function(self, provider, model)
     self.llm_provider = provider
     self.llm_model = model
   end,
@@ -91,26 +102,9 @@ local Store = {
   end,
 
   code = {
-    right = {
-      _text = "",
-      append = function(self, text) self._text = self._text .. text end,
-      read = function(self) return self._text end,
-      clear = function(self) self._text = "" end
-    },
-
-    left = {
-    _text = "",
-      append = function(self, text) self._text = self._text .. text end,
-      read = function(self) return self._text end,
-      clear = function(self) self._text = "" end
-    },
-
-    input = {
-      _text = "",
-      append = function(self, text) self._text = self._text .. text end,
-      read = function(self) return self._text end,
-      clear = function(self) self._text = "" end
-    },
+    right = build_strpane(),
+    left = build_strpane(),
+    input = build_strpane(),
 
     _files = {},
     append_file = function(self, filename) table.insert(self._files, filename) end,
@@ -125,12 +119,7 @@ local Store = {
     end
   },
   chat = {
-    input = {
-      _text = "",
-      append = function(self, text) self._text = self._text .. text end,
-      read = function(self) return self._text end,
-      clear = function(self) self._text = "" end
-    },
+    input = build_strpane(),
 
     chat = {
       _messages = {},
@@ -151,17 +140,9 @@ local Store = {
     end
   },
 
-  register_job = function(self, job)
-    self._job = job
-  end,
-
-  get_job = function(self)
-    return self._job
-  end,
-
-  clear_job = function(self)
-    self._job = nil
-  end
+  register_job = function(self, job) self._job = job end,
+  get_job = function(self) return self._job end,
+  clear_job = function(self) self._job = nil end
 
 }
 
