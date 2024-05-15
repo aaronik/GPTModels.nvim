@@ -92,7 +92,7 @@ vnoremap <leader>c :GPTModelsChat<CR>
 
 ### Thanks
 
-Big thanks to @jackMort for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
+Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
 
 #### TODO
 
