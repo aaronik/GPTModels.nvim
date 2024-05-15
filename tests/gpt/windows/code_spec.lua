@@ -18,6 +18,8 @@ describe("The code window", function()
     stub(cmd, "exec")
 
     Store.clear()
+
+    -- TODO need to create/reset luassert sessions here
   end)
 
   it("returns buffer numbers, winids", function()
@@ -30,11 +32,54 @@ describe("The code window", function()
     assert.is_not.equal(code.left_winid, nil)
   end)
 
-  it("places given provided text in left window", function()
+  it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
     local code = code_window.build_and_mount(given_lines)
     local gotten_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
     assert.same(given_lines, gotten_lines)
+  end)
+
+  it("clears all windows and kills job when opened with selected text", function()
+    -- First, open a window and add some stuff
+    local first_given_lines = { "first" }
+    local code = code_window.build_and_mount(first_given_lines) -- populate left pane
+
+    local die_called = false
+
+    local llm_stub = stub(llm, "generate")
+    llm_stub.returns({
+      die = function()
+        die_called = true
+      end,
+      done = function()
+        return die_called
+      end
+    })
+
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
+
+    ---@type MakeGenerateRequestArgs
+    local args = llm_stub.calls[1].refs[1]
+
+    args.on_read(nil, "some content") -- populate right pane
+
+    -- close the window
+    keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
+
+    local second_given_lines = { "second" }
+
+    code = code_window.build_and_mount(second_given_lines)
+
+    assert(die_called)
+
+    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
+    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
+    assert.same(second_given_lines, left_lines)
+    assert.same({ "" }, right_lines)
+    assert.same({ "" }, input_lines)
   end)
 
   it("shifts through windows on <Tab>", function()
@@ -161,6 +206,9 @@ describe("The code window", function()
     s.returns({
       die = function()
         die_called = true
+      end,
+      done = function()
+        return die_called
       end
     })
 
@@ -200,22 +248,6 @@ describe("The code window", function()
     -- Gets that response without reopening
     local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
     assert.same({ "response to be saved in background", "additional response" }, right_lines)
-  end)
-
-  it("opens prepopulated w/ prior session when no text provided", function()
-    Store.code.right.append("right content")
-    Store.code.input.append("input content")
-    Store.code.left.append("left content")
-
-    local code = code_window.build_and_mount()
-
-    local right_lines = vim.api.nvim_buf_get_lines(code.right_bufnr, 0, -1, true)
-    local input_lines = vim.api.nvim_buf_get_lines(code.input_bufnr, 0, -1, true)
-    local left_lines = vim.api.nvim_buf_get_lines(code.left_bufnr, 0, -1, true)
-
-    assert.same({ "right content" }, right_lines)
-    assert.same({ "input content" }, input_lines)
-    assert.same({ "left content" }, left_lines)
   end)
 
   it("does not open prepopulated w/ prior session when text is provided", function()

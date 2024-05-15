@@ -82,8 +82,9 @@ Big thanks to @jackMort for the inspiration for the code window. I used [jackMor
 * Protect against opening windows many times?
 * One really big integration flow for each window
 * Figure out how to test nui border text and test all the titles
+* A nice architectural feature would be to just have a method like safe_render_code_from_store and it just renders all of code from the store.
+  Same with chat, and all the bufnrs and winids are put into the store on open.
 
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
 * Sometimes, especially with openai, there are responses that don't conform to json, and responses where json is split between multiple. Both providers should handle that stuff more robustly.
-* Right pane of code window needs to clear when window is reopened with selection (and all active jobs need to die)

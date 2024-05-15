@@ -158,6 +158,15 @@ function M.build_and_mount(selected_lines)
     -- On open, save the text to the store, so next open contains that text
     Store.code.left.clear()
     Store.code.left.append(table.concat(selected_lines, "\n"))
+
+    -- If selected lines are given, it's like a new session, so we'll nuke all else
+    local extent_job = Store.get_job()
+    if extent_job then
+      extent_job.die()
+      vim.wait(100, function() return extent_job.done() end)
+    end
+    Store.code.input.clear()
+    Store.code.right.clear()
   else
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session
@@ -364,7 +373,6 @@ function M.build_and_mount(selected_lines)
         layout:unmount()
       end,
     })
-
   end
 
   layout:mount()

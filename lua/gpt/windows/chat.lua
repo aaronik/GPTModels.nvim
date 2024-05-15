@@ -183,10 +183,19 @@ function M.build_and_mount(selected_text)
 
   -- Add text selection to input buf
   if selected_text then
+    -- If selected lines are given, it's like a new session, so we'll nuke all else
+    local extent_job = Store.get_job()
+    if extent_job then
+      extent_job.die()
+      vim.wait(100, function() return extent_job.done() end)
+    end
+
     -- clear chat window
     vim.api.nvim_buf_set_lines(chat.bufnr, 0, -1, true, {})
+    Store.chat.chat.clear()
 
     -- add selection to input
+    Store.chat.input.clear()
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
 
     -- Go to bottom of input and enter insert mode
@@ -325,7 +334,6 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function() layout:unmount() end,
     })
-
   end
 
   return {

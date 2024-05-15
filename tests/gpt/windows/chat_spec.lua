@@ -59,19 +59,45 @@ describe("The Chat window", function()
     assert.equal(content, lines[1])
   end)
 
-  it("clears the chat window when opened with selection", function()
-    -- Open it once without any selection
-    local chat = chat_window.build_and_mount()
+  it("clears all windows and kills job when opened with selected text", function()
+    -- First, open a window and add some stuff
+    local first_given_lines = { "first" }
+    local chat = chat_window.build_and_mount(first_given_lines) -- populate input a bit
 
-    -- Send a message
-    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
+    local die_called = false
 
-    -- chat buffer now has our line
+    local llm_stub = stub(llm, "chat")
+    llm_stub.returns({
+      die = function()
+        die_called = true
+      end,
+      done = function()
+        return die_called
+      end
+    })
 
-    chat = chat_window.build_and_mount({ "selected line" })
-    assert.same({ "selected line", "" }, vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true))
-    assert.same({ "" }, vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true))
+    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
+
+    ---@type MakeChatRequestArgs
+    local args = llm_stub.calls[1].refs[1]
+
+    args.on_read(nil, { role = "assistant", content = "some content" }) -- populate chat pane
+
+    -- close the window
+    keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false) -- populate input, fire request
+
+    local second_given_lines = { "second" }
+
+    chat = chat_window.build_and_mount(second_given_lines)
+
+    assert(die_called)
+
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat_bufnr, 0, -1, true)
+    local input_lines = vim.api.nvim_buf_get_lines(chat.input_bufnr, 0, -1, true)
+    assert.same({ "" }, chat_lines)
+    assert.same({ "second", "" }, input_lines)
   end)
 
   it("shifts through windows on <Tab>", function()
