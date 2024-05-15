@@ -28,6 +28,7 @@ This plugin offers two commands:
 
 The code window is great for iterating on a selection of code.
 The chat window is great for having a free form conversation.
+Both are designed to be easy to use.
 
 ---
 
@@ -73,14 +74,9 @@ Big thanks to @jackMort for the inspiration for the code window. I used [jackMor
 
 * Use ctrl-w + hjkl to move between windows
 * code needs C-y?
-* Rename to something better than GPT. Models? TwoModel? Maybe GPT is good? AIModels?
-* Make a readme fr
 * Focus same buffer on nui exit?
-* Prompt tests?
-* Chat loading indicator?
 * Add copilot support .. Very hard as it turns out
 * Protect against opening windows many times?
-* One really big integration flow for each window
 * Figure out how to test nui border text and test all the titles
 * A nice architectural feature would be to just have a method like safe_render_code_from_store and it just renders all of code from the store.
   Same with chat, and all the bufnrs and winids are put into the store on open.
