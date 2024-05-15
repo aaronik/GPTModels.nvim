@@ -104,6 +104,8 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 * Figure out how to test nui border text and test all the titles
 * A nice architectural feature would be to just have a method like safe_render_code_from_store and it just renders all of code from the store.
   Same with chat, and all the bufnrs and winids are put into the store on open.
+* Gracefully handle when ollama isn't installed or running
+* Logging the errors instead of showing them in the window was the wrong way, I just want to handle as many as possible in the provider.
 
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
