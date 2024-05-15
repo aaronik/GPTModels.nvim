@@ -389,7 +389,13 @@ function M.build_and_mount(selected_lines)
     })
   end
 
+  -- Once this mounts, our popups now have a winid for as long as the layout is mounted
   layout:mount()
+
+  -- Wrap lines, because these are small windows and it's nicer
+  vim.api.nvim_win_set_option(left_popup.winid, "wrap", true)
+  vim.api.nvim_win_set_option(right_popup.winid, "wrap", true)
+  vim.api.nvim_win_set_option(input_popup.winid, "wrap", true)
 
   return {
     input = input_popup,

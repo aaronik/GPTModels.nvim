@@ -33,6 +33,16 @@ describe("The Chat window", function()
     assert.is_not.equal(chat.chat, nil)
   end)
 
+  it("sets wrap on all bufs, because these are small windows and that works better", function()
+    -- First disable it globally, so the popups don't inherit this wrap
+    vim.api.nvim_win_set_option(0, 'wrap', false)
+
+    local chat = chat_window.build_and_mount()
+
+    assert(vim.api.nvim_win_get_option(chat.chat.winid, 'wrap'))
+    assert(vim.api.nvim_win_get_option(chat.input.winid, 'wrap'))
+  end)
+
   skip("opens in input mode", function()
     chat_window.build_and_mount()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)

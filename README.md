@@ -96,7 +96,6 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
-* set pane to text wrap
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out

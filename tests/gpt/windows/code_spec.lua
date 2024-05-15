@@ -32,6 +32,17 @@ describe("The code window", function()
     assert.is_not.equal(code.left.winid, nil)
   end)
 
+  it("sets wrap on all bufs, because these are small windows and that works better", function()
+    -- First disable it globally, so the popups don't inherit this wrap
+    vim.api.nvim_win_set_option(0, 'wrap', false)
+
+    local code = code_window.build_and_mount()
+
+    assert(vim.api.nvim_win_get_option(code.left.winid, 'wrap'))
+    assert(vim.api.nvim_win_get_option(code.right.winid, 'wrap'))
+    assert(vim.api.nvim_win_get_option(code.input.winid, 'wrap'))
+  end)
+
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
     local code = code_window.build_and_mount(given_lines)
