@@ -191,3 +191,38 @@ describe("ollama.chat", function()
     assert.stub(on_read_stub).was_called(0)
   end)
 end)
+
+describe("ollama.fetch_models", function()
+  it("returns list of available ollama models", function()
+    local exec_stub = stub(cmd, "exec")
+    local finished = false
+    ---@type string[] | nil
+    local models = {}
+
+    ollama.fetch_models(function(err, ms)
+      models = ms
+      finished = true
+    end)
+
+    ---@type ExecArgs
+    local exec_args = exec_stub.calls[1].refs[1]
+
+    assert.equal(exec_args.cmd, "ollama")
+    assert.same(exec_args.args, { "list" })
+
+    local response = [[
+        NAME                    	ID          	SIZE  	MODIFIED
+        gemma:latest            	a72c7f4d0a15	5.0 GB	5 weeks ago
+        llama3:latest           	a6990ed6be41	4.7 GB	2 weeks ago
+        mistral:latest          	61e88e884507	4.1 GB	5 weeks ago
+        llama3:70b              	be39eb53a197	39 GB 	2 weeks ago
+      ]]
+
+    exec_args.onread(nil, response)
+
+    vim.wait(20, function() return finished end)
+
+    assert.is_nil(err)
+    assert.same({ "gemma:latest", "llama3:latest", "mistral:latest", "llama3:70b" }, models)
+  end)
+end)

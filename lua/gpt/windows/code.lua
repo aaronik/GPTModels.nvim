@@ -4,6 +4,7 @@ local Layout      = require("nui.layout")
 local Popup       = require("nui.popup")
 local llm         = require('gpt.llm')
 local Store       = require('gpt.store')
+local ollama      = require('gpt.providers.ollama')
 
 local M           = {}
 
@@ -12,19 +13,21 @@ local M           = {}
 ---@param code_text string
 ---@return string, string[]
 local code_prompt = function(filetype, input_text, code_text)
-  local prompt_string = ""
-  prompt_string = prompt_string .. "%s\n\n"
-  prompt_string = prompt_string .. "The extension of the language is %s.\n"
-  prompt_string = prompt_string .. "Here is the code:\n\n"
-  prompt_string = prompt_string .. "%s"
+  local prompt_string = [[
+    %s\n\n
+    The extension of the language is %s.
+    Here is the code:
+    %s
+  ]]
 
   local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
-  local system_string = ""
-  system_string = system_string .. "You are a code generator.\n"
-  system_string = system_string .. "You only respond with code.\n"
-  system_string = system_string .. "Do not include any explanations.\n"
-  system_string = system_string .. "Do not use backticks. Do not include ``` at all.\n"
+  local system_string = [[
+    You are a code generator.
+    You only respond with code.
+    Do not include any explanations.
+    Do not use backticks. Do not include ``` at all."
+  ]]
 
   local system = { string.format(system_string, input_text, code_text) }
 
@@ -162,6 +165,13 @@ function M.build_and_mount(selected_lines)
   Store.code.right.popup = right_popup
   Store.code.left.popup = left_popup
   Store.code.input.popup = input_popup
+
+  -- Fetch ollama models so user can work with what they have on their system
+  ollama.fetch_models(function (err, models)
+    if err then return util.log(err) end
+    if not models then return end
+    Store.llm_models.ollama = models
+  end)
 
   -- Turn off syntax highlighting for input buffer.
   vim.api.nvim_buf_set_option(input_popup.bufnr, 'filetype', 'txt')

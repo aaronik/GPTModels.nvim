@@ -4,6 +4,7 @@ local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local llm = require("gpt.llm")
 local Store = require("gpt.store")
+local ollama = require("gpt.providers.ollama")
 
 local M = {}
 
@@ -112,11 +113,15 @@ local function set_input_text(input)
   end
 end
 
+local function chat_title()
+  return "Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model
+end
+
 ---@param selected_text string[] | nil
 ---@return { input: NuiPopup, chat: NuiPopup }
 function M.build_and_mount(selected_text)
   ---@type NuiPopup
-  local chat = Popup(com.build_common_popup_opts("Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model))
+  local chat = Popup(com.build_common_popup_opts(chat_title()))
   ---@type NuiPopup
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
@@ -130,6 +135,13 @@ function M.build_and_mount(selected_text)
   -- Register popups with store
   Store.chat.chat.popup = chat
   Store.chat.input.popup = input
+
+  -- Fetch ollama models so user can work with what they have on their system
+  ollama.fetch_models(function(err, models)
+    if err then return util.log(err) end
+    if not models then return end
+    Store.llm_models.ollama = models
+  end)
 
   -- Input window is text with no syntax
   vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
@@ -309,7 +321,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
+        chat.border:set_text("top", " " .. chat_title() .. " ", "center")
       end
     })
 
@@ -331,7 +343,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", " Chat w/" .. com.model_display_name() .. " ", "center")
+        chat.border:set_text("top", " " .. chat_title() .. " ", "center")
       end
     })
 

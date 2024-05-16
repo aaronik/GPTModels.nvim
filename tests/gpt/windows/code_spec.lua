@@ -8,6 +8,7 @@ local spy = require('luassert.spy')
 local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
 local Store = require('gpt.store')
+local ollama = require('gpt.providers.ollama')
 
 describe("The code window", function()
   before_each(function()
@@ -469,7 +470,6 @@ describe("The code window", function()
     -- Does the request now contain a system string with the file
     local contains_system_with_file = false
     for _, system_string in ipairs(args.llm.system) do
-      util.log(system_string)
       if system_string.match(system_string, "README.md") then
         contains_system_with_file = true
       end
@@ -682,5 +682,18 @@ describe("The code window", function()
     -- Happens sometimes with openai, probably my fault. Just testing to make
     -- sure it doesn't error.
     args.on_read(nil, nil)
+  end)
+
+  it("fetches ollama llms when started", function()
+    local fetch_models_stub = stub(ollama, "fetch_models")
+
+    fetch_models_stub.invokes(function(cb)
+      cb(nil, { "my-model", "your-model" })
+    end)
+
+    code_window.build_and_mount()
+
+    assert.stub(fetch_models_stub).was_called(1)
+    assert.same({ "my-model", "your-model" }, Store.llm_models.ollama)
   end)
 end)

@@ -9,6 +9,7 @@ local spy = require('luassert.spy')
 local llm = require('gpt.llm')
 local cmd = require('gpt.cmd')
 local Store = require('gpt.store')
+local ollama = require('gpt.providers.ollama')
 
 local skip = pending
 
@@ -568,5 +569,18 @@ describe("The Chat window", function()
 
     assert.not_equals(og_nui_height, nui_height)
     assert.not_equals(og_nui_width, nui_width)
+  end)
+
+  it("fetches ollama llms when started", function()
+    local fetch_models_stub = stub(ollama, "fetch_models")
+
+    fetch_models_stub.invokes(function(cb)
+      cb(nil, { "my-model", "your-model" })
+    end)
+
+    chat_window.build_and_mount()
+
+    assert.stub(fetch_models_stub).was_called(1)
+    assert.same({ "my-model", "your-model" }, Store.llm_models.ollama)
   end)
 end)

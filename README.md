@@ -131,7 +131,6 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
-* Source available ollama models from ollama ls
 * :h gpt works but :h gptmodels doesn't
 * code needs C-y?
 * Focus same buffer on nui exit?
