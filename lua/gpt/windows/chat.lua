@@ -123,7 +123,7 @@ function M.build_and_mount(selected_text)
   -- available controls are found at the bottom of the input popup
   input.border:set_text(
     "bottom",
-    " q quit | [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files ",
+    " q quit | [S]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files ",
     "center"
   )
 

@@ -57,7 +57,7 @@ end
 ---@field chat MessagePane
 
 ---@class Store
----@field clear fun(self: Store,)
+---@field clear fun(self: Store)
 ---@field code CodeWindow
 ---@field chat ChatWindow
 ---@field register_job fun(self: Store, job: Job)

@@ -1,6 +1,3 @@
--- Weird quirk of this file is you don't need to require() it in nvim, you just
--- need to have the file open in some buffer
-
 ---@class LlmMessage
 ---@field role string
 ---@field content string

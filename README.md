@@ -4,12 +4,25 @@
 
 # GPTModels.nvim - an LLM AI plugin for neovim
 
-An AI plugin designed to tighten your neovim workflow with AI LLMs, focusing on **stability** and **user experience**.
+This is an iteration on the window features of [jackMort/ChatGPT.nvim].
+It's an AI plugin designed to tighten your neovim workflow with AI LLMs.
+It offers two windows: one for chat, and one for code editing.
 
-* **Test first development** - This plugin focuses on clean, stable code. All features are well tested.
-* **Developer UX in mind** - The goal is a simple, ergonomic interface. It's meant to be easy to pick up, not requiring any memorization. The tool "gets out of your way".
+The plugin is developed with a focus on **stability** and **user experience**.
+The plugin code is **well tested**, and leverages the **EmmyLua** type system for robustness.
 
 ---
+
+### Features
+
+* **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it super simple to switch between different models. I often get "second opinions" on code I'm getting LLM help with.
+* **File inclusion** - The plugin uses telescope for a super clean file picker, and includes the files in the messages to the llm.
+* **Background processing** - Close the window while the AI responds, open the window and the response will continue streaming in the background.
+* **Request cancellation** - Cancel requests midflight with Ctrl-c. Save tokens and time.
+* **Selection inclusion** - Both windows, when opened with selected text, bring that selected text into the window for inclusion in your llm request. Opening with a selection clears the old session automatically.
+* **Filetype inclusion** - The file's extension is included in llm requests so you don't have to specify what kind of code it is when supplying smaller amounts of code
+* **Stability** - This was written test first, and always will be. It also makes heavy use of the EmmyLua type system, which makes the code more robust. There still may be bugs, but hopefully there'll be fewer at least.
+* **UX in mind** - It's hard to enumerate the little things, but I hope and think you'll notice them as you use the plugin. Examples include keeping sessions across close in both windows, saving the prompt window after you type stuff before you send the request, so you can slowly build up the request, scrolls on llm responses unless you're in the window, so you can interact with the response before it's finished, responsive window resizing when terminal window changes size, and more little things like this.
 
 ### Usage
 
@@ -26,37 +39,52 @@ This plugin offers two commands:
         <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
       </details>
 
-The code window is great for iterating on a selection of code.
-The chat window is great for having a free form conversation.
-Both are designed to be easy to use.
+**The code window** (:GPTModelsCode) is great for iterating on a selection of code.
+You have three panes - the left pane holds code you're working on, the right pane
+code only responses from the LLMs,
+and then you have an input for your prompt.
+If you call it with a visual selection, that selection will be placed into the left pane.
+From there you can iterate on the code. Press Ctrl-x to replace the left pane with
+the contents of the right, rinse and repeat. This window is also nice because the
+code is the main focus, and has syntax highlighting. I use this whenever I have
+an AI request about code I'm working on. The prompt behind the scenes is tuned so the
+AI only responds with code (although some LLMs are harder to get perfect, so be lenient.)
+Other features, including changing models and including files, are labeled on the window.
+
+**The chat window** is great for having a free form conversation. You can still open with
+a selection, include files, cancel requests, etc.
+
+#### Keymaps
+
+The keymaps strive to be labaled and easily visible from within the plugin so you don't need to reference
+them here. But here they are anyways:
+
+| Keybinding | Action           | Description      |
+|------------|------------------|------------------|
+| `q`        | quit             | close the window |
+| `[S]Tab`   | cycle windows    | switch focus into each window successively |
+| `C-c`      | cancel request   | send SIGTERM to the `curl` command making the fetch |
+| `C-f`      | add files        | open the file picker window and include file contents in your request |
+| `C-g`      | clear files      | clear the files you have selected, leaving the windows be |
+| `C-x`      | xfer to deck     | in the code window, transfer the right pane's contents to the left |
+| `C-j/k`    | cycle models     | cycle through which LLM model to use for further requests |
+| `C-n`      | clear all        | clear the whole state, all the windows and files |
+
 
 ---
 
-### Features
-
-* **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it super simple to switch between different models. I often get "second opinions" on code I'm getting LLM help with.
-* **File inclusion** - The plugin uses telescope for a super clean file picker, and includes the files in the messages to the llm.
-* **Background processing** - close the window while the AI responds, open the window and the response will be there.
-* **Selection inclusion** - Both windows, when opened with selected text, bring that selected text into the window for inclusion in your llm request. Opening with a selection clears the old session automatically.
-* **Filetype inclusion** - The file's extension is included in llm requests so you don't have to specify what kind of code it is when supplying smaller amounts of code
-* **Request cancellation** - I often send a request to gpt-4 and then immediately realize I missed something critical and want to make the request again. This plugin offers Ctrl-c in that situation and immediately kills the job. That way you can save time and tokens, and stay more in the flow.
-* **Super simple key commands** - Key commands are clearly labeled without you needing to toggle any windows.
-* **UX in mind** - It's hard to enumerate the little things, but I hope and think you'll notice them as you use the plugin. Examples include keeping sessions across close in both windows, saving the prompt window after you type stuff before you send the request, so you can slowly build up the request, scrolls on llm responses unless you're in the window, so you can interact with the response before it's finished, responsive window resizing when terminal window changes size
-* **Stability** - This was written TDD, and always will be. It uses emmylua types as best as I could figure out how to use them. It should be pretty stable, with everything tested thoroughly.
-* **Opens prepopulated with prior sessions** - both windows open with your last session. The plugin makes it easy to iterate on a message.
-
 ### Installation
 
-First, install [Ollama](https://ollama.com/).
-Then ensure your local environment has `OPENAI_API_KEY` set.
+This plugin requires `curl` be installed for requests.
+For Ollama requests, have [Ollama](https://ollama.com/) running locally.
+For OpenAI requests, have the `OPENAI_API_KEY` environment variable set.
 
-Then, in your favorite package manager:
+Now, in your favorite package manager:
 
 lazy:
-
 ```lua
 {
-  'Aaronik/GPTModels.nvim',
+  "Aaronik/GPTModels.nvim",
   dependencies = {
     "MunifTanjim/nui.nvim",
     "nvim-telescope/telescope.nvim"
@@ -64,7 +92,14 @@ lazy:
 }
 ```
 
-_(P.S. If you're using another package manager and have this set up, please open a PR or let me know in an issue and I'll add that here!)_
+Plug:
+```vim
+Plug "MunifTanjim/nui.nvim"
+Plug "nvim-telescope/telescope.nvim"
+Plug "Aaronik/GPTModels.nvim"
+```
+
+_(Contributions to this readme for how to do other package managers are welcome)_
 
 #### Mapping
 
@@ -72,7 +107,7 @@ Here are some examples of how to map these -- this is what I use, `<leader>a` fo
 
 in `init.lua`:
 ```lua
--- Both visual and normal mode for each, so you can open with selection or without.
+-- Both visual and normal mode for each, so you can open with a visual selection or without.
 vim.api.nvim_set_keymap('v', '<leader>a', ':GPTModelsCode<CR>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<leader>a', ':GPTModelsCode<CR>', { noremap = true })
 
@@ -82,7 +117,7 @@ vim.api.nvim_set_keymap('n', '<leader>c', ':GPTModelsChat<CR>', { noremap = true
 
 in `.vimrc`:
 ```vim
-" Or if you prefer using the traditional way
+" Or if you prefer the traditional way
 nnoremap <leader>a :GPTModelsCode<CR>
 vnoremap <leader>a :GPTModelsCode<CR>
 
@@ -96,6 +131,8 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
+* Source available ollama models from ollama ls
+* :h gpt works but :h gptmodels doesn't
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out

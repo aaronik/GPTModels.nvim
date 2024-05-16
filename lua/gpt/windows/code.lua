@@ -23,7 +23,7 @@ local code_prompt = function(filetype, input_text, code_text)
   local system_string = ""
   system_string = system_string .. "You are a code generator.\n"
   system_string = system_string .. "You only respond with code.\n"
-  system_string = system_string .. "Do not explain the code.\n"
+  system_string = system_string .. "Do not include any explanations.\n"
   system_string = system_string .. "Do not use backticks. Do not include ``` at all.\n"
 
   local system = { string.format(system_string, input_text, code_text) }
@@ -155,7 +155,7 @@ function M.build_and_mount(selected_lines)
 
   -- available controls are found at the bottom of the input popup
   input_popup.border:set_text("bottom",
-    " q quit | [S-]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
+    " q quit | [S]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
     "center")
 
   -- Register popups with store
