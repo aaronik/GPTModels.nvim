@@ -1,6 +1,6 @@
-local util = require('gpt.util')
+local util = require('gptmodels.util')
 local uv = vim.loop
-require('gpt.types')
+require('gptmodels.types')
 
 local M = {}
 

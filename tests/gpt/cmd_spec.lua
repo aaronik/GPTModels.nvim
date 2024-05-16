@@ -1,9 +1,9 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gpt.util")
+local util = require("gptmodels.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
-local cmd = require('gpt.cmd')
+local cmd = require('gptmodels.cmd')
 
 describe("cmd.exec", function()
   it("calls onread with data", function()

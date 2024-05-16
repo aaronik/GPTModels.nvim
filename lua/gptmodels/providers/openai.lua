@@ -1,6 +1,6 @@
-local util = require('gpt.util')
-local cmd = require('gpt.cmd')
-require('gpt.types')
+local util = require('gptmodels.util')
+local cmd = require('gptmodels.cmd')
+require('gptmodels.types')
 
 local M = {}
 

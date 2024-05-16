@@ -2,7 +2,7 @@
 --
 -- via https://www.petergundel.de/neovim/lua/hack/2023/12/17/get-neovim-mode-when-executing-a-command.html
 
-local util = require('gpt.util')
+local util = require('gptmodels.util')
 
 function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
   local gpt_opts = {
@@ -10,8 +10,8 @@ function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
   }
 
   -- For development only
-  -- util.R('gpt').code(gpt_opts);
-  require('gpt').code(gpt_opts)
+  -- util.R('gptmodels').code(gpt_opts);
+  require('gptmodels').code(gpt_opts)
 end
 
 function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
@@ -20,8 +20,8 @@ function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
   }
 
   -- For development only
-  -- util.R('gpt').chat(gpt_opts);
-  require('gpt').chat(gpt_opts)
+  -- util.R('gptmodels').chat(gpt_opts);
+  require('gptmodels').chat(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(

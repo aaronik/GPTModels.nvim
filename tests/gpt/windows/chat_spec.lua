@@ -1,15 +1,15 @@
 ---@diagnostic disable: undefined-global
 
-require('gpt.types')
-local util = require("gpt.util")
+require('gptmodels.types')
+local util = require("gptmodels.util")
 local assert = require("luassert")
-local chat_window = require('gpt.windows.chat')
+local chat_window = require('gptmodels.windows.chat')
 local stub = require('luassert.stub')
 local spy = require('luassert.spy')
-local llm = require('gpt.llm')
-local cmd = require('gpt.cmd')
-local Store = require('gpt.store')
-local ollama = require('gpt.providers.ollama')
+local llm = require('gptmodels.llm')
+local cmd = require('gptmodels.cmd')
+local Store = require('gptmodels.store')
+local ollama = require('gptmodels.providers.ollama')
 
 local skip = pending
 

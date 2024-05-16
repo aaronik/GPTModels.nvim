@@ -1,6 +1,6 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gpt.util")
+local util = require("gptmodels.util")
 local assert = require("luassert")
 
 describe("util", function()

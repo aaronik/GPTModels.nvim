@@ -1,4 +1,4 @@
-local Store = require('gpt.store')
+local Store = require('gptmodels.store')
 
 local M = {}
 
@@ -51,6 +51,7 @@ end
 ---@param bufnr integer
 ---@param text string
 function M.safe_render_buffer_from_text(bufnr, text)
+  if not bufnr then return end
   local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
   if not (buf_loaded and buf_valid) then return end
@@ -64,6 +65,7 @@ end
 ---@param bufnr integer
 ---@param lines string[]
 function M.safe_render_buffer_from_lines(bufnr, lines)
+  if not bufnr then return end
   local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
   if not (buf_loaded and buf_valid) then return end

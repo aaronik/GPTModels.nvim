@@ -1,12 +1,12 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gpt.util")
+local util = require("gptmodels.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
-local llm = require('gpt.llm')
-local Store = require('gpt.store')
-local ollama = require('gpt.providers.ollama')
-local openai = require('gpt.providers.openai')
+local llm = require('gptmodels.llm')
+local Store = require('gptmodels.store')
+local ollama = require('gptmodels.providers.ollama')
+local openai = require('gptmodels.providers.openai')
 
 describe("gpt.llm", function()
   describe("calling the provider stored in the Store", function()

@@ -1,11 +1,11 @@
 ---@diagnostic disable: undefined-global
 
-require('gpt.types')
-local util = require("gpt.util")
+require('gptmodels.types')
+local util = require("gptmodels.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
-local ollama = require('gpt.providers.ollama')
-local cmd = require('gpt.cmd')
+local ollama = require('gptmodels.providers.ollama')
+local cmd = require('gptmodels.cmd')
 
 describe("ollama.generate", function()
   it("passes correct data to curl", function()

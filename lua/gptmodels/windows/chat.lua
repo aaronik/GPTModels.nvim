@@ -1,16 +1,17 @@
-local util = require('gpt.util')
-local com = require('gpt.windows.common')
+local util = require('gptmodels.util')
+local com = require('gptmodels.windows.common')
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
-local llm = require("gpt.llm")
-local Store = require("gpt.store")
-local ollama = require("gpt.providers.ollama")
+local llm = require("gptmodels.llm")
+local Store = require("gptmodels.store")
+local ollama = require("gptmodels.providers.ollama")
 
 local M = {}
 
 ---@param bufnr integer
 ---@param messages LlmMessage[]
 local safe_render_buffer_from_messages = function(bufnr, messages)
+  if not bufnr then return end -- can happen when popup has been unmounted
   local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
   if not (buf_loaded and buf_valid) then return end

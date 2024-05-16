@@ -1,6 +1,6 @@
-local util = require('gpt.util')
-local code_window = require("gpt.windows.code")
-local chat_window = require("gpt.windows.chat")
+local util = require('gptmodels.util')
+local code_window = require("gptmodels.windows.code")
+local chat_window = require("gptmodels.windows.chat")
 
 local M = {}
 

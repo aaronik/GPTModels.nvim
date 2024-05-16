@@ -1,10 +1,10 @@
-local util        = require('gpt.util')
-local com         = require('gpt.windows.common')
+local util        = require('gptmodels.util')
+local com         = require('gptmodels.windows.common')
 local Layout      = require("nui.layout")
 local Popup       = require("nui.popup")
-local llm         = require('gpt.llm')
-local Store       = require('gpt.store')
-local ollama      = require('gpt.providers.ollama')
+local llm         = require('gptmodels.llm')
+local Store       = require('gptmodels.store')
+local ollama      = require('gptmodels.providers.ollama')
 
 local M           = {}
 
@@ -67,7 +67,8 @@ local function safe_render_right_text_from_store()
   -- right_bufnr will be wrong, and it won't get repopulated.
   -- So we're assigning to ..right.bufnr every time the window opens.
   local right_text = Store.code.right:read()
-  if right_text then
+  local bufnr = Store.code.right.popup.bufnr
+  if right_text and bufnr then
     com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
   end
 end

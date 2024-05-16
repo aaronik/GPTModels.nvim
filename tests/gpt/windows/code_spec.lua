@@ -1,14 +1,14 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gpt.util")
+local util = require("gptmodels.util")
 local assert = require("luassert")
-local code_window = require('gpt.windows.code')
+local code_window = require('gptmodels.windows.code')
 local stub = require('luassert.stub')
 local spy = require('luassert.spy')
-local llm = require('gpt.llm')
-local cmd = require('gpt.cmd')
-local Store = require('gpt.store')
-local ollama = require('gpt.providers.ollama')
+local llm = require('gptmodels.llm')
+local cmd = require('gptmodels.cmd')
+local Store = require('gptmodels.store')
+local ollama = require('gptmodels.providers.ollama')
 
 describe("The code window", function()
   before_each(function()
