@@ -4,7 +4,7 @@
 
 # GPTModels.nvim - an LLM AI plugin for neovim
 
-This is an iteration on the window features of [jackMort/ChatGPT.nvim].
+This is an iteration on the window features of [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim).
 It's an AI plugin designed to tighten your neovim workflow with AI LLMs.
 It offers two windows: one for chat, and one for code editing.
 
