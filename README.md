@@ -61,6 +61,7 @@ them here. But here they are anyways:
 
 | Keybinding | Action           | Description      |
 |------------|------------------|------------------|
+| `<CR>`     | send request     | pressing enter sends your prompt and any files or code selected to the llm |
 | `q`        | quit             | close the window |
 | `[S]Tab`   | cycle windows    | switch focus into each window successively |
 | `C-c`      | cancel request   | send SIGTERM to the `curl` command making the fetch |
@@ -70,6 +71,7 @@ them here. But here they are anyways:
 | `C-j/k`    | cycle models     | cycle through which LLM model to use for further requests |
 | `C-n`      | clear all        | clear the whole state, all the windows and files |
 
+All keybindings work from normal mode.
 
 ---
 
@@ -131,7 +133,6 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
-* :h gpt works but :h gptmodels doesn't
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out
