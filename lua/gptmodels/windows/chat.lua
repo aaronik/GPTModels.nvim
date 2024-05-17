@@ -118,6 +118,11 @@ local function chat_title()
   return "Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model
 end
 
+---@param chat NuiPopup
+local function set_chat_title(chat)
+  chat.border:set_text("top", " " .. chat_title() .. " ", "center")
+end
+
 ---@param selected_text string[] | nil
 ---@return { input: NuiPopup, chat: NuiPopup }
 function M.build_and_mount(selected_text)
@@ -140,8 +145,12 @@ function M.build_and_mount(selected_text)
   -- Fetch ollama models so user can work with what they have on their system
   ollama.fetch_models(function(err, models)
     if err then return util.log(err) end
-    if not models then return end
+    if not models or #models == 0 then return end
     Store.llm_models.ollama = models
+    if not util.contains_line(models, Store.llm_model) then
+      Store:set_llm("ollama", models[1])
+      set_chat_title(chat)
+    end
   end)
 
   -- Input window is text with no syntax
@@ -322,7 +331,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", " " .. chat_title() .. " ", "center")
+        set_chat_title(chat)
       end
     })
 
@@ -344,7 +353,7 @@ function M.build_and_mount(selected_text)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        chat.border:set_text("top", " " .. chat_title() .. " ", "center")
+        set_chat_title(chat)
       end
     })
 

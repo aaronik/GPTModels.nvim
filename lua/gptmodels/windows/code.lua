@@ -147,6 +147,11 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store:register_job(job)
 end
 
+---@param right_popup NuiPopup
+local function display_model_name(right_popup)
+  right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
+end
+
 ---@param selected_lines string[] | nil
 ---@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
 function M.build_and_mount(selected_lines)
@@ -168,10 +173,14 @@ function M.build_and_mount(selected_lines)
   Store.code.input.popup = input_popup
 
   -- Fetch ollama models so user can work with what they have on their system
-  ollama.fetch_models(function (err, models)
+  ollama.fetch_models(function(err, models)
     if err then return util.log(err) end
-    if not models then return end
+    if not models or #models == 0 then return end
     Store.llm_models.ollama = models
+    if not util.contains_line(models, Store.llm_model) then
+      Store:set_llm("ollama", models[1])
+      display_model_name(right_popup)
+    end
   end)
 
   -- Turn off syntax highlighting for input buffer.
@@ -319,7 +328,7 @@ function M.build_and_mount(selected_lines)
         if not current_index then return end
         local selected_option = model_options[(current_index % #model_options) + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
+        display_model_name(right_popup)
       end
     })
 
@@ -341,7 +350,7 @@ function M.build_and_mount(selected_lines)
         if not current_index then return end
         local selected_option = model_options[(current_index - 2) % #model_options + 1]
         Store:set_llm(selected_option.provider, selected_option.model)
-        right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
+        display_model_name(right_popup)
       end
     })
 

@@ -582,5 +582,10 @@ describe("The Chat window", function()
 
     assert.stub(fetch_models_stub).was_called(1)
     assert.same({ "my-model", "your-model" }, Store.llm_models.ollama)
+
+    -- and reassigns any bunk llm_model (which could happen from a user config or
+    -- the user not having whatever model I determine to be the default in
+    -- their local ollama)
+    assert.equal("my-model", Store.llm_model)
   end)
 end)
