@@ -211,18 +211,23 @@ describe("ollama.fetch_models", function()
     assert.same(exec_args.args, { "list" })
 
     local response = [[
-        NAME                    	ID          	SIZE  	MODIFIED
-        gemma:latest            	a72c7f4d0a15	5.0 GB	5 weeks ago
-        llama3:latest           	a6990ed6be41	4.7 GB	2 weeks ago
-        mistral:latest          	61e88e884507	4.1 GB	5 weeks ago
-        llama3:70b              	be39eb53a197	39 GB 	2 weeks ago
-      ]]
+      NAME                    	ID          	SIZE  	MODIFIED
+      deepseek-coder:33b      	acec7c0b0fd9	18 GB 	17 seconds ago
+      dolphin-mistral:latest  	5dc8c5a2be65	4.1 GB	7 weeks ago
+      dolphincoder:15b        	1102380927c2	9.1 GB	12 days ago
+      gemma:latest            	a72c7f4d0a15	5.0 GB	7 weeks ago
+      llama2-uncensored:latest	44040b922233	3.8 GB	7 weeks ago
+      llama3:latest           	a6990ed6be41	4.7 GB	4 weeks ago
+      mistral:latest          	61e88e884507	4.1 GB	7 weeks ago
+    ]]
 
     exec_args.onread(nil, response)
 
     vim.wait(20, function() return finished end)
 
     assert.is_nil(err)
-    assert.same({ "gemma:latest", "llama3:latest", "mistral:latest", "llama3:70b" }, models)
+    assert.same(
+      { "deepseek-coder:33b", "dolphin-mistral:latest", "dolphincoder:15b", "gemma:latest", "llama2-uncensored:latest",
+        "llama3:latest", "mistral:latest" }, models)
   end)
 end)

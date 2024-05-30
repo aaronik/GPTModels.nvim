@@ -85,7 +85,7 @@ end
 ---@type Store
 local Store = {
   llm_models = {
-    openai = { "gpt-4-turbo", "gpt-3.5-turbo" },
+    openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o" },
     ollama = { "llama3:latest", "mistral:latest" },
   },
   llm_provider = "ollama",
