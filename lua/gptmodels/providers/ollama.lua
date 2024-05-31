@@ -118,25 +118,25 @@ end
 ---@return Job
 M.fetch_models = function(cb)
     local job = cmd.exec({
-        cmd = "ollama",
-        args = { "list" },
+        cmd = "curl",
+        args = { "-s", "http://localhost:11434/api/tags" },
         ---@param err string | nil
-        ---@param response string | nil
-        onread = vim.schedule_wrap(function(err, response)
+        ---@param json_response string | nil
+        onread = vim.schedule_wrap(function(err, json_response)
             if err then return cb(err) end
-            if not response then return end
+            if not json_response then return end
 
+            ---@type boolean, { models: { name: string }[] } | nil
+            local status_ok, response = pcall(vim.fn.json_decode, json_response)
+            if not status_ok or not response then
+                return cb("error retrieving ollama models")
+            end
+
+            ---@type string[]
             local models = {}
-            for line in response:gmatch("[^\r\n]+") do
-                -- skip the first line, which just has column names
-                if line:match("%s*NAME.*") then goto continue end
 
-                local name = line:match("^%s*(%S+)")
-                if name then
-                    table.insert(models, name)
-                end
-
-                ::continue::
+            for _, model in ipairs(response.models) do
+                table.insert(models, model.name)
             end
 
             return cb(nil, models)
