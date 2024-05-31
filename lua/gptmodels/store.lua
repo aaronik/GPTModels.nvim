@@ -22,6 +22,32 @@ local concat_chat = function(chat, message)
   end
 end
 
+-- Finds the index of the model/provider pair where model == provider
+---@param model_options { model: string, provider: string }[]
+---@param provider string
+---@param model string
+---@return integer | nil
+local function find_model_index(model_options, provider, model)
+  for index, option in ipairs(model_options) do
+    if option.provider == provider and option.model == model then
+      return index
+    end
+  end
+  return nil -- No match found
+end
+
+---@param self Store
+local function build_model_options(self)
+  ---@type { model: string, provider: string }[]
+  local model_options = {}
+  for provider, models in pairs(self.llm_models) do
+    for _, model in ipairs(models) do
+      table.insert(model_options, { provider = provider, model = model })
+    end
+  end
+  return model_options
+end
+
 ---@class Pane
 ---@field clear fun(self: StrPane | LinesPane | MessagePane)
 ---@field popup NuiPopup
@@ -67,6 +93,8 @@ end
 ---@field llm_provider string
 ---@field llm_model string
 ---@field set_llm fun(self: Store, provider: "openai" | "ollama", model: string)
+---@field cycle_model_forward fun(self: Store)
+---@field cycle_model_backward fun(self: Store)
 ---@field private _job Job | nil
 
 -- TODO store should store lines (string[]) instead of string. More neovim centric data structure. Less munging.
@@ -94,6 +122,22 @@ local Store = {
   set_llm = function(self, provider, model)
     self.llm_provider = provider
     self.llm_model = model
+  end,
+
+  cycle_model_forward = function(self)
+    local model_options = build_model_options(self)
+    local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
+    if not current_index then return end
+    local selected_option = model_options[(current_index % #model_options) + 1]
+    self:set_llm(selected_option.provider, selected_option.model)
+  end,
+
+  cycle_model_backward = function(self)
+    local model_options = build_model_options(self)
+    local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
+    if not current_index then return end
+    local selected_option = model_options[(current_index - 2) % #model_options + 1]
+    self:set_llm(selected_option.provider, selected_option.model)
   end,
 
   clear = function(self)

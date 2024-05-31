@@ -141,4 +141,14 @@ describe("Store | llm stuff", function ()
     assert.equal("openai", Store.llm_provider)
     assert.equal("gpt-4-turbo", Store.llm_model)
   end)
+
+  it("cycles through llm models", function ()
+    local first_model = Store.llm_model
+
+    Store:cycle_model_forward()
+    assert.not_equal(first_model, Store.llm_model)
+
+    Store:cycle_model_backward()
+    assert.equal(first_model, Store.llm_model)
+  end)
 end)

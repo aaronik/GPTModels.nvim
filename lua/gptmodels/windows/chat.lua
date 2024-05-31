@@ -326,19 +326,7 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        ---@type { model: string, provider: string }[]
-        local model_options = {}
-
-        for provider, models in pairs(Store.llm_models) do
-          for _, model in ipairs(models) do
-            table.insert(model_options, { provider = provider, model = model })
-          end
-        end
-
-        local current_index = com.find_model_index(model_options)
-        if not current_index then return end
-        local selected_option = model_options[(current_index % #model_options) + 1]
-        Store:set_llm(selected_option.provider, selected_option.model)
+        Store:cycle_model_forward()
         set_chat_title(chat)
       end
     })
@@ -348,19 +336,7 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        ---@type { model: string, provider: string }[]
-        local model_options = {}
-
-        for provider, models in pairs(Store.llm_models) do
-          for _, model in ipairs(models) do
-            table.insert(model_options, { provider = provider, model = model })
-          end
-        end
-
-        local current_index = com.find_model_index(model_options)
-        if not current_index then return end
-        local selected_option = model_options[(current_index - 2) % #model_options + 1]
-        Store:set_llm(selected_option.provider, selected_option.model)
+        Store:cycle_model_backward()
         set_chat_title(chat)
       end
     })
