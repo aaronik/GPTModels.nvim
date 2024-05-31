@@ -128,13 +128,15 @@ M.fetch_models = function(cb)
 
             local models = {}
             for line in response:gmatch("[^\r\n]+") do
-                -- drop the first line, which just has column names
-                if not line:match("%s*NAME.*") then
-                    local name = line:match("^%s*(.-)%s+%S+")
-                    if name then
-                        table.insert(models, name)
-                    end
+                -- skip the first line, which just has column names
+                if line:match("%s*NAME.*") then goto continue end
+
+                local name = line:match("^%s*(%S+)")
+                if name then
+                    table.insert(models, name)
                 end
+
+                ::continue::
             end
 
             return cb(nil, models)
