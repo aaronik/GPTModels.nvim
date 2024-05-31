@@ -218,6 +218,11 @@ function M.build_and_mount(selected_lines)
     safe_render_from_store()
   end
 
+  local missing_deps_error_message = com.check_deps()
+  if missing_deps_error_message then
+    com.safe_render_buffer_from_text(right_popup.bufnr, missing_deps_error_message)
+  end
+
   local layout = Layout(
     {
       position = "50%",

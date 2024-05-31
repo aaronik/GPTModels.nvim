@@ -74,6 +74,7 @@ describe("ollama.generate", function()
 
     local exec_stub = stub(cmd, "exec")
 
+    ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
       exec_args.onread(nil, weird_json)
     end)
@@ -167,6 +168,7 @@ describe("ollama.chat", function()
 
     local exec_stub = stub(cmd, "exec")
 
+    ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
       exec_args.onread(nil, weird_json)
     end)

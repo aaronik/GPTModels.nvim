@@ -1,4 +1,6 @@
 local Store = require('gptmodels.store')
+local cmd = require('gptmodels.cmd')
+local util = require('gptmodels.util')
 
 local M = {}
 
@@ -80,11 +82,34 @@ function M.safe_render_buffer_from_lines(bufnr, lines)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
 end
 
+-- Check for required programs, warn user if they're not there
+---@return string | nil
+function M.check_deps()
+  local failed = false
+  local return_string = [[
+Error - missing required dependencies.
+GPTModels.nvim requires the following programs installed, which are not detected in your path:
+  ]]
+
+  for _, prog in ipairs({ "ollama", "curl" }) do
+    cmd.exec({
+      sync = true,
+      cmd = "which",
+      args = { prog },
+      onexit = function (code)
+        if code ~= 0 then
+          return_string = return_string .. prog .. " "
+          failed = true
+        end
+      end
+    })
+  end
+
+  if failed then
+    return return_string
+  else
+    return nil
+  end
+end
+
 return M
-
--- Some memories, since I'm so new at this
-
--- -- Close the popup when leaving the buffer, just nice to have
--- input:on(event.BufLeave, function()
---   com.close_popup(input.bufnr)
--- end, { once = true })

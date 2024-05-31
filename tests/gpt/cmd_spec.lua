@@ -56,7 +56,7 @@ describe("cmd.exec", function()
 
     -- That directory is definitely not found, which leads to a message to
     -- stderr with this in it
-    assert(string.find(e, "No such file or directory") ~= nil)
+    assert.not_nil(string.find(e, "No such file or directory"))
   end)
 
   it("handles exit codes", function()

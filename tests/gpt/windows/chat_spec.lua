@@ -588,4 +588,22 @@ describe("The Chat window", function()
     -- their local ollama)
     assert.equal("my-model", Store.llm_model)
   end)
+
+  it("alerts the user when required programs are not installed", function()
+    local exec_stub = stub(cmd, "exec")
+
+    ---@param exec_args ExecArgs
+    exec_stub.invokes(function(exec_args)
+      exec_args.onexit(1, 15)
+    end)
+
+    local chat = chat_window.build_and_mount()
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
+    assert.equal("  ollama curl ", chat_lines[3])
+
+    chat = chat_window.build_and_mount({ "with selected text" })
+    chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
+    assert.equal("  ollama curl ", chat_lines[3])
+  end)
+
 end)

@@ -144,6 +144,7 @@ function M.build_and_mount(selected_text)
 
   -- Fetch ollama models so user can work with what they have on their system
   ollama.fetch_models(function(err, models)
+    -- TODO If there's an issue fetching, I want to display that to the user.
     if err then return util.log(err) end
     if not models or #models == 0 then return end
     Store.llm_models.ollama = models
@@ -240,6 +241,11 @@ function M.build_and_mount(selected_text)
 
     -- Get the files back
     set_input_text(input)
+  end
+
+  local missing_deps_error_message = com.check_deps()
+  if missing_deps_error_message then
+    com.safe_render_buffer_from_text(chat.bufnr, missing_deps_error_message)
   end
 
   -- keymaps
