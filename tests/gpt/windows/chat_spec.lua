@@ -572,6 +572,8 @@ describe("The Chat window", function()
   end)
 
   it("fetches ollama llms when started", function()
+    local first_openai_model = Store.llm_models.openai[1]
+
     local fetch_models_stub = stub(ollama, "fetch_models")
 
     fetch_models_stub.invokes(function(cb)
@@ -587,6 +589,13 @@ describe("The Chat window", function()
     -- the user not having whatever model I determine to be the default in
     -- their local ollama)
     assert.equal("my-model", Store.llm_model)
+
+    -- Now ensure if we end up on an openai model, we will stay there on subsequent open
+    Store.llm_model = first_openai_model
+
+    chat_window.build_and_mount()
+    assert.stub(fetch_models_stub).was_called(2)
+    assert.equal(first_openai_model, Store.llm_model)
   end)
 
   it("alerts the user when required programs are not installed", function()

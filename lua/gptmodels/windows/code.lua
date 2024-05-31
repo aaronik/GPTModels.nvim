@@ -177,7 +177,9 @@ function M.build_and_mount(selected_lines)
     if err then return util.log(err) end
     if not models or #models == 0 then return end
     Store.llm_models.ollama = models
-    if not util.contains_line(models, Store.llm_model) then
+    local is_ollama = util.contains_line(models, Store.llm_model)
+    local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
+    if not is_ollama and not is_openai then
       Store:set_llm("ollama", models[1])
       display_model_name(right_popup)
     end
