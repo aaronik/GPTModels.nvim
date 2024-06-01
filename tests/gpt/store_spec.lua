@@ -33,7 +33,7 @@ describe("Store | setting / getting", function()
     assert.same({ { role = "assistant", content = "chatchat" } }, Store.chat.chat:read())
   end)
 
-  it("sets and gets included files", function ()
+  it("sets and gets included files", function()
     Store.code:append_file("lua/gpt/windows/code.lua")
     Store.code:append_file("lua/gpt/windows/chat.lua")
 
@@ -131,8 +131,8 @@ describe("Store | jobs", function()
   end)
 end)
 
-describe("Store | llm stuff", function ()
-  it("set_llm assigns to local fields", function ()
+describe("Store | llm stuff", function()
+  it("set_llm assigns to local fields", function()
     Store:set_llm("ollama", "llama3")
     assert.equal("ollama", Store.llm_provider)
     assert.equal("llama3", Store.llm_model)
@@ -142,7 +142,7 @@ describe("Store | llm stuff", function ()
     assert.equal("gpt-4-turbo", Store.llm_model)
   end)
 
-  it("cycles through llm models", function ()
+  it("cycles through llm models", function()
     local first_model = Store.llm_model
 
     Store:cycle_model_forward()
@@ -150,5 +150,12 @@ describe("Store | llm stuff", function ()
 
     Store:cycle_model_backward()
     assert.equal(first_model, Store.llm_model)
+  end)
+
+  it("shows convenient list of models with llm_model_strings", function()
+    Store.llm_models.openai = { "m" }
+    Store.llm_models.ollama = { "m" }
+
+    assert.same({ "openai.m", "ollama.m" }, Store:llm_model_strings())
   end)
 end)

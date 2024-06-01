@@ -90,6 +90,7 @@ end
 ---@field get_job fun(self: Store): Job | nil
 ---@field clear_job fun(self: Store)
 ---@field llm_models { openai: string[], ollama: string[] }
+---@field llm_model_strings fun(self: Store): string[]
 ---@field llm_provider string
 ---@field llm_model string
 ---@field set_llm fun(self: Store, provider: "openai" | "ollama", model: string)
@@ -138,6 +139,16 @@ local Store = {
     if not current_index then return end
     local selected_option = model_options[(current_index - 2) % #model_options + 1]
     self:set_llm(selected_option.provider, selected_option.model)
+  end,
+
+  llm_model_strings = function(self)
+    local model_strings = {}
+    for provider, models in pairs(self.llm_models) do
+      for _, model in ipairs(models) do
+        table.insert(model_strings, provider .. "." .. model)
+      end
+    end
+    return model_strings
   end,
 
   clear = function(self)
