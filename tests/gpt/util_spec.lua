@@ -1,6 +1,7 @@
 ---@diagnostic disable: undefined-global
 
 local util = require("gptmodels.util")
+local stub = require('luassert.stub')
 local assert = require("luassert")
 
 describe("util", function()
@@ -27,8 +28,34 @@ describe("util", function()
 
   describe("log", function()
     it("works", function()
-      -- TODO stub io.{open,write,flush,close}; ensure write gets variadic arguments
-      util.log("--Test run--")
+      local io_open_stub = stub(io, "open")
+
+      ---@type string[]
+      local writes = {}
+      local num_flushes = 0
+      local num_closes = 0
+
+      local log_file = {
+        -- _ is because write is a _method_, log_file:write, so it gets self arg
+        write = function(_, arg1, arg2)
+          table.insert(writes, arg1)
+          table.insert(writes, arg2)
+        end,
+        flush = function()
+          num_flushes = num_flushes + 1
+        end,
+        close = function()
+          num_closes = num_closes + 1
+        end
+      }
+
+      io_open_stub.returns(log_file)
+
+      util.log(1, 2, 3, 4, 5)
+
+      assert.same({ "1\n", "2\n", "3\n", "4\n", "5\n", }, writes)
+      assert.equal(1, num_flushes)
+      assert.equal(1, num_closes)
     end)
   end)
 

@@ -19,15 +19,17 @@ M.P = function(v)
 end
 
 -- Log to the file debug.log in the root. File can be watched for easier debugging.
-M.log = function(data)
-  if type(data) == "table" then
-    data = vim.inspect(data)
-  end
+M.log = function(...)
+  local args = {...}
 
+  -- Canonical log dir
   local data_path = vim.fn.stdpath("data") .. "/gptmodels"
+
+  -- If no dir on fs, make it
   if vim.fn.isdirectory(data_path) == 0 then
     vim.fn.mkdir(data_path, "p")
   end
+
   local log_file = io.open(data_path .. "/debug.log", "a")
 
   -- Guard against no log file by making one
@@ -35,12 +37,20 @@ M.log = function(data)
     log_file = io.open(data_path .. "/debug.log", "w+")
   end
 
-  -- If that failed and there still isn't one, swallow the error.
+  -- Swallow further errors
   -- This is a utility for development, it should never cause issues
   -- during real use.
   if not log_file then return end
 
-  log_file:write(tostring(data) .. "\n")
+  -- Write each arg to disk
+  for _, arg in ipairs(args) do
+    if type(arg) == "table" then
+      arg = vim.inspect(arg)
+    end
+
+    log_file:write(tostring(arg) .. "\n")
+  end
+
   log_file:flush() -- Ensure the output is written immediately
   log_file:close()
 end
