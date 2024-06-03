@@ -95,7 +95,7 @@ local function on_s_tab(i, bufs)
   vim.api.nvim_set_current_win(next_win)
 end
 
----@param input any -- this is a popup, wish they were typed
+---@param input NuiPopup
 local function set_input_text(input)
   local files = Store.chat:get_files()
   if #files == 0 then
@@ -134,7 +134,7 @@ function M.build_and_mount(selected_text)
   -- available controls are found at the bottom of the input popup
   input.border:set_text(
     "bottom",
-    " q quit | [S]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files ",
+    " q quit | [S]Tab cycle windows | C-j/k/p cycle/pick models | C-c cancel request | C-n clear all | C-f/g add/clear files ",
     "center"
   )
 
@@ -307,6 +307,43 @@ function M.build_and_mount(selected_text)
       callback = function()
         Store.chat:clear_files()
         set_input_text(input)
+      end
+    })
+
+    -- Ctrl-p to open model picker
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-p>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+        local conf = require('telescope.config').values
+        local actions = require('telescope.actions')
+        local state = require('telescope.actions.state')
+        local pickers = require('telescope.pickers')
+
+        local opts = util.merge_tables(theme, {
+          attach_mappings = function(_, map)
+            map('i', '<CR>', function(bufnr)
+              local selection = state.get_selected_entry()
+              local model_string = selection[1]
+              local provider = vim.split(model_string, ".", { plain = true })[1]
+              local model = vim.split(model_string, ".", { plain = true })[2]
+              if not (provider and model) then return end
+              Store:set_llm(provider, model)
+              set_chat_title(chat)
+              actions.close(bufnr)
+            end)
+            return true
+          end
+        })
+
+        pickers.new(opts, {
+          prompt_title = "models",
+          finder = require('telescope.finders').new_table {
+            results = Store:llm_model_strings()
+          },
+          sorter = conf.generic_sorter({}),
+        }):find()
       end
     })
 

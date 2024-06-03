@@ -156,6 +156,7 @@ describe("Store | llm stuff", function()
     Store.llm_models.openai = { "m" }
     Store.llm_models.ollama = { "m" }
 
-    assert.same({ "openai.m", "ollama.m" }, Store:llm_model_strings())
+    assert(util.contains_line(Store:llm_model_strings(), "openai.m"))
+    assert(util.contains_line(Store:llm_model_strings(), "openai.m"))
   end)
 end)

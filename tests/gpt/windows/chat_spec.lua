@@ -14,6 +14,8 @@ local ollama = require('gptmodels.providers.ollama')
 local skip = pending
 
 describe("The Chat window", function()
+  local snapshot
+
   before_each(function()
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
     vim.api.nvim_win_set_height(0, 100)
@@ -26,6 +28,11 @@ describe("The Chat window", function()
     stub(cmd, "exec")
 
     Store:clear()
+    snapshot = assert:snapshot()
+  end)
+
+  after_each(function()
+    snapshot:revert()
   end)
 
   it("returns buffer numbers and winids", function()
@@ -374,6 +381,43 @@ describe("The Chat window", function()
     assert.False(contains_system_with_file)
   end)
 
+  it("opens a model picker on <C-p>", function()
+    -- For down the line of this crazy stubbing exercise
+    local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
+    get_selected_entry_stub.returns({ "abc.123", index = 1 }) -- typical response
+
+    -- And just make sure there are no closing errors
+    stub(require('telescope.actions'), "close")
+
+    local set_llm_stub = stub(Store, "set_llm")
+
+    local new_picker_stub = stub(require('telescope.pickers'), "new")
+    new_picker_stub.returns({ find = function() end })
+
+    chat_window.build_and_mount()
+
+    -- Open model picker
+    local c_m = vim.api.nvim_replace_termcodes("<C-p>", true, true, true)
+    vim.api.nvim_feedkeys(c_m, 'mtx', true)
+
+    assert.stub(new_picker_stub).was_called(1)
+
+    -- Type whatever nonsense and press enter
+    local search = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
+    vim.api.nvim_feedkeys(search, 'mtx', true)
+
+    local attach_mappings = new_picker_stub.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+
+    assert.stub(set_llm_stub).was_called(1)
+    assert.equal('abc', set_llm_stub.calls[1].refs[2])
+    assert.equal('123', set_llm_stub.calls[1].refs[3])
+  end)
+
   it("closes the window on q", function()
     local chat = chat_window.build_and_mount()
 
@@ -603,7 +647,9 @@ describe("The Chat window", function()
 
     ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
-      exec_args.onexit(1, 15)
+      if exec_args.onexit then
+        exec_args.onexit(1, 15)
+      end
     end)
 
     local chat = chat_window.build_and_mount()

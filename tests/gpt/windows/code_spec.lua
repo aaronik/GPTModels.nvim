@@ -11,6 +11,8 @@ local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
 
 describe("The code window", function()
+  local snapshot
+
   before_each(function()
     -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
     vim.api.nvim_win_set_height(0, 100)
@@ -19,8 +21,11 @@ describe("The code window", function()
     stub(cmd, "exec")
 
     Store:clear()
+    snapshot = assert:snapshot()
+  end)
 
-    -- TODO need to create/reset luassert sessions here
+  after_each(function()
+    snapshot:revert()
   end)
 
   it("returns buffer numbers, winids", function()
@@ -369,8 +374,6 @@ describe("The code window", function()
   it("cycles through available models with <C-j>", function()
     code_window.build_and_mount()
 
-    local snapshot = assert:snapshot()
-
     local store_spy = spy.on(Store, "set_llm")
 
     -- Press <C-j>
@@ -393,8 +396,6 @@ describe("The code window", function()
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
     assert.is_not.equal(first_args[2], second_args[2])
-
-    snapshot:revert()
   end)
 
   it("cycles through available models with <C-k>", function()
@@ -492,6 +493,43 @@ describe("The code window", function()
       end
     end
     assert.False(contains_system_with_file)
+  end)
+
+  it("opens a model picker on <C-p>", function()
+    -- For down the line of this crazy stubbing exercise
+    local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
+    get_selected_entry_stub.returns({ "abc.123", index = 1 }) -- typical response
+
+    -- And just make sure there are no closing errors
+    stub(require('telescope.actions'), "close")
+
+    local set_llm_stub = stub(Store, "set_llm")
+
+    local new_picker_stub = stub(require('telescope.pickers'), "new")
+    new_picker_stub.returns({ find = function() end })
+
+    code_window.build_and_mount()
+
+    -- Open model picker
+    local c_m = vim.api.nvim_replace_termcodes("<C-p>", true, true, true)
+    vim.api.nvim_feedkeys(c_m, 'mtx', true)
+
+    assert.stub(new_picker_stub).was_called(1)
+
+    -- Type whatever nonsense and press enter
+    local search = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
+    vim.api.nvim_feedkeys(search, 'mtx', true)
+
+    local attach_mappings = new_picker_stub.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+
+    assert.stub(set_llm_stub).was_called(1)
+    assert.equal('abc', set_llm_stub.calls[1].refs[2])
+    assert.equal('123', set_llm_stub.calls[1].refs[3])
   end)
 
   it("transfers contents of right pane to left pane on <C-x> (xfer)", function()
@@ -716,7 +754,10 @@ describe("The code window", function()
 
     ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
-      exec_args.onexit(1, 15)
+      -- multiple calls will take place, only the one with onexit we care about
+      if exec_args.onexit then
+        exec_args.onexit(1, 15)
+      end
     end)
 
     local code = code_window.build_and_mount()
@@ -727,5 +768,4 @@ describe("The code window", function()
     right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     assert.equal("  ollama curl ", right_lines[3])
   end)
-
 end)

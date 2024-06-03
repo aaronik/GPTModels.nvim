@@ -148,7 +148,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 end
 
 ---@param right_popup NuiPopup
-local function display_model_name(right_popup)
+local function render_model_name(right_popup)
   right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
 end
 
@@ -164,7 +164,7 @@ function M.build_and_mount(selected_lines)
 
   -- available controls are found at the bottom of the input popup
   input_popup.border:set_text("bottom",
-    " q quit | [S]Tab cycle windows | C-j/k cycle models | C-c cancel request | C-n clear all | C-f add files | C-g clear files | C-x xfer to deck ",
+    " q quit | [S]Tab cycle windows | C-j/k/p cycle/pick models | C-c cancel request | C-n clear all | C-f/g add/clear files | C-x xfer to deck ",
     "center")
 
   -- Register popups with store
@@ -181,7 +181,7 @@ function M.build_and_mount(selected_lines)
     local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
     if not is_ollama and not is_openai then
       Store:set_llm("ollama", models[1])
-      display_model_name(right_popup)
+      render_model_name(right_popup)
     end
   end)
 
@@ -317,13 +317,50 @@ function M.build_and_mount(selected_lines)
       end
     })
 
+    -- Ctrl-p to open model picker
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-p>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+        local conf = require('telescope.config').values
+        local actions = require('telescope.actions')
+        local state = require('telescope.actions.state')
+        local pickers = require('telescope.pickers')
+
+        local opts = util.merge_tables(theme, {
+          attach_mappings = function(_, map)
+            map('i', '<CR>', function(bufnr)
+              local selection = state.get_selected_entry()
+              local model_string = selection[1]
+              local provider = vim.split(model_string, ".", { plain = true })[1]
+              local model = vim.split(model_string, ".", { plain = true })[2]
+              if not (provider and model) then return end
+              Store:set_llm(provider, model)
+              render_model_name(right_popup)
+              actions.close(bufnr)
+            end)
+            return true
+          end
+        })
+
+        pickers.new(opts, {
+          prompt_title = "models",
+          finder = require('telescope.finders').new_table {
+            results = Store:llm_model_strings()
+          },
+          sorter = conf.generic_sorter({}),
+        }):find()
+      end
+    })
+
     -- Ctrl-j to cycle forward through llms
     vim.api.nvim_buf_set_keymap(buf, "", "<C-j>", "", {
       noremap = true,
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        display_model_name(right_popup)
+        render_model_name(right_popup)
       end
     })
 
@@ -333,7 +370,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        display_model_name(right_popup)
+        render_model_name(right_popup)
       end
     })
 
