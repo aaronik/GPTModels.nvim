@@ -142,6 +142,7 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
   Same with chat, and all the bufnrs and winids are put into the store on open.
 * Gracefully handle when ollama isn't installed or running
 * Logging the errors instead of showing them in the window was the wrong way, I just want to handle as many as possible in the provider.
+* Remove openai models when OPENAI_API_KEY is not set?
 
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
