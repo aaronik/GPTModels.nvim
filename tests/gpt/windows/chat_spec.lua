@@ -43,12 +43,12 @@ describe("The Chat window", function()
 
   it("sets wrap on all bufs, because these are small windows and that works better", function()
     -- First disable it globally, so the popups don't inherit this wrap
-    vim.api.nvim_win_set_option(0, 'wrap', false)
+    vim.wo[0].wrap = false
 
     local chat = chat_window.build_and_mount()
 
-    assert(vim.api.nvim_win_get_option(chat.chat.winid, 'wrap'))
-    assert(vim.api.nvim_win_get_option(chat.input.winid, 'wrap'))
+    assert.equal(vim.wo[chat.chat.winid].wrap, true)
+    assert.equal(vim.wo[chat.input.winid].wrap, true)
   end)
 
   skip("opens in input mode", function()
@@ -234,8 +234,6 @@ describe("The Chat window", function()
   it("cycles through available models with <C-j>", function()
     chat_window.build_and_mount()
 
-    local snapshot = assert:snapshot()
-
     local store_spy = spy.on(Store, "set_llm")
 
     -- Press <C-j>
@@ -258,14 +256,10 @@ describe("The Chat window", function()
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
     assert.is_not.equal(first_args[3], second_args[3])
-
-    snapshot:revert()
   end)
 
   it("cycles through available models with <C-k>", function()
     chat_window.build_and_mount()
-
-    local snapshot = assert:snapshot()
 
     local store_spy = spy.on(Store, "set_llm")
 
@@ -289,8 +283,6 @@ describe("The Chat window", function()
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
     assert.is_not.equal(first_args[3], second_args[3])
-
-    snapshot:revert()
   end)
 
   it("kills active job on <C-c>", function()

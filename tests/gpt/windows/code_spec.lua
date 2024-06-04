@@ -40,13 +40,14 @@ describe("The code window", function()
 
   it("sets wrap on all bufs, because these are small windows and that works better", function()
     -- First disable it globally, so the popups don't inherit this wrap
-    vim.api.nvim_win_set_option(0, 'wrap', false)
+    -- vim.api.nvim_win_set_option(0, 'wrap', false)
+    vim.wo[0].wrap = false
 
     local code = code_window.build_and_mount()
 
-    assert(vim.api.nvim_win_get_option(code.left.winid, 'wrap'))
-    assert(vim.api.nvim_win_get_option(code.right.winid, 'wrap'))
-    assert(vim.api.nvim_win_get_option(code.input.winid, 'wrap'))
+    assert.equal(vim.wo[code.left.winid].wrap, true)
+    assert.equal(vim.wo[code.right.winid].wrap, true)
+    assert.equal(vim.wo[code.input.winid].wrap, true)
   end)
 
   it("places provided selected text in left window", function()
@@ -187,10 +188,10 @@ describe("The code window", function()
   end)
 
   it("includes file type", function()
-    -- return "lua" for filetype request
-    stub(vim.api, "nvim_buf_get_option").returns("lua")
-
+    local bufnr = vim.api.nvim_get_current_buf()
+    vim.bo[bufnr].filetype = "lua"
     code_window.build_and_mount()
+
     local s = stub(llm, "generate")
 
     -- Make a request to start a job
@@ -200,8 +201,8 @@ describe("The code window", function()
     ---@type MakeGenerateRequestArgs
     local args = s.calls[1].refs[1]
 
-    assert.not_same(string.find(args.llm.prompt, "lua"), nil)
-    assert.is_not.same(args.llm.prompt, nil)
+    assert.not_nil(string.find(args.llm.prompt, "lua"))
+    assert.not_nil(args.llm.prompt)
   end)
 
   it("Has a loading indicator", function()
@@ -401,8 +402,6 @@ describe("The code window", function()
   it("cycles through available models with <C-k>", function()
     code_window.build_and_mount()
 
-    local snapshot = assert:snapshot()
-
     local store_spy = spy.on(Store, "set_llm")
 
     -- Press <C-k>
@@ -425,8 +424,6 @@ describe("The code window", function()
     -- Make sure the model is different, which it definitely should be.
     -- The provider might be the same.
     assert.is_not.equal(first_args[3], second_args[3])
-
-    snapshot:revert()
   end)
 
   it("includes files on <C-f> and clears them on <C-g>", function()

@@ -157,14 +157,14 @@ function M.build_and_mount(selected_text)
   end)
 
   -- Input window is text with no syntax
-  vim.api.nvim_buf_set_option(input.bufnr, 'filetype', 'txt')
-  vim.api.nvim_buf_set_option(input.bufnr, 'syntax', '')
+  vim.bo[input.bufnr].filetype = 'txt'
+  vim.bo[input.bufnr].syntax = ''
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.api.nvim_buf_set_option(input.bufnr, "buftype", "nofile")
+  vim.bo[input.bufnr].buftype = "nofile"
 
   -- Chat in markdown
-  vim.api.nvim_buf_set_option(chat.bufnr, 'filetype', 'markdown')
+  vim.bo[chat.bufnr].filetype = 'markdown'
 
   vim.api.nvim_buf_set_keymap(
     input.bufnr,
@@ -206,9 +206,9 @@ function M.build_and_mount(selected_text)
   -- Once this mounts, our popups now have a winid for as long as the layout is mounted
   layout:mount()
 
-  -- Wrap lines, because these are small windows and it's nicer
-  vim.api.nvim_win_set_option(chat.winid, "wrap", true)
-  vim.api.nvim_win_set_option(input.winid, "wrap", true)
+  -- Wrap lines for modern Neovim API
+  vim.wo[chat.winid].wrap = true
+  vim.wo[input.winid].wrap = true
 
   -- Add text selection to input buf
   if selected_text then

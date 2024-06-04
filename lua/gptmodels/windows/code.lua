@@ -97,7 +97,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   local left_lines = vim.api.nvim_buf_get_lines(left_bufnr, 0, -1, false)
   local left_text = table.concat(left_lines, "\n")
 
-  local filetype = vim.api.nvim_buf_get_option(left_bufnr, 'filetype')
+  local filetype = vim.bo[left_bufnr].filetype
 
   local prompt, system = code_prompt(filetype, input_text, left_text)
 
@@ -186,15 +186,15 @@ function M.build_and_mount(selected_lines)
   end)
 
   -- Turn off syntax highlighting for input buffer.
-  vim.api.nvim_buf_set_option(input_popup.bufnr, 'filetype', 'txt')
-  vim.api.nvim_buf_set_option(input_popup.bufnr, 'syntax', '')
+  vim.bo[input_popup.bufnr].filetype = "txt"
+  vim.bo[input_popup.bufnr].syntax = ""
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.api.nvim_buf_set_option(input_popup.bufnr, "buftype", "nofile")
+  vim.bo[input_popup.bufnr].buftype = "nofile"
 
   -- Set buffers to same filetype as current file, for highlighting
-  vim.api.nvim_buf_set_option(left_popup.bufnr, 'filetype', vim.bo.filetype)
-  vim.api.nvim_buf_set_option(right_popup.bufnr, 'filetype', vim.bo.filetype)
+  vim.bo[left_popup.bufnr].filetype = vim.bo.filetype
+  vim.bo[right_popup.bufnr].filetype = vim.bo.filetype
 
   -- When the user opened this from visual mode with text
   if selected_lines then
@@ -433,9 +433,9 @@ function M.build_and_mount(selected_lines)
   layout:mount()
 
   -- Wrap lines, because these are small windows and it's nicer
-  vim.api.nvim_win_set_option(left_popup.winid, "wrap", true)
-  vim.api.nvim_win_set_option(right_popup.winid, "wrap", true)
-  vim.api.nvim_win_set_option(input_popup.winid, "wrap", true)
+  vim.wo[left_popup.winid].wrap = true
+  vim.wo[right_popup.winid].wrap = true
+  vim.wo[input_popup.winid].wrap = true
 
   return {
     input = input_popup,
