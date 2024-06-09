@@ -57,7 +57,13 @@ local on_CR = function(input_bufnr, chat_bufnr)
       messages = messages,
     },
     on_read = function(err, message)
-      if err then return util.log(err) end
+      if err then
+        -- P("code found err: " .. err)
+        Store.chat.chat:append({ role = "assistant", content = err })
+        safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat:read())
+        return
+      end
+
 
       -- No response _and_ no error? Weird. Happens though.
       if message then
@@ -96,7 +102,7 @@ local function on_s_tab(i, bufs)
 end
 
 ---@param input NuiPopup
-local function set_input_text(input)
+local function set_input_top_border_text(input)
   local files = Store.chat:get_files()
   if #files == 0 then
     input.border:set_text(
@@ -112,6 +118,23 @@ local function set_input_text(input)
       "center"
     )
   end
+end
+
+
+-- available controls are found at the bottom of the input popup
+---@param input NuiPopup
+local function set_input_bottom_border_text(input)
+  local commands = {
+    "q quit",
+    "[S]Tab cycle windows",
+    "C-c cancel request",
+    "C-j/k/p cycle/pick models",
+    "C-n clear all",
+    "C-f/g add/clear files",
+  }
+
+  local commands_str = " " .. table.concat(commands, " | ") .. " "
+  input.border:set_text("bottom", commands_str, "center")
 end
 
 local function chat_title()
@@ -132,11 +155,7 @@ function M.build_and_mount(selected_text)
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
   -- available controls are found at the bottom of the input popup
-  input.border:set_text(
-    "bottom",
-    " q quit | [S]Tab cycle windows | C-j/k/p cycle/pick models | C-c cancel request | C-n clear all | C-f/g add/clear files ",
-    "center"
-  )
+  set_input_bottom_border_text(input)
 
   -- Register popups with store
   Store.chat.chat.popup = chat
@@ -242,7 +261,7 @@ function M.build_and_mount(selected_text)
     safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat:read())
 
     -- Get the files back
-    set_input_text(input)
+    set_input_top_border_text(input)
   end
 
   local missing_deps_error_message = com.check_deps()
@@ -276,7 +295,7 @@ function M.build_and_mount(selected_text)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        set_input_text(input)
+        set_input_top_border_text(input)
       end
     })
 
@@ -291,7 +310,7 @@ function M.build_and_mount(selected_text)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               Store.chat:append_file(selection[1])
-              set_input_text(input)
+              set_input_top_border_text(input)
               require('telescope.actions').close(prompt_bufnr)
             end)
             return true
@@ -306,7 +325,7 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function()
         Store.chat:clear_files()
-        set_input_text(input)
+        set_input_top_border_text(input)
       end
     })
 

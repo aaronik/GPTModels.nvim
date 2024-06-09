@@ -139,11 +139,9 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 * Add copilot support .. Very hard as it turns out
 * Protect against opening windows many times?
 * Figure out how to test nui border text and test all the titles
-* Gracefully handle when ollama isn't running
-* Show all curl errors in user window. Sad path here is unhelpful at best.
-* Logging the errors instead of showing them in the window was the wrong way, I just want to handle as many as possible in the provider.
-    * Provider errors might be alright to just log, actually, making sure all known ones are handled..
 * Remove openai models when OPENAI_API_KEY is not set?
+* Chat only scrolls on llm response, user input scrolls off bottom of screen
+* util.log filesize management
 
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost

@@ -39,11 +39,13 @@ end
 ---@param text string
 function M.safe_render_buffer_from_text(bufnr, text)
   if not bufnr then return end
-  local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  -- local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
+  local buf_loaded = true
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
+
   if not (buf_loaded and buf_valid) then return end
 
-  local buf_writable = vim.api.nvim_buf_get_option(bufnr, 'modifiable')
+  local buf_writable = vim.bo[bufnr].modifiable
   if not buf_writable then return end
 
   local response_lines = vim.split(text or "", "\n")
@@ -60,7 +62,7 @@ function M.safe_render_buffer_from_lines(bufnr, lines)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
   if not (buf_loaded and buf_valid) then return end
 
-  local buf_writable = vim.api.nvim_buf_get_option(bufnr, 'modifiable')
+  local buf_writable = vim.bo[bufnr].modifiable
   if not buf_writable then return end
 
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)

@@ -11,10 +11,12 @@ local M = {}
 M.generate = function(args)
     local url = "http://localhost:11434/api/generate"
 
+    -- default model
     if not args.llm.model then
         args.llm.model = "llama3"
     end
 
+    -- system prompt
     if args.llm.system then
         ---@diagnostic disable-next-line: assign-type-mismatch -- do some last minute munging to get it happy for ollama
         args.llm.system = table.concat(args.llm.system, "\n\n")
@@ -24,30 +26,38 @@ M.generate = function(args)
         url,
         "--data",
         vim.fn.json_encode(args.llm),
-        "--silent",
+        "--no-progress-meter",
         "--no-buffer",
     }
 
     local job = cmd.exec({
+        testid = "ollama-generate",
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, json)
             if err then return args.on_read(err) end
             if not json then return end
 
-            -- A strange case where a final message returned by ollama often has a decoding issue,
-            -- but doesn't have any content. So it's getting dropped
+            -- There's a final message that ollama returns, which sometimes is
+            -- too big for a single curl frame response. So the json can't get
+            -- decoded.
+            -- The first always contains "done": true
             if string.match(json, '"done":true') then
+                return
+            end
+
+            -- The rest start with a comma or a number.
+            local pattern = "^[%,%d]"
+            if string.match(json, pattern) then
                 return
             end
 
             ---@type boolean, { response: string } | nil
             local status_ok, data = pcall(vim.fn.json_decode, json)
             if not status_ok or not data then
-                args.on_read("Error decoding json: " .. json, "")
+                return args.on_read("Error decoding json: " .. json, "")
             end
 
-            ---@diagnostic disable-next-line: need-check-nil
             args.on_read(nil, data.response)
         end),
         onexit = vim.schedule_wrap(function()
@@ -73,20 +83,29 @@ M.chat = function(args)
         url,
         "--data",
         vim.fn.json_encode(args.llm),
-        "--silent",
+        "--no-progress-meter",
         "--no-buffer",
     }
 
     local job = cmd.exec({
+        testid = "ollama-chat",
         cmd = "curl",
         args = curl_args,
         onread = vim.schedule_wrap(function(err, json)
             if err then return args.on_read(err) end
             if not json then return end
 
-            -- A strange case where a final message returned by ollama often has a decoding issue,
-            -- but doesn't have any content. So it's getting dropped
+            -- There's a final message that ollama returns, which sometimes is
+            -- too big for a single curl frame response. So the json can't get
+            -- decoded.
+            -- The first always contains "done": true
             if string.match(json, '"done":true') then
+                return
+            end
+
+            -- The rest start with a comma or a number.
+            local pattern = "^[%,%d]"
+            if string.match(json, pattern) then
                 return
             end
 
@@ -119,7 +138,7 @@ end
 M.fetch_models = function(cb)
     local job = cmd.exec({
         cmd = "curl",
-        args = { "-s", "http://localhost:11434/api/tags" },
+        args = { "--no-progress-meter", "http://localhost:11434/api/tags" },
         ---@param err string | nil
         ---@param json_response string | nil
         onread = vim.schedule_wrap(function(err, json_response)

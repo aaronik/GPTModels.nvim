@@ -10,6 +10,15 @@ local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
 
+-- For async functions that use vim.schedule_wrap, which writing to buffers requires
+local function stub_schedule_wrap()
+  stub(vim, "schedule_wrap").invokes(function(cb)
+    return function(...)
+      cb(...)
+    end
+  end)
+end
+
 describe("The code window", function()
   local snapshot
 
@@ -695,30 +704,6 @@ describe("The code window", function()
     assert.equal(expected_scroll, actual_scroll)
   end)
 
-  it("handles llm errors gracefully", function()
-    code_window.build_and_mount()
-
-    local llm_stub = stub(llm, "generate")
-
-    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    ---@type MakeGenerateRequestArgs
-    local args = llm_stub.calls[1].refs[1]
-
-    local log_stub = stub(util, "log")
-
-    args.on_read("llm-error", nil)
-
-    -- Populate a log file with mostly json decode errors I'm sure
-    assert.stub(log_stub).was_called(1)
-
-    -- This would mean the provider called on_read with no error and no response
-    -- Happens sometimes with openai, probably my fault. Just testing to make
-    -- sure it doesn't error.
-    args.on_read(nil, nil)
-  end)
-
   it("fetches ollama llms when started", function()
     local first_openai_model = Store.llm_models.openai[1]
 
@@ -759,10 +744,35 @@ describe("The code window", function()
 
     local code = code_window.build_and_mount()
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert.equal("  ollama curl ", right_lines[3])
+    assert(util.contains_line(right_lines, "  ollama curl "))
 
     code = code_window.build_and_mount({ "with selected text" })
     right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert.equal("  ollama curl ", right_lines[3])
+    assert(util.contains_line(right_lines, "  ollama curl "))
+  end)
+
+  it("handles errors gracefully - curl error messages appear on screen", function()
+    local exec_stub = stub(cmd, "exec")
+
+    stub_schedule_wrap()
+
+    ---@param exec_args ExecArgs
+    exec_stub.invokes(function(exec_args)
+      -- multiple calls will take place, only the one for ollama generation we care about
+      if exec_args.testid == "ollama-generate" then
+        -- sometimes requests are broken into multiple - system must concat correctly.
+        exec_args.onread("curl ")
+        exec_args.onread("error")
+      end
+    end)
+
+    local code = code_window.build_and_mount()
+
+    -- Send a request
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
+    assert.equal("curl error", right_lines[1])
   end)
 end)

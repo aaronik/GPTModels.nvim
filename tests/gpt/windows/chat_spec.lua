@@ -11,7 +11,13 @@ local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
 
-local skip = pending
+local function stub_schedule_wrap()
+  stub(vim, "schedule_wrap").invokes(function(cb)
+    return function(...)
+      cb(...)
+    end
+  end)
+end
 
 describe("The Chat window", function()
   local snapshot
@@ -51,7 +57,7 @@ describe("The Chat window", function()
     assert.equal(vim.wo[chat.input.winid].wrap, true)
   end)
 
-  skip("opens in input mode", function()
+  pending("opens in input mode", function()
     chat_window.build_and_mount()
     vim.api.nvim_feedkeys('xhello', 'mtx', true)
     -- For some reason, the first letter is always trimmed off. But if it's not in insert mode, the line will be empty ""
@@ -560,30 +566,6 @@ describe("The Chat window", function()
     assert.equal(expected_scroll, actual_scroll)
   end)
 
-  it("handles llm errors gracefully", function()
-    chat_window.build_and_mount()
-
-    local llm_stub = stub(llm, "chat")
-
-    local keys = vim.api.nvim_replace_termcodes('iwahoo<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    ---@type MakeChatRequestArgs
-    local args = llm_stub.calls[1].refs[1]
-
-    local log_stub = stub(util, "log")
-
-    args.on_read("llm-error", nil)
-
-    -- Populate a log file with mostly json decode errors I'm sure
-    assert.stub(log_stub).was_called(1)
-
-    -- This would mean the provider called on_read with no error and no response
-    -- Happens sometimes with openai, probably my fault. Just testing to make
-    -- sure it doesn't error.
-    args.on_read(nil, nil)
-  end)
-
   -- Having a lot of trouble testing this.
   pending("updates and resizes the nui window when the vim window resized TODO", function()
     local chat = chat_window.build_and_mount()
@@ -651,6 +633,31 @@ describe("The Chat window", function()
     chat = chat_window.build_and_mount({ "with selected text" })
     chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert.equal("  ollama curl ", chat_lines[3])
+  end)
+
+  it("handles errors gracefully - curl error messages appear on screen", function()
+    local exec_stub = stub(cmd, "exec")
+
+    stub_schedule_wrap()
+
+    ---@param exec_args ExecArgs
+    exec_stub.invokes(function(exec_args)
+      -- multiple calls will take place, only the one for ollama generation we care about
+      if exec_args.testid == "ollama-chat" then
+        -- sometimes requests are broken into multiple - system must concat correctly.
+        exec_args.onread("curl ")
+        exec_args.onread("error")
+      end
+    end)
+
+    local chat = chat_window.build_and_mount()
+
+    -- Send a request
+    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
+    assert(util.contains_line(chat_lines, "curl error"))
   end)
 
 end)

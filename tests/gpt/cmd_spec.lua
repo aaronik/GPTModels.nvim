@@ -161,4 +161,5 @@ describe("cmd.exec", function()
 
     assert.equal(0, sig)
   end)
+
 end)

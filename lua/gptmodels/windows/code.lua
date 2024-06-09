@@ -8,6 +8,7 @@ local ollama      = require('gptmodels.providers.ollama')
 
 local M           = {}
 
+-- The system prompt for the LLM
 ---@param filetype string
 ---@param input_text string
 ---@param code_text string
@@ -43,8 +44,8 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
----@param input NuiPopup -- this is a popup, wish they were typed
-local function set_input_border_text(input)
+---@param input NuiPopup
+local function set_input_top_border_text(input)
   local files = Store.code:get_files()
   if #files == 0 then
     input.border:set_text(
@@ -60,6 +61,23 @@ local function set_input_border_text(input)
       "center"
     )
   end
+end
+
+-- available controls are found at the bottom of the input popup
+---@param input NuiPopup
+local function set_input_bottom_border_text(input)
+  local commands = {
+    "q quit",
+    "[S]Tab cycle windows",
+    "C-c cancel request",
+    "C-j/k/p cycle/pick models",
+    "C-n clear all",
+    "C-f/g add/clear files",
+    "C-x xfer to deck",
+  }
+
+  local commands_str = " " .. table.concat(commands, " | ") .. " "
+  input.border:set_text("bottom", commands_str, "center")
 end
 
 local function safe_render_right_text_from_store()
@@ -88,7 +106,7 @@ local function safe_render_from_store()
   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
   -- Get the files back
-  set_input_border_text(Store.code.input.popup)
+  set_input_top_border_text(Store.code.input.popup)
 end
 
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
@@ -119,14 +137,16 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       system = system,
     },
     on_read = function(err, response)
-      if err then return util.log(err) end
+      if err then
+        Store.code.right:append(err)
+        safe_render_right_text_from_store()
+        return
+      end
 
       -- No response _and_ no error? Weird. Happens though.
-      if not response then
-        Store.code.right:append('')
-      else
-        Store.code.right:append(response)
-      end
+      if not response then return end
+
+      Store.code.right:append(response)
 
       safe_render_right_text_from_store()
 
@@ -156,24 +176,22 @@ end
 ---@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
 function M.build_and_mount(selected_lines)
   ---@type NuiPopup
-  local left_popup = Popup(com.build_common_popup_opts("On Deck"))
+  local left = Popup(com.build_common_popup_opts("On Deck"))
   ---@type NuiPopup
-  local right_popup = Popup(com.build_common_popup_opts(com.model_display_name()))
+  local right = Popup(com.build_common_popup_opts(com.model_display_name()))
   ---@type NuiPopup
-  local input_popup = Popup(com.build_common_popup_opts("Prompt"))
+  local input = Popup(com.build_common_popup_opts("Prompt"))
 
-  -- available controls are found at the bottom of the input popup
-  input_popup.border:set_text("bottom",
-    " q quit | [S]Tab cycle windows | C-j/k/p cycle/pick models | C-c cancel request | C-n clear all | C-f/g add/clear files | C-x xfer to deck ",
-    "center")
+  set_input_bottom_border_text(input)
 
   -- Register popups with store
-  Store.code.right.popup = right_popup
-  Store.code.left.popup = left_popup
-  Store.code.input.popup = input_popup
+  Store.code.right.popup = right
+  Store.code.left.popup = left
+  Store.code.input.popup = input
 
   -- Fetch ollama models so user can work with what they have on their system
   ollama.fetch_models(function(err, models)
+    -- TODO Change this too
     if err then return util.log(err) end
     if not models or #models == 0 then return end
     Store.llm_models.ollama = models
@@ -181,24 +199,24 @@ function M.build_and_mount(selected_lines)
     local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
     if not is_ollama and not is_openai then
       Store:set_llm("ollama", models[1])
-      render_model_name(right_popup)
+      render_model_name(right)
     end
   end)
 
   -- Turn off syntax highlighting for input buffer.
-  vim.bo[input_popup.bufnr].filetype = "txt"
-  vim.bo[input_popup.bufnr].syntax = ""
+  vim.bo[input.bufnr].filetype = "txt"
+  vim.bo[input.bufnr].syntax = ""
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.bo[input_popup.bufnr].buftype = "nofile"
+  vim.bo[input.bufnr].buftype = "nofile"
 
   -- Set buffers to same filetype as current file, for highlighting
-  vim.bo[left_popup.bufnr].filetype = vim.bo.filetype
-  vim.bo[right_popup.bufnr].filetype = vim.bo.filetype
+  vim.bo[left.bufnr].filetype = vim.bo.filetype
+  vim.bo[right.bufnr].filetype = vim.bo.filetype
 
   -- When the user opened this from visual mode with text
   if selected_lines then
-    vim.api.nvim_buf_set_lines(left_popup.bufnr, 0, -1, true, selected_lines)
+    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selected_lines)
 
     -- On open, save the text to the store, so next open contains that text
     Store.code.left:clear()
@@ -222,7 +240,7 @@ function M.build_and_mount(selected_lines)
 
   local missing_deps_error_message = com.check_deps()
   if missing_deps_error_message then
-    com.safe_render_buffer_from_text(right_popup.bufnr, missing_deps_error_message)
+    com.safe_render_buffer_from_text(right.bufnr, missing_deps_error_message)
   end
 
   local layout = Layout(
@@ -236,40 +254,40 @@ function M.build_and_mount(selected_lines)
     },
     Layout.Box({
       Layout.Box({
-        Layout.Box(left_popup, { size = "50%" }),
-        Layout.Box(right_popup, { size = "50%" }),
+        Layout.Box(left, { size = "50%" }),
+        Layout.Box(right, { size = "50%" }),
       }, { dir = "row", size = "80%" }),
-      Layout.Box(input_popup, { size = "20%" }),
+      Layout.Box(input, { size = "20%" }),
     }, { dir = "col" })
   )
 
   -- For input, set <CR>
-  vim.api.nvim_buf_set_keymap(input_popup.bufnr, "n", "<CR>", "",
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
     {
       noremap = true,
       silent = true,
       callback = function()
-        on_CR(input_popup.bufnr, left_popup.bufnr, right_popup.bufnr)
+        on_CR(input.bufnr, left.bufnr, right.bufnr)
       end
     }
   )
 
   -- For input, save to populate on next open
-  input_popup:on("InsertLeave",
+  input:on("InsertLeave",
     function()
-      local input_lines = vim.api.nvim_buf_get_lines(input_popup.bufnr, 0, -1, true)
+      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
       Store.code.input:clear()
       Store.code.input:append(table.concat(input_lines, "\n"))
     end
   )
 
   -- recalculate nui window when vim window resizes
-  input_popup:on("VimResized", function()
+  input:on("VimResized", function()
     layout:update()
   end)
 
   -- Further Keymaps
-  local bufs = { left_popup.bufnr, right_popup.bufnr, input_popup.bufnr }
+  local bufs = { left.bufnr, right.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -302,7 +320,7 @@ function M.build_and_mount(selected_lines)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        set_input_border_text(input_popup)
+        set_input_top_border_text(input)
       end
     })
 
@@ -337,7 +355,7 @@ function M.build_and_mount(selected_lines)
               local model = vim.split(model_string, ".", { plain = true })[2]
               if not (provider and model) then return end
               Store:set_llm(provider, model)
-              render_model_name(right_popup)
+              render_model_name(right)
               actions.close(bufnr)
             end)
             return true
@@ -360,7 +378,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        render_model_name(right_popup)
+        render_model_name(right)
       end
     })
 
@@ -370,7 +388,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        render_model_name(right_popup)
+        render_model_name(right)
       end
     })
 
@@ -385,7 +403,7 @@ function M.build_and_mount(selected_lines)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               Store.code:append_file(selection[1])
-              set_input_border_text(input_popup)
+              set_input_top_border_text(input)
               require('telescope.actions').close(prompt_bufnr)
             end)
             return true
@@ -400,7 +418,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store.code:clear_files()
-        set_input_border_text(input_popup)
+        set_input_top_border_text(input)
       end
     })
 
@@ -414,8 +432,8 @@ function M.build_and_mount(selected_lines)
         Store.code.left:clear()
         Store.code.left:append(right_text)
         Store.code.right:clear()
-        com.safe_render_buffer_from_text(right_popup.bufnr, Store.code.right:read() or "")
-        com.safe_render_buffer_from_text(left_popup.bufnr, Store.code.left:read() or "")
+        com.safe_render_buffer_from_text(right.bufnr, Store.code.right:read() or "")
+        com.safe_render_buffer_from_text(left.bufnr, Store.code.left:read() or "")
       end
     })
 
@@ -433,14 +451,14 @@ function M.build_and_mount(selected_lines)
   layout:mount()
 
   -- Wrap lines, because these are small windows and it's nicer
-  vim.wo[left_popup.winid].wrap = true
-  vim.wo[right_popup.winid].wrap = true
-  vim.wo[input_popup.winid].wrap = true
+  vim.wo[left.winid].wrap = true
+  vim.wo[right.winid].wrap = true
+  vim.wo[input.winid].wrap = true
 
   return {
-    input = input_popup,
-    right = right_popup,
-    left = left_popup
+    input = input,
+    right = right,
+    left = left
   }
 end
 

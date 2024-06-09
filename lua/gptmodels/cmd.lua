@@ -1,5 +1,5 @@
 local util = require('gptmodels.util')
-local uv = vim.loop
+local uv = vim.uv
 require('gptmodels.types')
 
 local M = {}
@@ -8,9 +8,9 @@ local M = {}
 ---@param args ExecArgs
 ---@return Job
 function M.exec(args)
-  local stdin = vim.loop.new_pipe()
-  local stdout = vim.loop.new_pipe()
-  local stderr = vim.loop.new_pipe()
+  local stdin = uv.new_pipe()
+  local stdout = uv.new_pipe()
+  local stderr = uv.new_pipe()
 
   local done = false
 
@@ -26,7 +26,7 @@ function M.exec(args)
   end)
 
   if args.onread then
-    uv.read_start(stdout, function(_, data) args.onread(nil, data) end)
+    uv.read_start(stdout, function(err, data) args.onread(err, data) end)
     uv.read_start(stderr, function(_, err) args.onread(err, nil) end)
   end
 

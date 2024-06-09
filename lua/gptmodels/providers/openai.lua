@@ -90,7 +90,7 @@ M.generate = function(args)
         "Authorization: Bearer " .. os.getenv("OPENAI_API_KEY"),
         "-H",
         "Content-Type: application/json",
-        "--silent",
+        "--no-progress-meter",
         "--no-buffer",
     }
 
@@ -143,7 +143,7 @@ M.chat = function(args)
         "-H",
         "Content-Type: application/json",
         "--no-buffer",
-        "--silent",
+        "--no-progress-meter",
     }
 
     local job = cmd.exec({

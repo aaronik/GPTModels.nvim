@@ -30,20 +30,14 @@
 ---@field die function
 ---@field done fun():boolean
 
+---@alias TestIds
+---| "ollama-generate"
+---| "ollama-chat"
+
 ---@class ExecArgs
 ---@field cmd string
 ---@field args string[] | nil
 ---@field onread fun(err: string | nil, data: string | nil) | nil
 ---@field onexit fun(code: integer, signal: integer) | nil
 ---@field sync boolean | nil
-
----@class NuiBorder
----@field set_text fun(self: NuiBorder, edge: "top" | "bottom" | "left" | "right", text: string, align: "left" | "right" | "center")
-
--- Wish they exported types
----@class NuiPopup
----@field bufnr integer
----@field winid integer | nil
----@field border NuiBorder
----@field on fun(self: NuiPopup, vim_event: string, function)
-
+---@field testid TestIds | nil

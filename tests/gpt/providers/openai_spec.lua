@@ -20,6 +20,8 @@ describe("openai.generate", function()
 
       local llm_data_json = exec_args.args[3]
 
+      assert(util.contains_line(exec_args.args, "--no-progress-meter"))
+
       ---@type LlmGenerateArgs | nil
       local llm_data = vim.fn.json_decode(llm_data_json)
 
@@ -95,6 +97,8 @@ describe("openai.chat", function()
       assert.equal(exec_args.args[1], "https://api.openai.com/v1/chat/completions")
 
       local llm_data_json = exec_args.args[3]
+
+      assert(util.contains_line(exec_args.args, "--no-progress-meter"))
 
       ---@type LlmChatArgs | nil
       local llm_data = vim.fn.json_decode(llm_data_json)
