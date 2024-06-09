@@ -69,7 +69,7 @@ them here. But here they are anyways:
 | `C-g`      | clear files      | clear the files you have selected, leaving the windows be |
 | `C-x`      | xfer to deck     | in the code window, transfer the right pane's contents to the left |
 | `C-j/k`    | cycle models     | cycle through which LLM model to use for further requests |
-| `C-m`      | pick model       | open a popup window to pick a model. Useful when you have many models |
+| `C-p`      | pick model       | open a popup window to pick a model. Useful when you have many models |
 | `C-n`      | clear all        | clear the whole state, all the windows and files |
 
 All keybindings work from normal mode.
