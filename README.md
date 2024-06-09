@@ -139,9 +139,20 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 * Add copilot support .. Very hard as it turns out
 * Protect against opening windows many times?
 * Figure out how to test nui border text and test all the titles
-* Remove openai models when OPENAI_API_KEY is not set?
 * Chat only scrolls on llm response, user input scrolls off bottom of screen
 * util.log filesize management
+* Help window
+    * with detailed descriptions of commands
+    * input bottom border is just q, Enter, and Ctrl-h maybe, or maybe just Ctrl-h
+* :help docs
+* Model showing / hiding
+    * Show all openai models?
+    * Remove openai models when OPENAI_API_KEY is not set
+        * Render in the chat/right window, at the top above all else, that this is happening?
+    * Remove all ollama models when ollama.fetch_models fails indicating server isn't running?
+        * Or is it better to alert that the server isn't running? Or both?
+* Have providers accumulate response frames when one isn't json decodable. Handle scenario of big json
+  being split into smaller frames.
 
 #### Bugs
 * If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
