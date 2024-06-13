@@ -1,0 +1,13 @@
+repos:
+  - repo: 'https://github.com/kdheepak/panvimdoc'
+    rev: v4.0.1
+    hooks:
+      - id: panvimdoc-docker
+        files: doc/doc\.md
+        args:
+          - '--project-name'
+          - gpt-models.nvim
+          - '--toc'
+          - 'true'
+          - '--input-file'
+          - doc/doc.md

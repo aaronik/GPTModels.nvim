@@ -17,3 +17,10 @@ test:
 
 test-watch:
 	nodemon -e lua -x "$(MAKE) test"
+
+build-doc:
+	pre-commit run
+
+# Currently not used; README.md is in :help
+install-precommit-hook:
+	pre-commit install
