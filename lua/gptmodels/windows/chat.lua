@@ -170,7 +170,7 @@ function M.build_and_mount(selected_text)
     local is_ollama = util.contains_line(models, Store.llm_model)
     local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
     if not is_ollama and not is_openai then
-      Store:set_llm("ollama", models[1])
+      Store:set_model("ollama", models[1])
       set_chat_title(chat)
     end
   end)
@@ -348,7 +348,7 @@ function M.build_and_mount(selected_text)
               local provider = vim.split(model_string, ".", { plain = true })[1]
               local model = vim.split(model_string, ".", { plain = true })[2]
               if not (provider and model) then return end
-              Store:set_llm(provider, model)
+              Store:set_model(provider, model)
               set_chat_title(chat)
               actions.close(bufnr)
             end)

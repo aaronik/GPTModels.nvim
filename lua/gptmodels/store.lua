@@ -93,7 +93,7 @@ end
 ---@field llm_model_strings fun(self: Store): string[]
 ---@field llm_provider string
 ---@field llm_model string
----@field set_llm fun(self: Store, provider: "openai" | "ollama", model: string)
+---@field set_model fun(self: Store, provider: "openai" | "ollama", model: string)
 ---@field cycle_model_forward fun(self: Store)
 ---@field cycle_model_backward fun(self: Store)
 ---@field private _job Job | nil
@@ -120,7 +120,7 @@ local Store = {
   llm_provider = "ollama",
   llm_model = "llama3:latest",
 
-  set_llm = function(self, provider, model)
+  set_model = function(self, provider, model)
     self.llm_provider = provider
     self.llm_model = model
   end,
@@ -130,7 +130,7 @@ local Store = {
     local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
     if not current_index then return end
     local selected_option = model_options[(current_index % #model_options) + 1]
-    self:set_llm(selected_option.provider, selected_option.model)
+    self:set_model(selected_option.provider, selected_option.model)
   end,
 
   cycle_model_backward = function(self)
@@ -138,7 +138,7 @@ local Store = {
     local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
     if not current_index then return end
     local selected_option = model_options[(current_index - 2) % #model_options + 1]
-    self:set_llm(selected_option.provider, selected_option.model)
+    self:set_model(selected_option.provider, selected_option.model)
   end,
 
   llm_model_strings = function(self)

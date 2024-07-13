@@ -133,11 +133,11 @@ end)
 
 describe("Store | llm stuff", function()
   it("set_llm assigns to local fields", function()
-    Store:set_llm("ollama", "llama3")
+    Store:set_model("ollama", "llama3")
     assert.equal("ollama", Store.llm_provider)
     assert.equal("llama3", Store.llm_model)
 
-    Store:set_llm("openai", "gpt-4-turbo")
+    Store:set_model("openai", "gpt-4-turbo")
     assert.equal("openai", Store.llm_provider)
     assert.equal("gpt-4-turbo", Store.llm_model)
   end)

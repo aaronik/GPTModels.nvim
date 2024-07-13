@@ -240,7 +240,7 @@ describe("The Chat window", function()
   it("cycles through available models with <C-j>", function()
     chat_window.build_and_mount()
 
-    local store_spy = spy.on(Store, "set_llm")
+    local store_spy = spy.on(Store, "set_model")
 
     -- Press <C-j>
     local ctrl_j = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
@@ -267,7 +267,7 @@ describe("The Chat window", function()
   it("cycles through available models with <C-k>", function()
     chat_window.build_and_mount()
 
-    local store_spy = spy.on(Store, "set_llm")
+    local store_spy = spy.on(Store, "set_model")
 
     -- Press <C-k>
     local ctrl_k = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
@@ -387,7 +387,7 @@ describe("The Chat window", function()
     -- And just make sure there are no closing errors
     stub(require('telescope.actions'), "close")
 
-    local set_llm_stub = stub(Store, "set_llm")
+    local set_model_stub = stub(Store, "set_model")
 
     local new_picker_stub = stub(require('telescope.pickers'), "new")
     new_picker_stub.returns({ find = function() end })
@@ -411,9 +411,9 @@ describe("The Chat window", function()
     end)
     attach_mappings(nil, map)
 
-    assert.stub(set_llm_stub).was_called(1)
-    assert.equal('abc', set_llm_stub.calls[1].refs[2])
-    assert.equal('123', set_llm_stub.calls[1].refs[3])
+    assert.stub(set_model_stub).was_called(1)
+    assert.equal('abc', set_model_stub.calls[1].refs[2])
+    assert.equal('123', set_model_stub.calls[1].refs[3])
   end)
 
   it("closes the window on q", function()
