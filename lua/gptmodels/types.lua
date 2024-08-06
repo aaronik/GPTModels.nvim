@@ -41,3 +41,18 @@
 ---@field onexit fun(code: integer, signal: integer) | nil
 ---@field sync boolean | nil
 ---@field testid TestIds | nil
+
+---@class NuiBorder
+---@field set_text fun(self: NuiBorder, edge: "top" | "bottom" | "left" | "right", text: string, align: "left" | "right" | "center")
+
+-- Wish they exported types
+-- Update: At some point it appears they did, but later I'm having trouble finding them.
+-- LSP is not picking it up any more, but often requires file to be open before registering
+-- types definted in it.
+-- TODO: This is at risk of divergence from the actual NuiPopup. Gotta find that again.
+---@class NuiPopup
+---@field bufnr integer
+---@field winid integer | nil
+---@field border NuiBorder
+---@field on fun(self: NuiPopup, vim_event: string, function)
+
