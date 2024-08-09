@@ -28,7 +28,7 @@ describe("ollama.generate", function()
       end
 
       -- defaults to this
-      assert.equal(llm_data.model, "llama3")
+      assert.equal(llm_data.model, "llama3.1")
       assert.equal(llm_data.prompt, "pr0mpT")
       assert.equal(llm_data.stream, true)
       assert(util.contains_line(exec_args.args, "--no-progress-meter"))
@@ -126,7 +126,7 @@ describe("ollama.chat", function()
         error("vim.fn.json_decode returned unexpected nil")
       end
 
-      assert.equal(llm_data.model, "llama3")
+      assert.equal(llm_data.model, "llama3.1")
       assert.same(messages, llm_data.messages)
       assert.equal(llm_data.stream, true)
       assert(util.contains_line(exec_args.args, "--no-progress-meter"))

@@ -13,7 +13,7 @@ M.generate = function(args)
 
     -- default model
     if not args.llm.model then
-        args.llm.model = "llama3"
+        args.llm.model = "llama3.1"
     end
 
     -- system prompt
@@ -76,7 +76,7 @@ M.chat = function(args)
     local url = "http://localhost:11434/api/chat"
 
     if not args.llm.model then
-        args.llm.model = "llama3"
+        args.llm.model = "llama3.1"
     end
 
     local curl_args = {

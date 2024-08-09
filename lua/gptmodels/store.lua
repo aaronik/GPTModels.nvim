@@ -115,10 +115,10 @@ end
 local Store = {
   llm_models = {
     openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o" },
-    ollama = { "llama3:latest", "mistral:latest" },
+    ollama = { "llama3.1:latest", "mistral:latest" },
   },
   llm_provider = "ollama",
-  llm_model = "llama3:latest",
+  llm_model = "llama3.1:latest",
 
   set_model = function(self, provider, model)
     self.llm_provider = provider
