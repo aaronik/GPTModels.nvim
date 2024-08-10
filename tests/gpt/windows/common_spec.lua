@@ -33,7 +33,7 @@ describe("window common functions", function()
 
       -- When buffer is read only
       local ro_buf = vim.api.nvim_create_buf(false, true)
-      vim.api.nvim_buf_set_option(ro_buf, 'modifiable', false)
+      vim.bo[ro_buf].modifiable = false
       common.safe_render_buffer_from_text(ro_buf, "hi")
 
       ---@diagnostic disable-next-line: param-type-mismatch
@@ -59,7 +59,7 @@ describe("window common functions", function()
 
       -- When buffer is read only
       local ro_buf = vim.api.nvim_create_buf(false, true)
-      vim.api.nvim_buf_set_option(ro_buf, 'modifiable', false)
+      vim.bo[ro_buf].modifiable = false
       common.safe_render_buffer_from_lines(ro_buf, { "hi" })
 
       ---@diagnostic disable-next-line: param-type-mismatch
