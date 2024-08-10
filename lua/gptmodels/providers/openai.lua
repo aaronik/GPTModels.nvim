@@ -1,6 +1,11 @@
 local util = require('gptmodels.util')
 local cmd = require('gptmodels.cmd')
+local consts = require('gptmodels.constants')
 require('gptmodels.types')
+
+-- TODO: Got these two partial responses in a row from openai 4o - they are showing up with error messages in the windows:
+-- {"id":"chatcmpl-9uaDnKCfZr5V6f32G3R2Ot53:'
+-- fOUfn","object":"chat.completion.chunk","created":1723272631,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":" Simpsons"},"logprobs":null,"finish_reason":null}]}'
 
 local M = {}
 
@@ -34,7 +39,8 @@ local parse_llm_response = function(json)
         ---@type boolean, { choices: { delta: LlmMessage }[] } | nil
         local status_ok, data = pcall(vim.fn.json_decode, line)
         if not status_ok or not data or not data.choices or not data.choices[1].delta then
-            return " [JSON decode or schema error for LLM response]: " .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
+            -- TODO this seems untested
+            return consts.LLM_DECODE_ERROR_STRING .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
         end
 
         if not data.choices[1].delta.role then

@@ -1,5 +1,6 @@
 local util = require('gptmodels.util')
 local cmd = require('gptmodels.cmd')
+local consts = require('gptmodels.constants')
 require('gptmodels.types')
 
 local M = {}
@@ -116,7 +117,8 @@ M.chat = function(args)
             for _, line in ipairs(json_lines) do
                 local status_ok, data = pcall(vim.fn.json_decode, line)
                 if not status_ok or not data then
-                    return args.on_read("JSON decode error for LLM response!  " .. json)
+                    -- TODO this seems untested
+                    return args.on_read(consts.LLM_DECODE_ERROR_STRING .. json)
                 end
 
                 args.on_read(nil, data.message)
