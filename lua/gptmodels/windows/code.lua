@@ -44,25 +44,6 @@ local code_prompt = function(filetype, input_text, code_text)
   return prompt, system
 end
 
----@param input NuiPopup
-local function set_input_top_border_text(input)
-  local files = Store.code:get_files()
-  if #files == 0 then
-    input.border:set_text(
-      "top",
-      " Prompt ",
-      "center"
-    )
-  else
-    local files_string = table.concat(files, ", ")
-    input.border:set_text(
-      "top",
-      " Prompt + " .. files_string .. " ",
-      "center"
-    )
-  end
-end
-
 local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.
@@ -89,7 +70,7 @@ local function safe_render_from_store()
   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
   -- Get the files back
-  set_input_top_border_text(Store.code.input.popup)
+  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
 end
 
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
@@ -160,7 +141,7 @@ function M.build_and_mount(selected_lines)
   ---@type NuiPopup
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
-  com.set_bottom_border_text(input, { "C-x xfer to deck" })
+  com.set_input_bottom_border_text(input, { "C-x xfer to deck" })
 
   -- Register popups with store
   Store.code.right.popup = right
@@ -298,7 +279,7 @@ function M.build_and_mount(selected_lines)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        set_input_top_border_text(input)
+        com.set_input_top_border_text(input, Store.code:get_files())
       end
     })
 
@@ -381,7 +362,7 @@ function M.build_and_mount(selected_lines)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               Store.code:append_file(selection[1])
-              set_input_top_border_text(input)
+              com.set_input_top_border_text(input, Store.code:get_files())
               require('telescope.actions').close(prompt_bufnr)
             end)
             return true
@@ -396,7 +377,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store.code:clear_files()
-        set_input_top_border_text(input)
+        com.set_input_top_border_text(input, Store.code:get_files())
       end
     })
 

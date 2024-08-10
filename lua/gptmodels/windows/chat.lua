@@ -101,26 +101,6 @@ local function on_s_tab(i, bufs)
   vim.api.nvim_set_current_win(next_win)
 end
 
----@param input NuiPopup
-local function set_input_top_border_text(input)
-  local files = Store.chat:get_files()
-  if #files == 0 then
-    input.border:set_text(
-      "top",
-      " Prompt ",
-      "center"
-    )
-  else
-    local files_string = table.concat(files, ", ")
-    input.border:set_text(
-      "top",
-      " Prompt + " .. files_string .. " ",
-      "center"
-    )
-  end
-end
-
-
 local function chat_title()
   return "Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model
 end
@@ -139,7 +119,7 @@ function M.build_and_mount(selected_text)
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
   -- available controls are found at the bottom of the input popup
-  com.set_bottom_border_text(input)
+  com.set_input_bottom_border_text(input)
 
   -- Register popups with store
   Store.chat.chat.popup = chat
@@ -245,7 +225,7 @@ function M.build_and_mount(selected_text)
     safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat:read())
 
     -- Get the files back
-    set_input_top_border_text(input)
+    com.set_input_top_border_text(input, Store.chat:get_files())
   end
 
   local missing_deps_error_message = com.check_deps()
@@ -279,7 +259,7 @@ function M.build_and_mount(selected_text)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        set_input_top_border_text(input)
+        com.set_input_top_border_text(input, Store.chat:get_files())
       end
     })
 
@@ -294,7 +274,7 @@ function M.build_and_mount(selected_text)
             map('i', '<CR>', function(prompt_bufnr)
               local selection = require('telescope.actions.state').get_selected_entry()
               Store.chat:append_file(selection[1])
-              set_input_top_border_text(input)
+              com.set_input_top_border_text(input, Store.chat:get_files())
               require('telescope.actions').close(prompt_bufnr)
             end)
             return true
@@ -309,7 +289,7 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function()
         Store.chat:clear_files()
-        set_input_top_border_text(input)
+        com.set_input_top_border_text(input, Store.chat:get_files())
       end
     })
 

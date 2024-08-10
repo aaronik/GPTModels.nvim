@@ -113,7 +113,7 @@ end
 -- available controls are found at the bottom of the input popup
 ---@param input NuiPopup
 ---@param extra_commands? table<string>
-M.set_bottom_border_text = function(input, extra_commands)
+M.set_input_bottom_border_text = function(input, extra_commands)
   local commands = {
     "q quit",
     "[S]Tab cycle windows",
@@ -129,6 +129,25 @@ M.set_bottom_border_text = function(input, extra_commands)
 
   local commands_str = " " .. table.concat(commands, " | ") .. " "
   input.border:set_text("bottom", commands_str, "center")
+end
+
+---@param input NuiPopup
+---@param files table<string>
+M.set_input_top_border_text = function(input, files)
+  if #files == 0 then
+    input.border:set_text(
+      "top",
+      " Prompt ",
+      "center"
+    )
+  else
+    local files_string = table.concat(files, ", ")
+    input.border:set_text(
+      "top",
+      " Prompt + " .. files_string .. " ",
+      "center"
+    )
+  end
 end
 
 

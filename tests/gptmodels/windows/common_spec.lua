@@ -68,12 +68,12 @@ describe("window common functions", function()
     end)
   end)
 
-  describe("set_bottom_border_text function", function()
+  describe("set_input_bottom_border_text", function()
     it("sets border text when no extra commands are given", function()
       ---@type NuiPopup
       local popup = Popup({ title = "Test" })
       local set_text_stub = stub(popup.border, 'set_text')
-      common.set_bottom_border_text(popup)
+      common.set_input_bottom_border_text(popup)
       assert.stub(set_text_stub).was_called(1)
     end)
 
@@ -82,7 +82,25 @@ describe("window common functions", function()
       local popup = Popup({ title = "Test" })
       local extra_commands = { "some command" }
       local set_text_stub = stub(popup.border, 'set_text')
-      common.set_bottom_border_text(popup, extra_commands)
+      common.set_input_bottom_border_text(popup, extra_commands)
+      assert.stub(set_text_stub).was_called(1)
+    end)
+  end)
+
+  describe("set_input_top_border_text", function()
+    it("sets border text without given files", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_input_top_border_text(popup, {})
+      assert.stub(set_text_stub).was_called(1)
+    end)
+
+    it("sets border text with given files", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_input_top_border_text(popup, { "file one", "file two" })
       assert.stub(set_text_stub).was_called(1)
     end)
   end)
