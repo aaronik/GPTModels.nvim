@@ -98,4 +98,16 @@ GPTModels.nvim requires the following programs installed, which are not detected
   end
 end
 
+-- Scroll to the bottom of a given window/buffer pair.
+-- Checks window validity and ensures user is not in the window before attempting scroll.
+---@param winid integer
+---@param bufnr integer
+M.safe_scroll_to_bottom_when_user_not_present = function(winid, bufnr)
+  if vim.api.nvim_win_is_valid(winid) and vim.api.nvim_get_current_win() ~= winid then
+    vim.api.nvim_win_set_cursor(
+      winid, { vim.api.nvim_buf_line_count(bufnr), 0 }
+    )
+  end
+end
+
 return M

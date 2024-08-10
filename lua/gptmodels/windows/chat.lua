@@ -39,7 +39,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
   safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
 
   -- Scroll to the bottom (in case user message goes past bottom of win)
-  util.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
+  com.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
 
   -- Attach included files
   local file_messages = {}
@@ -79,7 +79,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
-      util.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
+      com.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
     end,
     on_end = function()
       Store:clear_job()
