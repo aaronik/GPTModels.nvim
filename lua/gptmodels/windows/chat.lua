@@ -35,8 +35,13 @@ local on_CR = function(input_bufnr, chat_bufnr)
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
 
   Store.chat.chat:append({ role = "user", content = input_text })
+
   safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
 
+  -- Scroll to the bottom (in case user message goes past bottom of win)
+  util.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
+
+  -- Attach included files
   local file_messages = {}
   for _, filename in ipairs(Store.chat:get_files()) do
     local file = io.open(filename, "r")
@@ -74,12 +79,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
-      local chat_winid = Store.chat.chat.popup.winid or 1 -- nonsense winid, it shouldn't ever be nil
-      if vim.api.nvim_win_is_valid(chat_winid) and vim.api.nvim_get_current_win() ~= chat_winid then
-        vim.api.nvim_win_set_cursor(chat_winid,
-          { vim.api.nvim_buf_line_count(Store.chat.chat.popup.bufnr), 0 }
-        )
-      end
+      util.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
     end,
     on_end = function()
       Store:clear_job()

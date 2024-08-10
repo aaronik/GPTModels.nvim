@@ -564,6 +564,19 @@ describe("The Chat window", function()
     actual_scroll = vim.fn.line('w0', chat.chat.winid)
 
     assert.equal(expected_scroll, actual_scroll)
+
+    -- now some long text from the user
+    keys = vim.api.nvim_replace_termcodes('i' .. long_content .. '<Esc><CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- and now ensure the autoscrolling continues to happen
+    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(chat.chat.winid))
+    win_height = vim.api.nvim_win_get_height(chat.chat.winid)
+    expected_scroll = last_line - win_height + 1
+    actual_scroll = vim.fn.line('w0', chat.chat.winid)
+
+    assert.equal(expected_scroll, actual_scroll)
+
   end)
 
   -- Having a lot of trouble testing this.

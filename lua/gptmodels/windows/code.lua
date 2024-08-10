@@ -152,12 +152,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
-      local right_winid = Store.code.right.popup.winid or 1
-      if vim.api.nvim_win_is_valid(right_winid) and vim.api.nvim_get_current_win() ~= right_winid then
-        vim.api.nvim_win_set_cursor(
-          right_winid, { vim.api.nvim_buf_line_count(Store.code.right.popup.bufnr), 0 }
-        )
-      end
+      util.safe_scroll_to_bottom_when_user_not_present(Store.code.right.popup.winid or 1, Store.code.right.popup.bufnr)
     end,
     on_end = function()
       Store:clear_job()
