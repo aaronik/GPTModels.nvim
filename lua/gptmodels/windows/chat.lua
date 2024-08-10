@@ -56,7 +56,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
   end
   local messages = util.merge_tables(Store.chat.chat:read(), file_messages)
 
-  local jorb = llm.chat({
+  local job = llm.chat({
     llm = {
       stream = true,
       messages = messages,
@@ -86,19 +86,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
     end
   })
 
-  Store:register_job(jorb)
-end
-
-local function on_tab(i, bufs)
-  local next_buf_index = (i % #bufs) + 1
-  local next_win = vim.fn.bufwinid(bufs[next_buf_index])
-  vim.api.nvim_set_current_win(next_win)
-end
-
-local function on_s_tab(i, bufs)
-  local next_buf_index = (i % #bufs) + 1
-  local next_win = vim.fn.bufwinid(bufs[next_buf_index])
-  vim.api.nvim_set_current_win(next_win)
+  Store:register_job(job)
 end
 
 local function chat_title()
@@ -149,12 +137,14 @@ function M.build_and_mount(selected_text)
   -- Chat in markdown
   vim.bo[chat.bufnr].filetype = 'markdown'
 
-  vim.api.nvim_buf_set_keymap(
-    input.bufnr,
-    "n",
-    "<CR>",
-    "",
-    { noremap = true, silent = true, callback = function() on_CR(input.bufnr, chat.bufnr) end }
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
+    {
+      noremap = true,
+      silent = true,
+      callback = function()
+        on_CR(input.bufnr, chat.bufnr)
+      end
+    }
   )
 
   local layout = Layout(
@@ -240,14 +230,14 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() on_tab(i, bufs) end,
+      callback = function() com.cycle_tabs_forward(i, bufs) end,
     })
 
     -- Shift-Tab cycles through windows in reverse
     vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() on_s_tab(i, bufs) end,
+      callback = function() com.cycle_tabs_backward(i, bufs) end,
     })
 
     -- Ctl-n to reset session

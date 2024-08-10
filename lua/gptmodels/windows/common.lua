@@ -150,5 +150,20 @@ M.set_input_top_border_text = function(input, files)
   end
 end
 
+---@param win_index integer
+---@param bufs table<integer>
+M.cycle_tabs_forward = function(win_index, bufs)
+  local next_buf_index = (win_index % #bufs) + 1
+  local next_win = vim.fn.bufwinid(bufs[next_buf_index])
+  vim.api.nvim_set_current_win(next_win)
+end
+
+---@param win_index integer
+---@param bufs table<integer>
+M.cycle_tabs_backward = function(win_index, bufs)
+  local prev_buf_index = (win_index - 2) % #bufs + 1
+  local prev_win = vim.fn.bufwinid(bufs[prev_buf_index])
+  vim.api.nvim_set_current_win(prev_win)
+end
 
 return M

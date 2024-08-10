@@ -231,6 +231,11 @@ function M.build_and_mount(selected_lines)
     }
   )
 
+  -- recalculate nui window when vim window resizes
+  input:on("VimResized", function()
+    layout:update()
+  end)
+
   -- For input, save to populate on next open
   input:on("InsertLeave",
     function()
@@ -240,11 +245,6 @@ function M.build_and_mount(selected_lines)
     end
   )
 
-  -- recalculate nui window when vim window resizes
-  input:on("VimResized", function()
-    layout:update()
-  end)
-
   -- Further Keymaps
   local bufs = { left.bufnr, right.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
@@ -253,9 +253,7 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        local next_buf_index = (i % #bufs) + 1
-        local next_win = vim.fn.bufwinid(bufs[next_buf_index])
-        vim.api.nvim_set_current_win(next_win)
+        com.cycle_tabs_forward(i, bufs)
       end
     })
 
@@ -264,9 +262,7 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        local prev_buf_index = (i - 2) % #bufs + 1
-        local prev_win = vim.fn.bufwinid(bufs[prev_buf_index])
-        vim.api.nvim_set_current_win(prev_win)
+        com.cycle_tabs_backward(i, bufs)
       end
     })
 
