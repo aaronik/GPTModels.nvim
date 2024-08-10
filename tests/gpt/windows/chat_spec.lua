@@ -194,7 +194,7 @@ describe("The Chat window", function()
     local chat_bufnr = chat.chat.bufnr
 
     -- stub llm call
-    local s = stub(llm, "chat")
+    local chat_stub = stub(llm, "chat")
 
     vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, { "hello" })
 
@@ -204,7 +204,7 @@ describe("The Chat window", function()
 
     -- grab the given callback
     ---@type MakeChatRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = chat_stub.calls[1].refs[1]
 
     -- simulate llm responding
     args.on_read(nil, { role = "assistant", content = "response text1\nresponse text2" })
@@ -293,10 +293,10 @@ describe("The Chat window", function()
 
   it("kills active job on <C-c>", function()
     chat_window.build_and_mount()
-    local s = stub(llm, "chat")
+    local chat_stub = stub(llm, "chat")
     local die_called = false
 
-    s.returns({
+    chat_stub.returns({
       die = function()
         die_called = true
       end
@@ -454,10 +454,10 @@ describe("The Chat window", function()
 
   it("finishes jobs in the background when closed", function()
     chat_window.build_and_mount()
-    local s = stub(llm, "chat")
+    local chat_stub = stub(llm, "chat")
     local die_called = false
 
-    s.returns({
+    chat_stub.returns({
       die = function()
         die_called = true
       end
@@ -479,7 +479,7 @@ describe("The Chat window", function()
     -- vim.wait(10)
 
     ---@type MakeChatRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = chat_stub.calls[1].refs[1]
 
     args.on_read(nil, { role = "assistant", content = "response to be saved in background" })
 

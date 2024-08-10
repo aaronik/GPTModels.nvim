@@ -168,13 +168,13 @@ describe("The code window", function()
   it("Places llm responses into right window", function()
     local code = code_window.build_and_mount()
 
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
 
     local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = generate_stub.calls[1].refs[1]
 
     -- simulate a multiline resposne from the llm
     args.on_read(nil, "line 1\nline 2")
@@ -185,14 +185,14 @@ describe("The code window", function()
 
   it("includes a system prompt", function()
     code_window.build_and_mount()
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
 
     -- Make a request to start a job
     local keys = vim.api.nvim_replace_termcodes('xincluding system prompt?<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = generate_stub.calls[1].refs[1]
     assert.is_not.same(args.llm.system, nil)
   end)
 
@@ -201,14 +201,14 @@ describe("The code window", function()
     vim.bo[bufnr].filetype = "lua"
     code_window.build_and_mount()
 
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
 
     -- Make a request to start a job
     local keys = vim.api.nvim_replace_termcodes('xincluding filetype?<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = generate_stub.calls[1].refs[1]
 
     assert.not_nil(string.find(args.llm.prompt, "lua"))
     assert.not_nil(args.llm.prompt)
@@ -217,13 +217,13 @@ describe("The code window", function()
   it("Has a loading indicator", function()
     local code = code_window.build_and_mount()
 
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
 
     local keys = vim.api.nvim_replace_termcodes('xloading test<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = generate_stub.calls[1].refs[1]
 
     -- before on_response gets a response from the llm, the right window should show a loading indicator
     assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "Loading..." })
@@ -237,10 +237,10 @@ describe("The code window", function()
 
   it("finishes jobs in the background when closed", function()
     code_window.build_and_mount()
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
     local die_called = false
 
-    s.returns({
+    generate_stub.returns({
       die = function()
         die_called = true
       end,
@@ -271,7 +271,7 @@ describe("The code window", function()
     -- vim.wait(10)
 
     ---@type MakeGenerateRequestArgs
-    local args = s.calls[1].refs[1]
+    local args = generate_stub.calls[1].refs[1]
 
     args.on_read(nil, "response to be saved in background")
 
@@ -306,14 +306,14 @@ describe("The code window", function()
   it("Replaces prior llm response with new one", function()
     local code = code_window.build_and_mount()
 
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
 
     -- Input anything
     local keys = vim.api.nvim_replace_termcodes('xtesting first response<Esc><CR>', true, true, true)
     vim.api.nvim_feedkeys(keys, 'mtx', false)
 
     ---@type MakeGenerateRequestArgs
-    local args_first = s.calls[1].refs[1]
+    local args_first = generate_stub.calls[1].refs[1]
 
     -- Simulate first response
     args_first.on_read(nil, "first response line")
@@ -328,7 +328,7 @@ describe("The code window", function()
     if args_first.on_end then args_first.on_end() end
 
     ---@type MakeGenerateRequestArgs
-    local args_second = s.calls[2].refs[1]
+    local args_second = generate_stub.calls[2].refs[1]
 
     -- Simulate second response
     args_second.on_read(nil, "second response line")
@@ -361,10 +361,10 @@ describe("The code window", function()
 
   it("kills active job on <C-c>", function()
     code_window.build_and_mount()
-    local s = stub(llm, "generate")
+    local generate_stub = stub(llm, "generate")
     local die_called = false
 
-    s.returns({
+    generate_stub.returns({
       die = function()
         die_called = true
       end

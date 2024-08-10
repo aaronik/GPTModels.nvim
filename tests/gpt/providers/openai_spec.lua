@@ -9,9 +9,9 @@ local cmd = require('gptmodels.cmd')
 
 describe("openai.generate", function()
   it("passes correct data to curl", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       ---@type ExecArgs
       local exec_args = data
 
@@ -56,13 +56,13 @@ describe("openai.generate", function()
       end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 
   it("gracefully handles errors to on_read", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       local exec_args = data
       exec_args.onread("error", nil)
     end)
@@ -79,7 +79,7 @@ describe("openai.generate", function()
       end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 end)
 
@@ -157,9 +157,9 @@ describe("openai.chat", function()
   end)
 
   it("gracefully handles errors to on_read", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       local exec_args = data
       exec_args.onread("error", nil)
     end)
@@ -176,6 +176,6 @@ describe("openai.chat", function()
       end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 end)

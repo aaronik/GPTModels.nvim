@@ -9,9 +9,9 @@ local cmd = require('gptmodels.cmd')
 
 describe("ollama.generate", function()
   it("passes correct data to curl", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       ---@type ExecArgs
       local exec_args = data
 
@@ -42,13 +42,13 @@ describe("ollama.generate", function()
       on_read = function() end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 
   it("gracefully handles errors to on_read", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       local exec_args = data
       exec_args.onread("error", nil)
     end)
@@ -65,7 +65,7 @@ describe("ollama.generate", function()
       end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 
   -- This was giving these huge error messages to the right pane after every response
@@ -108,9 +108,9 @@ describe("ollama.chat", function()
   local messages = { { role = "user", content = "hi" }, { role = "assistant", content = "hi" } }
 
   it("passes correct data to curl", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       ---@type ExecArgs
       local exec_args = data
 
@@ -140,13 +140,13 @@ describe("ollama.chat", function()
       on_read = function() end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 
   it("gracefully handles errors to on_read", function()
-    local s = stub(cmd, "exec")
+    local exec_stub = stub(cmd, "exec")
 
-    s.invokes(function(data)
+    exec_stub.invokes(function(data)
       local exec_args = data
       exec_args.onread("error", nil)
     end)
@@ -163,7 +163,7 @@ describe("ollama.chat", function()
       end,
     })
 
-    assert.stub(s).was_called(1)
+    assert.stub(exec_stub).was_called(1)
   end)
 
   -- This was giving these huge error messages to the right pane after every response
