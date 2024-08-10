@@ -126,11 +126,6 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store:register_job(job)
 end
 
----@param right_popup NuiPopup
-local function render_model_name(right_popup)
-  right_popup.border:set_text("top", " " .. com.model_display_name() .. " ", "center")
-end
-
 ---@param selected_lines string[] | nil
 ---@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
 function M.build_and_mount(selected_lines)
@@ -158,7 +153,7 @@ function M.build_and_mount(selected_lines)
     local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
     if not is_ollama and not is_openai then
       Store:set_model("ollama", models[1])
-      render_model_name(right)
+      com.set_window_title(right)
     end
   end)
 
@@ -310,7 +305,7 @@ function M.build_and_mount(selected_lines)
               local model = vim.split(model_string, ".", { plain = true })[2]
               if not (provider and model) then return end
               Store:set_model(provider, model)
-              render_model_name(right)
+              com.set_window_title(right)
               actions.close(bufnr)
             end)
             return true
@@ -333,7 +328,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        render_model_name(right)
+        com.set_window_title(right)
       end
     })
 
@@ -343,7 +338,7 @@ function M.build_and_mount(selected_lines)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        render_model_name(right)
+        com.set_window_title(right)
       end
     })
 

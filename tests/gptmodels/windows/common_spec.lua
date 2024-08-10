@@ -104,4 +104,22 @@ describe("window common functions", function()
       assert.stub(set_text_stub).was_called(1)
     end)
   end)
+
+  describe("set_window_title", function()
+    it("sets border text without given prefix", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_window_title(popup)
+      assert.stub(set_text_stub).was_called(1)
+    end)
+
+    it("sets border text with given prefix", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_window_title(popup, "title prefix ")
+      assert.stub(set_text_stub).was_called(1)
+    end)
+  end)
 end)

@@ -8,6 +8,8 @@ local ollama = require("gptmodels.providers.ollama")
 
 local M = {}
 
+local WINDOW_TITLE_PREFIX = "Chat w/ "
+
 ---@param bufnr integer
 ---@param messages LlmMessage[]
 local safe_render_buffer_from_messages = function(bufnr, messages)
@@ -89,20 +91,11 @@ local on_CR = function(input_bufnr, chat_bufnr)
   Store:register_job(job)
 end
 
-local function chat_title()
-  return "Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model
-end
-
----@param chat NuiPopup
-local function set_chat_title(chat)
-  chat.border:set_text("top", " " .. chat_title() .. " ", "center")
-end
-
 ---@param selected_text string[] | nil
 ---@return { input: NuiPopup, chat: NuiPopup }
 function M.build_and_mount(selected_text)
   ---@type NuiPopup
-  local chat = Popup(com.build_common_popup_opts(chat_title()))
+  local chat = Popup(com.build_common_popup_opts(WINDOW_TITLE_PREFIX .. com.model_display_name()))
   ---@type NuiPopup
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
@@ -123,7 +116,7 @@ function M.build_and_mount(selected_text)
     local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
     if not is_ollama and not is_openai then
       Store:set_model("ollama", models[1])
-      set_chat_title(chat)
+      com.set_window_title(chat, WINDOW_TITLE_PREFIX)
     end
   end)
 
@@ -303,7 +296,7 @@ function M.build_and_mount(selected_text)
               local model = vim.split(model_string, ".", { plain = true })[2]
               if not (provider and model) then return end
               Store:set_model(provider, model)
-              set_chat_title(chat)
+              com.set_window_title(chat, WINDOW_TITLE_PREFIX)
               actions.close(bufnr)
             end)
             return true
@@ -337,7 +330,7 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        set_chat_title(chat)
+        com.set_window_title(chat, WINDOW_TITLE_PREFIX)
       end
     })
 
@@ -347,7 +340,7 @@ function M.build_and_mount(selected_text)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        set_chat_title(chat)
+        com.set_window_title(chat, WINDOW_TITLE_PREFIX)
       end
     })
 

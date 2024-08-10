@@ -166,4 +166,14 @@ M.cycle_tabs_backward = function(win_index, bufs)
   vim.api.nvim_set_current_win(prev_win)
 end
 
+---@param popup NuiPopup
+---@param prefix string | nil
+M.set_window_title = function(popup, prefix)
+  if prefix then
+    popup.border:set_text("top", " " .. prefix .. M.model_display_name() .. " ", "center")
+  else
+    popup.border:set_text("top", " " .. M.model_display_name() .. " ", "center")
+  end
+end
+
 return M
