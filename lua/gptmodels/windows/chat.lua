@@ -121,22 +121,6 @@ local function set_input_top_border_text(input)
 end
 
 
--- available controls are found at the bottom of the input popup
----@param input NuiPopup
-local function set_input_bottom_border_text(input)
-  local commands = {
-    "q quit",
-    "[S]Tab cycle windows",
-    "C-c cancel request",
-    "C-j/k/p cycle/pick models",
-    "C-n clear all",
-    "C-f/g add/clear files",
-  }
-
-  local commands_str = " " .. table.concat(commands, " | ") .. " "
-  input.border:set_text("bottom", commands_str, "center")
-end
-
 local function chat_title()
   return "Chat w/ " .. Store.llm_provider .. "." .. Store.llm_model
 end
@@ -155,7 +139,7 @@ function M.build_and_mount(selected_text)
   local input = Popup(com.build_common_popup_opts("Prompt")) -- the Prompt part will be overwritten by calls to set_input_text
 
   -- available controls are found at the bottom of the input popup
-  set_input_bottom_border_text(input)
+  com.set_bottom_border_text(input)
 
   -- Register popups with store
   Store.chat.chat.popup = chat

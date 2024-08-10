@@ -110,4 +110,26 @@ M.safe_scroll_to_bottom_when_user_not_present = function(winid, bufnr)
   end
 end
 
+-- available controls are found at the bottom of the input popup
+---@param input NuiPopup
+---@param extra_commands? table<string>
+M.set_bottom_border_text = function(input, extra_commands)
+  local commands = {
+    "q quit",
+    "[S]Tab cycle windows",
+    "C-c cancel request",
+    "C-j/k/p cycle/pick models",
+    "C-n clear all",
+    "C-f/g add/clear files",
+  }
+
+  if extra_commands ~= nil then
+    commands = util.merge_tables(commands, extra_commands)
+  end
+
+  local commands_str = " " .. table.concat(commands, " | ") .. " "
+  input.border:set_text("bottom", commands_str, "center")
+end
+
+
 return M

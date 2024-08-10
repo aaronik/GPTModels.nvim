@@ -9,6 +9,7 @@ local llm = require('gptmodels.llm')
 local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
+local Popup = require('nui.popup')
 local common = require('gptmodels.windows.common')
 
 
@@ -64,6 +65,25 @@ describe("window common functions", function()
 
       ---@diagnostic disable-next-line: param-type-mismatch
       common.safe_render_buffer_from_lines(nil, { "hi" })
+    end)
+  end)
+
+  describe("set_bottom_border_text function", function()
+    it("sets border text when no extra commands are given", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_bottom_border_text(popup)
+      assert.stub(set_text_stub).was_called(1)
+    end)
+
+    it("sets border text when no extra commands are given", function()
+      ---@type NuiPopup
+      local popup = Popup({ title = "Test" })
+      local extra_commands = { "some command" }
+      local set_text_stub = stub(popup.border, 'set_text')
+      common.set_bottom_border_text(popup, extra_commands)
+      assert.stub(set_text_stub).was_called(1)
     end)
   end)
 end)

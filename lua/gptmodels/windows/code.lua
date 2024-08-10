@@ -63,23 +63,6 @@ local function set_input_top_border_text(input)
   end
 end
 
--- available controls are found at the bottom of the input popup
----@param input NuiPopup
-local function set_input_bottom_border_text(input)
-  local commands = {
-    "q quit",
-    "[S]Tab cycle windows",
-    "C-c cancel request",
-    "C-j/k/p cycle/pick models",
-    "C-n clear all",
-    "C-f/g add/clear files",
-    "C-x xfer to deck",
-  }
-
-  local commands_str = " " .. table.concat(commands, " | ") .. " "
-  input.border:set_text("bottom", commands_str, "center")
-end
-
 local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.
@@ -177,7 +160,7 @@ function M.build_and_mount(selected_lines)
   ---@type NuiPopup
   local input = Popup(com.build_common_popup_opts("Prompt"))
 
-  set_input_bottom_border_text(input)
+  com.set_bottom_border_text(input, { "C-x xfer to deck" })
 
   -- Register popups with store
   Store.code.right.popup = right
