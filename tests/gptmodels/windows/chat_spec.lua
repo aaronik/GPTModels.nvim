@@ -382,7 +382,7 @@ describe("The Chat window", function()
   it("opens a model picker on <C-p>", function()
     -- For down the line of this crazy stubbing exercise
     local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry_stub.returns({ "abc.123", index = 1 }) -- typical response
+    get_selected_entry_stub.returns({ "abc.123.pie", index = 1 }) -- typical response
 
     -- And just make sure there are no closing errors
     stub(require('telescope.actions'), "close")
@@ -413,7 +413,7 @@ describe("The Chat window", function()
 
     assert.stub(set_model_stub).was_called(1)
     assert.equal('abc', set_model_stub.calls[1].refs[2])
-    assert.equal('123', set_model_stub.calls[1].refs[3])
+    assert.equal('123.pie', set_model_stub.calls[1].refs[3])
   end)
 
   it("closes the window on q", function()

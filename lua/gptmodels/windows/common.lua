@@ -228,9 +228,9 @@ M.launch_telescope_model_picker = function(on_complete)
     attach_mappings = function(_, map)
       map('i', '<CR>', function(bufnr)
         local selection = state.get_selected_entry()
-        local model_string = selection[1]
-        local provider = vim.split(model_string, ".", { plain = true })[1]
-        local model = vim.split(model_string, ".", { plain = true })[2]
+        local model_split = vim.split(selection[1], ".", { plain = true })
+        local provider = model_split[1]
+        local model = table.concat(model_split, ".", 2)
         if not (provider and model) then return end
         Store:set_model(provider, model)
         on_complete()
