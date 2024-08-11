@@ -186,6 +186,9 @@ describe("The Chat window", function()
     -- ensure input is empty
     local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, true)
     assert.same(input_lines, { "" })
+
+    -- ensure store's been cleared of input, since it's now empty
+    assert.equal("", Store.chat.input:read())
   end)
 
   it("Places llm response into chat window", function()

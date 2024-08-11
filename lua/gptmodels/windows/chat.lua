@@ -32,8 +32,9 @@ local on_CR = function(input_bufnr, chat_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
 
-  -- Clear input buf
+  -- Clear input buf, store
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
+  Store.chat.input:clear()
 
   Store.chat.chat:append({ role = "user", content = input_text })
 
@@ -55,6 +56,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
       content = filename .. ":\n\n" .. content
     })
   end
+
   local messages = util.merge_tables(Store.chat.chat:read(), file_messages)
 
   local job = llm.chat({
