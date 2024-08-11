@@ -83,7 +83,7 @@ GPTModels.nvim requires the following programs installed, which are not detected
       sync = true,
       cmd = "which",
       args = { prog },
-      onexit = function (code)
+      onexit = function(code)
         if code ~= 0 then
           return_string = return_string .. prog .. " "
           failed = true
@@ -178,6 +178,7 @@ M.set_window_title = function(popup, prefix)
 end
 
 -- Triggers the fetching / saving of available models from the ollama server
+-- TODO This is only tested via window tests
 ---@param on_complete fun(): nil
 M.trigger_ollama_models_etl = function(on_complete)
   ollama.fetch_models(function(err, ollama_models)
@@ -194,6 +195,24 @@ M.trigger_ollama_models_etl = function(on_complete)
       on_complete()
     end
   end)
+end
+
+-- Generates a function that abstracts the telescope stuff, w/ a simpler api
+---@param on_complete fun(filename: string): nil
+M.launch_telescope_file_picker = function(on_complete)
+  return function()
+    local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+    require('telescope.builtin').find_files(util.merge_tables(theme, {
+      attach_mappings = function(_, map)
+        map('i', '<CR>', function(prompt_bufnr)
+          local selection = require('telescope.actions.state').get_selected_entry()
+          on_complete(selection[1])
+          require('telescope.actions').close(prompt_bufnr)
+        end)
+        return true
+      end
+    }))
+  end
 end
 
 return M

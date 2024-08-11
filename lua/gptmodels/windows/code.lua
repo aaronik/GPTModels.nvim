@@ -144,7 +144,7 @@ function M.build_and_mount(selected_lines)
 
   -- Fetch ollama models so user can work with what they have on their system
   com.trigger_ollama_models_etl(function()
-      com.set_window_title(right)
+    com.set_window_title(right)
   end)
 
   -- Turn off syntax highlighting for input buffer.
@@ -336,20 +336,10 @@ function M.build_and_mount(selected_lines)
     vim.api.nvim_buf_set_keymap(buf, "", "<C-f>", "", {
       noremap = true,
       silent = true,
-      callback = function()
-        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-        require('telescope.builtin').find_files(util.merge_tables(theme, {
-          attach_mappings = function(_, map)
-            map('i', '<CR>', function(prompt_bufnr)
-              local selection = require('telescope.actions.state').get_selected_entry()
-              Store.code:append_file(selection[1])
-              com.set_input_top_border_text(input, Store.code:get_files())
-              require('telescope.actions').close(prompt_bufnr)
-            end)
-            return true
-          end
-        }))
-      end
+      callback = com.launch_telescope_file_picker(function(filename)
+        Store.code:append_file(filename)
+        com.set_input_top_border_text(input, Store.code:get_files())
+      end)
     })
 
     -- Ctl-g to clear files

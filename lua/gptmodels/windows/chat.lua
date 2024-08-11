@@ -107,7 +107,7 @@ function M.build_and_mount(selected_text)
 
   -- Fetch ollama models so user can work with what they have on their system
   com.trigger_ollama_models_etl(function()
-      com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+    com.set_window_title(chat, WINDOW_TITLE_PREFIX)
   end)
 
   -- Input window is text with no syntax
@@ -119,16 +119,6 @@ function M.build_and_mount(selected_text)
 
   -- Chat in markdown
   vim.bo[chat.bufnr].filetype = 'markdown'
-
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    {
-      noremap = true,
-      silent = true,
-      callback = function()
-        on_CR(input.bufnr, chat.bufnr)
-      end
-    }
-  )
 
   local layout = Layout(
     {
@@ -207,6 +197,16 @@ function M.build_and_mount(selected_text)
   end
 
   -- keymaps
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
+    {
+      noremap = true,
+      silent = true,
+      callback = function()
+        on_CR(input.bufnr, chat.bufnr)
+      end
+    }
+  )
+
   local bufs = { chat.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
@@ -240,20 +240,10 @@ function M.build_and_mount(selected_text)
     vim.api.nvim_buf_set_keymap(buf, "", "<C-f>", "", {
       noremap = true,
       silent = true,
-      callback = function()
-        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-        require('telescope.builtin').find_files(util.merge_tables(theme, {
-          attach_mappings = function(_, map)
-            map('i', '<CR>', function(prompt_bufnr)
-              local selection = require('telescope.actions.state').get_selected_entry()
-              Store.chat:append_file(selection[1])
-              com.set_input_top_border_text(input, Store.chat:get_files())
-              require('telescope.actions').close(prompt_bufnr)
-            end)
-            return true
-          end
-        }))
-      end
+      callback = com.launch_telescope_file_picker(function(filename)
+        Store.chat:append_file(filename)
+        com.set_input_top_border_text(input, Store.chat:get_files())
+      end)
     })
 
     -- Ctl-g to clear files
