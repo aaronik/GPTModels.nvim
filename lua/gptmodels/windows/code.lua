@@ -4,7 +4,6 @@ local Layout      = require("nui.layout")
 local Popup       = require("nui.popup")
 local llm         = require('gptmodels.llm')
 local Store       = require('gptmodels.store')
-local ollama      = require('gptmodels.providers.ollama')
 
 local M           = {}
 
@@ -144,17 +143,8 @@ function M.build_and_mount(selected_lines)
   Store.code.input.popup = input
 
   -- Fetch ollama models so user can work with what they have on their system
-  ollama.fetch_models(function(err, models)
-    -- TODO Change this too
-    if err then return util.log(err) end
-    if not models or #models == 0 then return end
-    Store.llm_models.ollama = models
-    local is_ollama = util.contains_line(models, Store.llm_model)
-    local is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
-    if not is_ollama and not is_openai then
-      Store:set_model("ollama", models[1])
+  com.trigger_ollama_models_etl(function()
       com.set_window_title(right)
-    end
   end)
 
   -- Turn off syntax highlighting for input buffer.

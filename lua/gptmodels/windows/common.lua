@@ -1,6 +1,7 @@
 local Store = require('gptmodels.store')
 local cmd = require('gptmodels.cmd')
 local util = require('gptmodels.util')
+local ollama = require('gptmodels.providers.ollama')
 
 local M = {}
 
@@ -174,6 +175,25 @@ M.set_window_title = function(popup, prefix)
   else
     popup.border:set_text("top", " " .. M.model_display_name() .. " ", "center")
   end
+end
+
+-- Triggers the fetching / saving of available models from the ollama server
+---@param on_complete fun(): nil
+M.trigger_ollama_models_etl = function(on_complete)
+  ollama.fetch_models(function(err, ollama_models)
+    -- TODO If there's an issue fetching, I want to display that to the user.
+    if err then return util.log(err) end
+    if not ollama_models or #ollama_models == 0 then return end
+    Store.llm_models.ollama = ollama_models
+    local currently_selected_is_ollama = util.contains_line(ollama_models, Store.llm_model)
+    local currently_selected_is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
+
+    -- If the currently selected model has been removed from the system
+    if not currently_selected_is_ollama and not currently_selected_is_openai then
+      Store:set_model("ollama", ollama_models[1])
+      on_complete()
+    end
+  end)
 end
 
 return M
