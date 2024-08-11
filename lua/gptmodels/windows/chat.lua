@@ -64,12 +64,10 @@ local on_CR = function(input_bufnr, chat_bufnr)
     },
     on_read = function(err, message)
       if err then
-        -- P("code found err: " .. err)
         Store.chat.chat:append({ role = "assistant", content = err })
         safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat:read())
         return
       end
-
 
       -- No response _and_ no error? Weird. Happens though.
       if message then
@@ -261,35 +259,9 @@ function M.build_and_mount(selected_text)
       noremap = true,
       silent = true,
       callback = function()
-        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-        local conf = require('telescope.config').values
-        local actions = require('telescope.actions')
-        local state = require('telescope.actions.state')
-        local pickers = require('telescope.pickers')
-
-        local opts = util.merge_tables(theme, {
-          attach_mappings = function(_, map)
-            map('i', '<CR>', function(bufnr)
-              local selection = state.get_selected_entry()
-              local model_string = selection[1]
-              local provider = vim.split(model_string, ".", { plain = true })[1]
-              local model = vim.split(model_string, ".", { plain = true })[2]
-              if not (provider and model) then return end
-              Store:set_model(provider, model)
-              com.set_window_title(chat, WINDOW_TITLE_PREFIX)
-              actions.close(bufnr)
-            end)
-            return true
-          end
-        })
-
-        pickers.new(opts, {
-          prompt_title = "models",
-          finder = require('telescope.finders').new_table {
-            results = Store:llm_model_strings()
-          },
-          sorter = conf.generic_sorter({}),
-        }):find()
+        com.launch_telescope_model_picker(function()
+          com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+        end)
       end
     })
 

@@ -215,4 +215,38 @@ M.launch_telescope_file_picker = function(on_complete)
   end
 end
 
+-- Generates a function that abstracts the telescope stuff, w/ a simpler api
+---@param on_complete fun(): nil
+M.launch_telescope_model_picker = function(on_complete)
+  local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
+  local conf = require('telescope.config').values
+  local actions = require('telescope.actions')
+  local state = require('telescope.actions.state')
+  local pickers = require('telescope.pickers')
+
+  local opts = util.merge_tables(theme, {
+    attach_mappings = function(_, map)
+      map('i', '<CR>', function(bufnr)
+        local selection = state.get_selected_entry()
+        local model_string = selection[1]
+        local provider = vim.split(model_string, ".", { plain = true })[1]
+        local model = vim.split(model_string, ".", { plain = true })[2]
+        if not (provider and model) then return end
+        Store:set_model(provider, model)
+        on_complete()
+        actions.close(bufnr)
+      end)
+      return true
+    end
+  })
+
+  pickers.new(opts, {
+    prompt_title = "models",
+    finder = require('telescope.finders').new_table {
+      results = Store:llm_model_strings()
+    },
+    sorter = conf.generic_sorter({}),
+  }):find()
+end
+
 return M

@@ -280,35 +280,9 @@ function M.build_and_mount(selected_lines)
       noremap = true,
       silent = true,
       callback = function()
-        local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-        local conf = require('telescope.config').values
-        local actions = require('telescope.actions')
-        local state = require('telescope.actions.state')
-        local pickers = require('telescope.pickers')
-
-        local opts = util.merge_tables(theme, {
-          attach_mappings = function(_, map)
-            map('i', '<CR>', function(bufnr)
-              local selection = state.get_selected_entry()
-              local model_string = selection[1]
-              local provider = vim.split(model_string, ".", { plain = true })[1]
-              local model = vim.split(model_string, ".", { plain = true })[2]
-              if not (provider and model) then return end
-              Store:set_model(provider, model)
-              com.set_window_title(right)
-              actions.close(bufnr)
-            end)
-            return true
-          end
-        })
-
-        pickers.new(opts, {
-          prompt_title = "models",
-          finder = require('telescope.finders').new_table {
-            results = Store:llm_model_strings()
-          },
-          sorter = conf.generic_sorter({}),
-        }):find()
+        com.launch_telescope_model_picker(function()
+          com.set_window_title(right)
+        end)
       end
     })
 
