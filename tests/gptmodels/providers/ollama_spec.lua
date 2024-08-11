@@ -45,37 +45,11 @@ describe("ollama.generate", function()
     assert.stub(exec_stub).was_called(1)
   end)
 
-  it("gracefully handles errors to on_read", function()
-    local exec_stub = stub(cmd, "exec")
-
-    exec_stub.invokes(function(data)
-      local exec_args = data
-      exec_args.onread("error", nil)
-    end)
-
-    ollama.generate({
-      llm = {
-        system = { "system" },
-        prompt = "pr0mpT",
-        stream = true,
-      },
-      on_read = function(error, message)
-        assert.equal("error", error)
-        assert.is_nil(message)
-      end,
-    })
-
-    assert.stub(exec_stub).was_called(1)
-  end)
-
-  -- This was giving these huge error messages to the right pane after every response
-  it("gracefully handles a clipped final message with no content", function()
-    local initial_clipped_json =
-    '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","response":"","done":true,"context":[128006,9125],"total_duration":5058894333,"load_duration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
-    local follow_on_one = ",3755,23526"
+  it('combines clipped responses', function()
+    local initial_clipped_json = '{"model":"whatever","created_at":"2024-05-14T04:31:47.332514Z","respo'
+    local follow_on_one = 'nse":"hiya","done":false,"context":[128006,9125],"total_duration":5058894333,"load_d'
     local follow_on_two =
-    '5,8145,108], "total_duration":3688802667, "load_duration":864584, "prompt_eval_count":1515, "prompt_eval_duration":3633759000, "eval_count":3, "eval_duration":52699000}'
-
+    'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
 
     local exec_stub = stub(cmd, "exec")
 
@@ -86,21 +60,25 @@ describe("ollama.generate", function()
       exec_args.onread(nil, follow_on_two)
     end)
 
-    local on_read_called = false
+    ---@type string | nil
+    local on_read_args = ""
 
+    ---@type MakeGenerateRequestArgs
     local generate_args = {
       llm = {
         system = { "system" },
         prompt = "pr0mpT",
         stream = true,
       },
-      on_read = function() on_read_called = true end,
+      on_read = function(_, args)
+        on_read_args = args
+      end,
     }
 
     ollama.generate(generate_args)
     assert.stub(exec_stub).was_called(1)
     vim.wait(20)
-    assert.False(on_read_called)
+    assert.equal("hiya", on_read_args)
   end)
 end)
 
@@ -143,36 +121,12 @@ describe("ollama.chat", function()
     assert.stub(exec_stub).was_called(1)
   end)
 
-  it("gracefully handles errors to on_read", function()
-    local exec_stub = stub(cmd, "exec")
-
-    exec_stub.invokes(function(data)
-      local exec_args = data
-      exec_args.onread("error", nil)
-    end)
-
-    ollama.chat({
-      llm = {
-        messages = { role = "system", content = "yo" },
-        prompt = "pr0mpT",
-        stream = true,
-      },
-      on_read = function(error, message)
-        assert.equal("error", error)
-        assert.is_nil(message)
-      end,
-    })
-
-    assert.stub(exec_stub).was_called(1)
-  end)
-
-  -- This was giving these huge error messages to the right pane after every response
-  it("gracefully handles a weird final message with no content", function()
-    local initial_clipped_json =
-    '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","response":"","done":true,"context":[128006,9125],"total_duration":5058894333,"load_duration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
-    local follow_on_one = ",3755,23526"
+  it('combines clipped responses', function()
+    local initial_clipped_json = '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","mess'
+    local follow_on_one =
+    'age":{"content": "hiya", "role": "assistant"},"done":false,"context":[128006,9125],"total_duration":5058894333,"load_d'
     local follow_on_two =
-    '5,8145,108], "total_duration":3688802667, "load_duration":864584, "prompt_eval_count":1515, "prompt_eval_duration":3633759000, "eval_count":3, "eval_duration":52699000}'
+    'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
 
     local exec_stub = stub(cmd, "exec")
 
@@ -183,20 +137,24 @@ describe("ollama.chat", function()
       exec_args.onread(nil, follow_on_two)
     end)
 
+    ---@type string | nil
+    local on_read_args = ""
+
     ---@type MakeChatRequestArgs
     local chat_args = {
       llm = {
         system = "system",
         stream = true,
       },
-      on_read = function() end,
+      on_read = function(_, args)
+        on_read_args = args and args.content
+      end,
     }
 
-    local on_read_stub = stub(chat_args, "on_read")
     ollama.chat(chat_args)
     assert.stub(exec_stub).was_called(1)
     vim.wait(20)
-    assert.stub(on_read_stub).was_called(0)
+    assert.equal('hiya', on_read_args)
   end)
 end)
 

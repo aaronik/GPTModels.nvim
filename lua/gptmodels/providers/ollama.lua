@@ -3,168 +3,146 @@ local cmd = require('gptmodels.cmd')
 local consts = require('gptmodels.constants')
 require('gptmodels.types')
 
-local M = {}
-
 -- curl http://localhost:11434/api/chat -d '{ "model": "llama2", "messages": [ { "role": "user", "content": "why is the sky blue?" } ] }'
 
----@param args MakeGenerateRequestArgs
----@return Job
-M.generate = function(args)
-    local url = "http://localhost:11434/api/generate"
+-- TODO: How to get the LSP to recognize this file to have 2 spaces instead of 4? Why's it work fine in Store but not here?
 
-    -- default model
-    if not args.llm.model then
-        args.llm.model = "llama3.1"
-    end
+---@type LlmProvider
+local Provider = {
+    name = 'ollama',
+    generate = function(args)
+        local url = "http://localhost:11434/api/generate"
 
-    -- system prompt
-    if args.llm.system then
-        ---@diagnostic disable-next-line: assign-type-mismatch -- do some last minute munging to get it happy for ollama
-        args.llm.system = table.concat(args.llm.system, "\n\n")
-    end
+        -- default model
+        if not args.llm.model then
+            args.llm.model = "llama3.1"
+        end
 
-    local curl_args = {
-        url,
-        "--data",
-        vim.fn.json_encode(args.llm),
-        "--no-progress-meter",
-        "--no-buffer",
-    }
+        -- system prompt
+        if args.llm.system then
+            ---@diagnostic disable-next-line: assign-type-mismatch -- do some last minute munging to get it happy for ollama
+            args.llm.system = table.concat(args.llm.system, "\n\n")
+        end
 
-    local job = cmd.exec({
-        testid = "ollama-generate",
-        cmd = "curl",
-        args = curl_args,
-        onread = vim.schedule_wrap(function(err, json)
-            if err then return args.on_read(err) end
-            if not json then return end
+        local curl_args = {
+            url,
+            "--data",
+            vim.fn.json_encode(args.llm),
+            "--no-progress-meter",
+            "--no-buffer",
+        }
 
-            -- There's a final message that ollama returns, which sometimes is
-            -- too big for a single curl frame response. So the json can't get
-            -- decoded.
-            -- The first always contains "done": true
-            if string.match(json, '"done":true') then
-                return
-            end
+        local json_fragment_aggregate = ''
 
-            -- The rest start with a comma or a number.
-            local pattern = "^[%,%d]"
-            if string.match(json, pattern) then
-                return
-            end
+        local job = cmd.exec({
+            testid = "ollama-generate",
+            cmd = "curl",
+            args = curl_args,
+            onread = vim.schedule_wrap(function(err, json_fragment)
+                if err then return args.on_read(err) end
+                if not json_fragment then return end
 
-            ---@type boolean, { response: string } | nil
-            local status_ok, data = pcall(vim.fn.json_decode, json)
-            if not status_ok or not data then
-                return args.on_read("Error decoding json: " .. json, "")
-            end
+                json_fragment_aggregate = json_fragment_aggregate .. json_fragment
 
-            args.on_read(nil, data.response)
-        end),
-        onexit = vim.schedule_wrap(function()
-            if args.on_end ~= nil then
-                args.on_end()
-            end
-        end)
-    })
-
-    return job
-end
-
----@param args MakeChatRequestArgs
----@return Job
-M.chat = function(args)
-    local url = "http://localhost:11434/api/chat"
-
-    if not args.llm.model then
-        args.llm.model = "llama3.1"
-    end
-
-    local curl_args = {
-        url,
-        "--data",
-        vim.fn.json_encode(args.llm),
-        "--no-progress-meter",
-        "--no-buffer",
-    }
-
-    local job = cmd.exec({
-        testid = "ollama-chat",
-        cmd = "curl",
-        args = curl_args,
-        onread = vim.schedule_wrap(function(err, json)
-            if err then return args.on_read(err) end
-            if not json then return end
-
-            -- There's a final message that ollama returns, which sometimes is
-            -- too big for a single curl frame response. So the json can't get
-            -- decoded.
-            -- The first always contains "done": true
-            if string.match(json, '"done":true') then
-                return
-            end
-
-            -- The rest start with a comma or a number.
-            local pattern = "^[%,%d]"
-            if string.match(json, pattern) then
-                return
-            end
-
-            -- split, and trim empty lines
-            local json_lines = vim.split(json, "\n")
-            json_lines = vim.tbl_filter(function(line) return line ~= "" end, json_lines)
-
-            for _, line in ipairs(json_lines) do
-                local status_ok, data = pcall(vim.fn.json_decode, line)
+                local status_ok, data = pcall(vim.fn.json_decode, json_fragment_aggregate)
                 if not status_ok or not data then
-                    -- TODO this seems untested
-                    return args.on_read(consts.LLM_DECODE_ERROR_STRING .. json)
+                    return -- wait for another fragment to come in
                 end
 
-                args.on_read(nil, data.message)
-            end
-        end),
-        -- TODO Test that this doesn't throw when on_end isn't passed in
-        onexit = vim.schedule_wrap(function()
-            if args.on_end then
-                args.on_end()
-            end
-        end)
-    })
+                json_fragment_aggregate = '' -- the fragments were fully combined, reset the aggregate
+                args.on_read(nil, data.response)
+            end),
+            onexit = vim.schedule_wrap(function()
+                -- TODO return error when there's leftover json_fragment_aggregate here and below
+                if args.on_end ~= nil then
+                    args.on_end()
+                end
+            end)
+        })
 
-    return job
-end
+        return job
+    end,
 
----@param cb fun(err: string | nil, models: string[] | nil)
----@return Job
-M.fetch_models = function(cb)
-    local job = cmd.exec({
-        cmd = "curl",
-        args = { "--no-progress-meter", "http://localhost:11434/api/tags" },
-        ---@param err string | nil
-        ---@param json_response string | nil
-        onread = vim.schedule_wrap(function(err, json_response)
-            if err then return cb(err) end
-            if not json_response then return end
+    chat = function(args)
+        local url = "http://localhost:11434/api/chat"
 
-            ---@type boolean, { models: { name: string }[] } | nil
-            local status_ok, response = pcall(vim.fn.json_decode, json_response)
-            if not status_ok or not response then
-                return cb("error retrieving ollama models")
-            end
+        if not args.llm.model then
+            args.llm.model = "llama3.1"
+        end
 
-            ---@type string[]
-            local models = {}
+        local curl_args = {
+            url,
+            "--data",
+            vim.fn.json_encode(args.llm),
+            "--no-progress-meter",
+            "--no-buffer",
+        }
 
-            for _, model in ipairs(response.models) do
-                table.insert(models, model.name)
-            end
+        local json_fragment_aggregate = ''
 
-            return cb(nil, models)
-        end)
-    })
+        local job = cmd.exec({
+            testid = "ollama-chat",
+            cmd = "curl",
+            args = curl_args,
+            onread = vim.schedule_wrap(function(err, json_fragment)
+                if err then return args.on_read(err) end
+                if not json_fragment then return end
 
-    return job
-end
+                -- split, and trim empty lines
+                local json_lines = vim.split(json_fragment, "\n")
+                json_lines = vim.tbl_filter(function(line) return line ~= "" end, json_lines)
 
-return M
+                for _, line in ipairs(json_lines) do
+                    line = json_fragment_aggregate .. line
+                    local status_ok, data = pcall(vim.fn.json_decode, line)
+                    if status_ok and data then
+                        json_fragment_aggregate = ''
+                        args.on_read(nil, data.message)
+                    else
+                        json_fragment_aggregate = line
+                    end
+                end
+            end),
+            -- TODO Test that this doesn't throw when on_end isn't passed in
+            onexit = vim.schedule_wrap(function()
+                if args.on_end then
+                    args.on_end()
+                end
+            end)
+        })
+
+        return job
+    end,
+
+    fetch_models = function(cb)
+        local job = cmd.exec({
+            cmd = "curl",
+            args = { "--no-progress-meter", "http://localhost:11434/api/tags" },
+            ---@param err string | nil
+            ---@param json_response string | nil
+            onread = vim.schedule_wrap(function(err, json_response)
+                if err then return cb(err) end
+                if not json_response then return end
+
+                ---@type boolean, { models: { name: string }[] } | nil
+                local status_ok, response = pcall(vim.fn.json_decode, json_response)
+                if not status_ok or not response then
+                    return cb("error retrieving ollama models")
+                end
+
+                ---@type string[]
+                local models = {}
+
+                for _, model in ipairs(response.models) do
+                    table.insert(models, model.name)
+                end
+
+                return cb(nil, models)
+            end)
+        })
+
+        return job
+    end
+}
+
+return Provider

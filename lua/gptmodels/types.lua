@@ -45,14 +45,20 @@
 ---@class NuiBorder
 ---@field set_text fun(self: NuiBorder, edge: "top" | "bottom" | "left" | "right", text: string, align: "left" | "right" | "center")
 
--- Wish they exported types
--- Update: At some point it appears they did, but later I'm having trouble finding them.
--- LSP is not picking it up any more, but often requires file to be open before registering
--- types definted in it.
--- TODO: This is at risk of divergence from the actual NuiPopup. Gotta find that again.
----@class NuiPopup
----@field bufnr integer
----@field winid integer | nil
----@field border NuiBorder
----@field on fun(self: NuiPopup, vim_event: string, function)
+---@class LlmProvider
+---@field name string
+---@field generate fun(args: MakeGenerateRequestArgs): Job
+---@field chat fun(args: MakeChatRequestArgs): Job
+---@field fetch_models fun(cb: fun(err: string | nil, models: string[] | nil)): Job
+
+-- -- Wish they exported types
+-- -- Update: At some point it appears they did, but later I'm having trouble finding them.
+-- -- LSP is not picking it up any more, but often requires file to be open before registering
+-- -- types definted in it.
+-- -- TODO: This is at risk of divergence from the actual NuiPopup. Gotta find that again.
+-- ---@class NuiPopup
+-- ---@field bufnr integer
+-- ---@field winid integer | nil
+-- ---@field border NuiBorder
+-- ---@field on fun(self: NuiPopup, vim_event: string, function)
 

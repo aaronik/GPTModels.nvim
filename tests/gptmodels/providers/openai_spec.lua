@@ -59,13 +59,21 @@ describe("openai.generate", function()
     assert.stub(exec_stub).was_called(1)
   end)
 
-  it("gracefully handles errors to on_read", function()
+  it("handles clipped responses", function()
     local exec_stub = stub(cmd, "exec")
+
+    -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
+    -- All messages are just "hello"
+    local response_1 = 'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+    local response_2 = 'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
-      exec_args.onread("error", nil)
+      exec_args.onread(nil, response_1)
+      exec_args.onread(nil, response_2)
     end)
+
+    local on_read_call_count = 0
 
     openai.generate({
       llm = {
@@ -74,12 +82,15 @@ describe("openai.generate", function()
         stream = true,
       },
       on_read = function(error, message)
-        assert.equal("error", error)
-        assert.is_nil(message)
+        assert.is_nil(error)
+        assert.equal("hello", message)
+        on_read_call_count = on_read_call_count + 1
       end,
     })
 
+    vim.wait(20)
     assert.stub(exec_stub).was_called(1)
+    assert.equal(on_read_call_count, 3)
   end)
 end)
 
@@ -156,26 +167,36 @@ describe("openai.chat", function()
     assert.stub(cmd_stub).was_called(1)
   end)
 
-  it("gracefully handles errors to on_read", function()
+  it("handles clipped responses", function()
     local exec_stub = stub(cmd, "exec")
+
+    -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
+    -- All messages are just "hello"
+    local response_1 = 'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+    local response_2 = 'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
-      exec_args.onread("error", nil)
+      exec_args.onread(nil, response_1)
+      exec_args.onread(nil, response_2)
     end)
+
+    local on_read_call_count = 0
 
     openai.chat({
       llm = {
-        messages = { role = "system", content = "yo" },
         prompt = "pr0mpT",
         stream = true,
       },
       on_read = function(error, message)
-        assert.equal("error", error)
-        assert.is_nil(message)
+        assert.is_nil(error)
+        assert.equal("hello", message and message.content)
+        on_read_call_count = on_read_call_count + 1
       end,
     })
 
+    vim.wait(20)
     assert.stub(exec_stub).was_called(1)
+    assert.equal(3, on_read_call_count)
   end)
 end)
