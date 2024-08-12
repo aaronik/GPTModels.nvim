@@ -90,9 +90,9 @@ local on_CR = function(input_bufnr, chat_bufnr)
   Store:register_job(job)
 end
 
----@param selected_text string[] | nil
+---@param selection Selection | nil
 ---@return { input: NuiPopup, chat: NuiPopup }
-function M.build_and_mount(selected_text)
+function M.build_and_mount(selection)
   ---@type NuiPopup
   local chat = Popup(com.build_common_popup_opts(WINDOW_TITLE_PREFIX .. com.model_display_name()))
   ---@type NuiPopup
@@ -157,7 +157,7 @@ function M.build_and_mount(selected_text)
   vim.wo[input.winid].wrap = true
 
   -- Add text selection to input buf
-  if selected_text then
+  if selection then
     -- If selected lines are given, it's like a new session, so we'll nuke all else
     local extent_job = Store:get_job()
     if extent_job then
@@ -174,7 +174,7 @@ function M.build_and_mount(selected_text)
 
     -- clear / add selection to input
     Store.chat.input:clear()
-    vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selected_text)
+    vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selection.text)
 
     -- Go to bottom of input and enter insert mode
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)

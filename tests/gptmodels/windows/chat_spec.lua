@@ -10,6 +10,7 @@ local llm = require('gptmodels.llm')
 local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
+local helpers = require('tests.gptmodels.spec_helpers')
 
 local function stub_schedule_wrap()
   stub(vim, "schedule_wrap").invokes(function(cb)
@@ -65,7 +66,7 @@ describe("The Chat window", function()
   end)
 
   it("puts selected text into input buffer and puts newline under it", function()
-    local chat = chat_window.build_and_mount({ "selected text" })
+    local chat = chat_window.build_and_mount(helpers.build_selection({ "selected text" }))
     local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
     assert.same({ "selected text", "" }, input_lines)
   end)
@@ -84,7 +85,7 @@ describe("The Chat window", function()
   it("clears all windows, kills job, removes files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
-    local chat = chat_window.build_and_mount(first_given_lines) -- populate input a bit
+    local chat = chat_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate input a bit
 
     local die_called = false
 
@@ -117,7 +118,7 @@ describe("The Chat window", function()
     local second_given_lines = { "second" }
 
     -- reopen window with new selection
-    chat = chat_window.build_and_mount(second_given_lines)
+    chat = chat_window.build_and_mount(helpers.build_selection(second_given_lines))
 
     -- old job got killed
     assert(die_called)
@@ -646,7 +647,7 @@ describe("The Chat window", function()
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert.equal("  ollama curl ", chat_lines[3])
 
-    chat = chat_window.build_and_mount({ "with selected text" })
+    chat = chat_window.build_and_mount(helpers.build_selection({ "with selected text" }))
     chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert.equal("  ollama curl ", chat_lines[3])
   end)

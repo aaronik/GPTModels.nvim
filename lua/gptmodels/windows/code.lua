@@ -125,9 +125,9 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store:register_job(job)
 end
 
----@param selected_lines string[] | nil
+---@param selection Selection | nil
 ---@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
-function M.build_and_mount(selected_lines)
+function M.build_and_mount(selection)
   ---@type NuiPopup
   local left = Popup(com.build_common_popup_opts("On Deck"))
   ---@type NuiPopup
@@ -159,12 +159,35 @@ function M.build_and_mount(selected_lines)
   vim.bo[right.bufnr].filetype = vim.bo.filetype
 
   -- When the user opened this from visual mode with text
-  if selected_lines then
-    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selected_lines)
+  if selection then
+    -- start by clearing all existing state
+    Store.code.input:clear()
+    Store.code.left:clear()
+    Store.code.right:clear()
+    Store.code:clear_files()
+
+    local diagnostic_lines = util.get_relevant_diagnostic_text(
+      vim.diagnostic.get(0),
+      selection.start_line,
+      selection.end_line
+    )
+
+    if #diagnostic_lines > 0 then
+      local input_lines = util.merge_tables({
+        "Please fix the following " .. #diagnostic_lines .. " LSP Error(s) in this code:",
+        "",
+      }, diagnostic_lines)
+
+      vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, input_lines)
+      for _, line in ipairs(input_lines) do
+        Store.code.input:append(line .. '\n')
+      end
+    end
+
+    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.text)
 
     -- On open, save the text to the store, so next open contains that text
-    Store.code.left:clear()
-    Store.code.left:append(table.concat(selected_lines, "\n"))
+    Store.code.left:append(table.concat(selection.text, "\n"))
 
     -- If selected lines are given, it's like a new session, so we'll nuke all else
     local extent_job = Store:get_job()
@@ -172,10 +195,6 @@ function M.build_and_mount(selected_lines)
       extent_job.die()
       vim.wait(100, function() return extent_job.done() end)
     end
-    Store.code.input:clear()
-    Store.code.right:clear()
-
-    Store.code:clear_files()
   else
     -- When the store already has some data
     -- If a selection is passed in, though, then it gets a new session

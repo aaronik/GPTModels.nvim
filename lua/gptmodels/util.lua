@@ -104,17 +104,17 @@ M.guid = function()
 end
 
 ---Get useful data about the current visual selection
----@return {start_line: number, end_line: number, start_column: number, end_column: number, text: string[]}
+---@return Selection
 M.get_visual_selection = function()
   local selection = {}
-  selection.start_line = vim.fn.getpos("'<")[2]
-  selection.end_line = vim.fn.getpos("'>")[2]
-  selection.start_column = vim.fn.getpos("'<")[3]
+  selection.start_line = vim.fn.getpos("'<")[2] - 1
+  selection.end_line = vim.fn.getpos("'>")[2] - 1
+  selection.start_column = vim.fn.getpos("'<")[3] - 1
   selection.end_column = vim.fn.getpos("'>")[3]
 
   local end_col = math.min(selection.end_column, 2147483646)
   local text = vim.api.nvim_buf_get_text(
-    0, selection.start_line - 1, selection.start_column - 1, selection.end_line - 1, end_col, {}
+    0, selection.start_line, selection.start_column, selection.end_line, end_col, {}
   )
 
   selection.text = text
@@ -127,5 +127,23 @@ end
 M.has_env_var = function(env_key)
   return type(os.getenv(env_key)) ~= type(nil)
 end
+
+-- Get the messages from diagnostics that are present between start_line and end_line, inclusive
+---@param diagnostics vim.Diagnostic[]
+---@param start_line integer
+---@param end_line integer
+---@return string[]
+M.get_relevant_diagnostic_text = function(diagnostics, start_line, end_line)
+  local relevant_texts = {}
+
+  for _, diagnostic in ipairs(diagnostics) do
+    if diagnostic.lnum >= start_line and diagnostic.lnum <= end_line then
+      table.insert(relevant_texts, diagnostic.message)
+    end
+  end
+
+  return relevant_texts
+end
+
 
 return M

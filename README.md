@@ -16,6 +16,7 @@ The plugin code is **well tested**, and leverages the **EmmyLua** type system fo
 ### Features
 
 * **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it super simple to switch between different models. I often get "second opinions" on code I'm getting LLM help with.
+* **LSP Diagnostic inclusion** - LSP diagnostics in selected code are transferred to the code window
 * **File inclusion** - The plugin uses telescope for a super clean file picker, and includes the files in the messages to the llm.
 * **Background processing** - Close the window while the AI responds, open the window and the response will continue streaming in the background.
 * **Request cancellation** - Cancel requests midflight with Ctrl-c. Save tokens and time.

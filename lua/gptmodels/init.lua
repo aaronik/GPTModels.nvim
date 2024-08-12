@@ -16,8 +16,8 @@ end
 ---@see file plugin/init.lua
 M.code = function(opts)
   if opts.visual_mode then
-    local selected_text = util.get_visual_selection().text
-    code_window.build_and_mount(selected_text)
+    local selection = util.get_visual_selection()
+    code_window.build_and_mount(selection)
   else
     code_window.build_and_mount()
   end
@@ -27,8 +27,8 @@ end
 ---@see file plugin/init.lua
 M.chat = function (opts)
   if opts.visual_mode then
-    local selected_text = util.get_visual_selection().text
-    chat_window.build_and_mount(selected_text)
+    local selection = util.get_visual_selection()
+    chat_window.build_and_mount(selection)
   else
     chat_window.build_and_mount()
   end

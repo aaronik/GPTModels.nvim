@@ -51,6 +51,14 @@
 ---@field chat fun(args: MakeChatRequestArgs): Job
 ---@field fetch_models fun(cb: fun(err: string | nil, models: string[] | nil)): Job
 
+---@class Selection
+---@field start_line number
+---@field end_line number
+---@field start_column number
+---@field end_column number
+---@field text string[]
+
+
 -- -- Wish they exported types
 -- -- Update: At some point it appears they did, but later I'm having trouble finding them.
 -- -- LSP is not picking it up any more, but often requires file to be open before registering

@@ -9,6 +9,7 @@ local llm = require('gptmodels.llm')
 local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
+local helpers = require('tests.gptmodels.spec_helpers')
 
 -- For async functions that use vim.schedule_wrap, which writing to buffers requires
 local function stub_schedule_wrap()
@@ -61,7 +62,7 @@ describe("The code window", function()
 
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
-    local code = code_window.build_and_mount(given_lines)
+    local code = code_window.build_and_mount(helpers.build_selection(given_lines))
     local gotten_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
     assert.same(given_lines, gotten_lines)
   end)
@@ -69,7 +70,7 @@ describe("The code window", function()
   it("clears all windows, kills job, and clears files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
-    local code = code_window.build_and_mount(first_given_lines) -- populate left pane
+    local code = code_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate left pane
 
     local die_called = false
 
@@ -102,7 +103,7 @@ describe("The code window", function()
     local second_given_lines = { "second" }
 
     -- reopen window with new selection
-    code = code_window.build_and_mount(second_given_lines)
+    code = code_window.build_and_mount(helpers.build_selection(second_given_lines))
 
     -- old job got killed
     assert(die_called)
@@ -292,7 +293,7 @@ describe("The code window", function()
     Store.code.input:append("input content")
     Store.code.left:append("left content")
 
-    local code = code_window.build_and_mount({ "provided text" })
+    local code = code_window.build_and_mount(helpers.build_selection({ "provided text" }))
 
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
@@ -607,7 +608,7 @@ describe("The code window", function()
     local llm_stub = stub(llm, "generate")
 
     -- left window is saved when it opens
-    local code = code_window.build_and_mount({ "left" })
+    local code = code_window.build_and_mount(helpers.build_selection({ "left" }))
 
     -- Add user input
     vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input" })
@@ -746,7 +747,7 @@ describe("The code window", function()
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     assert(util.contains_line(right_lines, "  ollama curl "))
 
-    code = code_window.build_and_mount({ "with selected text" })
+    code = code_window.build_and_mount(helpers.build_selection({ "with selected text" }))
     right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     assert(util.contains_line(right_lines, "  ollama curl "))
   end)
@@ -774,5 +775,52 @@ describe("The code window", function()
 
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     assert.equal("curl error", right_lines[1])
+  end)
+
+  it("sets input bottom border text on launch", function()
+    -- TODO here and in chat spec
+  end)
+
+  it("includes LSP diagnostics when present within selection", function()
+    ---@type Selection
+    local selection = {
+      start_line = 0,
+      end_line = 10,
+      start_column = 0,
+      end_column = 10,
+      text = { "couple", "of", "lines" }
+    } -- make sure start/end lines contain the correct two diagnostics from helpers.diagnostic_response
+
+    local get_diagnostic_stub = stub(vim.diagnostic, 'get')
+    get_diagnostic_stub.invokes(function()
+      return helpers.diagnostic_response
+    end)
+
+    local code = code_window.build_and_mount(selection)
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
+
+    assert.stub(get_diagnostic_stub).was_called(1)
+    assert(
+      util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
+      "LSP Diagnostic not found in input"
+    )
+    assert(util.contains_line(input_lines, "Unused local `what`."), "LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "Unused local `bob`."), "LSP Diagnostic not found in input")
+
+    -- close window
+    local keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
+    vim.api.nvim_feedkeys(keys, 'mtx', false)
+
+    -- reopen
+    code = code_window.build_and_mount()
+    input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
+
+    -- all lines should remain
+    assert(
+      util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
+      "Saved LSP Diagnostic not found in input"
+    )
+    assert(util.contains_line(input_lines, "Unused local `what`."), "Saved LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "Unused local `bob`."), "Saved LSP Diagnostic not found in input")
   end)
 end)
