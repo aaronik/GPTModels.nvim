@@ -1,0 +1,53 @@
+*gptmodels.nvim.txt*		Plugin Documentation     		*gptmodels*
+
+NAME
+    gptmodels.nvim - An AI plugin for Neovim integrating local and remote LLMs
+
+DESCRIPTION
+    This plugin offers two specialized windows for interacting with AI language models: one for chat and one for code editing. Leverage OpenAI and local models for various tasks, integrated seamlessly into your Neovim workflow.
+
+INSTALLATION
+    Requires `curl` for network requests.
+    For OpenAI, set the `OPENAI_API_KEY` environment variable.
+    For Ollama, have the Ollama service running locally.
+
+    Using 'lazy.nvim':
+        ```lua
+        {
+          "Aaronik/GPTModels.nvim",
+          dependencies = {
+            "MunifTanjim/nui.nvim",
+            "nvim-telescope/telescope.nvim"
+          }
+        }
+        ```
+
+    Using 'vim-plug':
+        ```vim
+        Plug "MunifTanjim/nui.nvim"
+        Plug "nvim-telescope/telescope.nvim"
+        Plug "Aaronik/GPTModels.nvim"
+        ```
+
+COMMANDS
+    :GPTModelsCode
+        Open a window for iterating on selections of code.
+
+    :GPTModelsChat
+        Open a chat window for general discussions.
+
+KEYMAPS
+    The keymaps are described below. They are accessible from normal mode.
+
+    Keybinding | Action            | Description
+    -----------|-------------------|-------------------------------------------------
+    `<CR>`     | send request      | Send your prompt and any files or code to the AI
+    `q`        | quit              | Close the window
+    `[S]Tab`   | cycle windows     | Switch focus successively between windows
+    `C-c`      | cancel request    | Cancel the current request by sending SIGTERM to `curl`
+    `C-f`      | add files         | Open file picker and include selected file's contents in the request
+    `C-g`      | clear files       | Clear selected files without affecting window contents
+    `C-x`      | xfer to deck      | Transfer right pane contents to the left pane in code window
+    `C-j/k`    | cycle models      | Cycle through available AI models
+    `C-p`      | pick model        | Open popup to select a model from multiple options
+    `C-n`      | clear all         | Clear all state, including windows and files
