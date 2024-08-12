@@ -14,7 +14,9 @@ local M           = {}
 ---@return string, string[]
 local code_prompt = function(filetype, input_text, code_text)
   local prompt_string = [[
-    %s\n\n
+    \[USER INPUT\]:
+    %s
+    \n\n
     \[FILE EXTENSION\]:
     %s
     \n\n
@@ -28,7 +30,7 @@ local code_prompt = function(filetype, input_text, code_text)
   local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
   local system_string = [[
-    You are a high quality software modification system.
+    You are a high quality software creation and modification system.
     Your code is clean, avoiding unnecessary complexity. Tricky or odd bits of code are commented explaining what they are and why they're there.
     Your job is to help with the included code and the user request.
     The user may include files for reference.
@@ -37,7 +39,7 @@ local code_prompt = function(filetype, input_text, code_text)
     Do not wrap any code in triple backticks, just give the code."
   ]]
 
-  local system = { string.format(system_string, input_text, code_text) }
+  local system = { system_string }
 
   for _, filename in ipairs(Store.code:get_files()) do
     local file = io.open(filename, "r")
