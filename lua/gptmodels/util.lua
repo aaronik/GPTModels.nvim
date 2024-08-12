@@ -138,7 +138,9 @@ M.get_relevant_diagnostic_text = function(diagnostics, start_line, end_line)
 
   for _, diagnostic in ipairs(diagnostics) do
     if diagnostic.lnum >= start_line and diagnostic.lnum <= end_line then
-      table.insert(relevant_texts, diagnostic.message)
+      -- TODO Test that these messages are getting cleaned from here, in addition to testing this method
+      local cleaned_message = diagnostic.message:gsub("\n", "--")
+      table.insert(relevant_texts, cleaned_message)
     end
   end
 
