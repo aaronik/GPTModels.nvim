@@ -15,18 +15,26 @@ local M           = {}
 local code_prompt = function(filetype, input_text, code_text)
   local prompt_string = [[
     %s\n\n
-    The extension of the language is %s.
-    Here is the code:
+    \[FILE EXTENSION\]:
     %s
+    \n\n
+    \[INCLUDED CODE\]:
+    %s
+    \n\n
+    \[INCLUDED FILES\]:
+    \n\n
   ]]
 
   local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
   local system_string = [[
-    You are a code generator.
-    You only respond with code.
+    You are a high quality software modification system.
+    Your code is clean, avoiding unnecessary complexity. Tricky or odd bits of code are commented explaining what they are and why they're there.
+    Your job is to help with the included code and the user request.
+    The user may include files for reference.
+    Your response goes directly into a code viewing window, therefore only respond with code and comments.
     Do not include any explanations.
-    Do not use backticks. Do not include ``` at all."
+    Do not wrap any code in triple backticks, just give the code."
   ]]
 
   local system = { string.format(system_string, input_text, code_text) }
@@ -37,7 +45,7 @@ local code_prompt = function(filetype, input_text, code_text)
     local content = file:read("*all")
     file:close()
 
-    table.insert(system, filename .. ":\n" .. content .. "\n\n")
+    prompt = prompt .. filename .. ":\n\n" .. content .. "\n\n---\n\n"
   end
 
   return prompt, system

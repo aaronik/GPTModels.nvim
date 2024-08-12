@@ -475,14 +475,8 @@ describe("The code window", function()
     ---@type MakeGenerateRequestArgs
     local args = generate_stub.calls[1].refs[1]
 
-    -- Does the request now contain a system string with the file
-    local contains_system_with_file = false
-    for _, system_string in ipairs(args.llm.system) do
-      if system_string.match(system_string, "README.md") then
-        contains_system_with_file = true
-      end
-    end
-    assert.True(contains_system_with_file)
+    -- Does the request now contain the file
+    assert(string.match(args.llm.prompt, "README.md"))
 
     -- Now we'll make sure C-g clears the files
     local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
@@ -493,13 +487,7 @@ describe("The code window", function()
     args = generate_stub.calls[2].refs[1]
 
     -- Does the request now contain a system string with the file
-    contains_system_with_file = false
-    for _, system_string in ipairs(args.llm.system) do
-      if system_string.match(system_string, "README.md") then
-        contains_system_with_file = true
-      end
-    end
-    assert.False(contains_system_with_file)
+    assert.is_nil(string.match(args.llm.prompt, "README.md"))
   end)
 
   it("opens a model picker on <C-p>", function()
