@@ -114,12 +114,15 @@ end
 ---@type Store
 local Store = {
   llm_models = {
-    openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o" },
+    openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini" },
     ollama = { "llama3.1:latest", "mistral:latest" },
   },
+
+  -- defaults
   llm_provider = "ollama",
   llm_model = "llama3.1:latest",
 
+  -- just to provide some order to the universe
   set_model = function(self, provider, model)
     self.llm_provider = provider
     self.llm_model = model
