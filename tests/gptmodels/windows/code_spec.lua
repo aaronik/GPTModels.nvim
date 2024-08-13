@@ -772,17 +772,22 @@ describe("The code window", function()
   it("includes LSP diagnostics when present within selection", function()
     ---@type Selection
     local selection = {
-      start_line = 0,
-      end_line = 10,
+      start_line = 1,
+      end_line = 2,
       start_column = 0,
       end_column = 10,
-      text = { "couple", "of", "lines" }
-    } -- make sure start/end lines contain the correct two diagnostics from helpers.diagnostic_response
+      text = { "irrelevant", "for", "test" }
+    }
+
+    -- make sure start/end lines contain the correct two diagnostics from helpers.diagnostic_response
+    local diagnostics = {
+      { lnum = 1, message = "Error on line 1\n  Second line of message" },
+      { lnum = 2, message = "Warning on line 2" },
+      { lnum = 3, message = "Note on line 3" },
+    }
 
     local get_diagnostic_stub = stub(vim.diagnostic, 'get')
-    get_diagnostic_stub.invokes(function()
-      return helpers.diagnostic_response
-    end)
+    get_diagnostic_stub.returns(diagnostics)
 
     local code = code_window.build_and_mount(selection)
     local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
@@ -792,8 +797,8 @@ describe("The code window", function()
       util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
       "LSP Diagnostic not found in input"
     )
-    assert(util.contains_line(input_lines, "Unused local `what`."), "LSP Diagnostic not found in input")
-    assert(util.contains_line(input_lines, "Unused local `bob`."), "LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "Error on line 1"), "LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "  Second line of message"), "LSP Diagnostic not found in input")
 
     -- close window
     local keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
@@ -808,7 +813,7 @@ describe("The code window", function()
       util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
       "Saved LSP Diagnostic not found in input"
     )
-    assert(util.contains_line(input_lines, "Unused local `what`."), "Saved LSP Diagnostic not found in input")
-    assert(util.contains_line(input_lines, "Unused local `bob`."), "Saved LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "Error on line 1"), "LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "  Second line of message"), "LSP Diagnostic not found in input")
   end)
 end)

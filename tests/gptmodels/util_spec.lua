@@ -116,8 +116,28 @@ describe("util", function()
     end)
 
     it("returns false", function()
-      local res = util.has_env_var("I_DONT_EXIST_WOO")
+      local res = util.has_env_var("IM_SUPER_SURE_THIS_ENV_VAR_WONT_BE_SET_FR_FR")
       assert.is_false(res)
+    end)
+  end)
+
+  describe("get_relevant_diagnostic_text", function()
+    it("formats and returns relevant diagnostic messages within the given line range", function()
+      local diagnostics = {
+        { lnum = 1, message = "Error on line 1\n  Second line of message" },
+        { lnum = 2, message = "Warning on line 2" },
+        { lnum = 3, message = "Note on line 3" },
+      }
+      local start_line = 1
+      local end_line = 2
+      local expected_output = {
+        "Error on line 1",
+        "  Second line of message",
+        "Warning on line 2"
+      }
+
+      local result = util.get_relevant_diagnostics(diagnostics, start_line, end_line)
+      assert.are.same(expected_output, result)
     end)
   end)
 end)

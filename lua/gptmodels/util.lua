@@ -132,19 +132,19 @@ end
 ---@param diagnostics vim.Diagnostic[]
 ---@param start_line integer
 ---@param end_line integer
----@return string[]
-M.get_relevant_diagnostic_text = function(diagnostics, start_line, end_line)
+---@return string[], integer
+M.get_relevant_diagnostics = function(diagnostics, start_line, end_line)
   local relevant_texts = {}
-
+  local count = 0
   for _, diagnostic in ipairs(diagnostics) do
     if diagnostic.lnum >= start_line and diagnostic.lnum <= end_line then
-      -- TODO Test that these messages are getting cleaned from here, in addition to testing this method
-      local cleaned_message = diagnostic.message:gsub("\n", "--")
-      table.insert(relevant_texts, cleaned_message)
+      count = count + 1
+      local split_message = vim.split(diagnostic.message, "\n")
+      relevant_texts = M.merge_tables(relevant_texts, split_message)
     end
   end
 
-  return relevant_texts
+  return relevant_texts, count
 end
 
 

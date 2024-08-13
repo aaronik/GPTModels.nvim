@@ -177,17 +177,19 @@ function M.build_and_mount(selection)
     Store.code.right:clear()
     Store.code:clear_files()
 
-    local diagnostic_lines = util.get_relevant_diagnostic_text(
-      vim.diagnostic.get(0),
+    -- Put diagnostics fix string into the input window
+    local diagnostics = vim.diagnostic.get(0)
+    local diagnostic_prompt, diagnostic_count = util.get_relevant_diagnostics(
+      diagnostics,
       selection.start_line,
       selection.end_line
     )
 
-    if #diagnostic_lines > 0 then
+    if #diagnostic_prompt > 0 then
       local input_lines = util.merge_tables({
-        "Please fix the following " .. #diagnostic_lines .. " LSP Error(s) in this code:",
+        "Please fix the following " .. diagnostic_count .. " LSP Error(s) in this code:",
         "",
-      }, diagnostic_lines)
+      }, diagnostic_prompt)
 
       vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, input_lines)
       for _, line in ipairs(input_lines) do
