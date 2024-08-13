@@ -143,7 +143,6 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 * Add copilot support .. Very hard as it turns out
 * Protect against opening windows many times?
 * Figure out how to test nui border text and test all the titles
-* util.log filesize management
 * Help window
     * with detailed descriptions of commands
     * input bottom border is just q, Enter, and Ctrl-h maybe, or maybe just Ctrl-h
