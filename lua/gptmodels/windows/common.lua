@@ -203,6 +203,7 @@ M.launch_telescope_file_picker = function(on_complete)
   return function()
     local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
     require('telescope.builtin').find_files(util.merge_tables(theme, {
+      prompt_title = "include file name/contents in prompt",
       attach_mappings = function(_, map)
         map('i', '<CR>', function(prompt_bufnr)
           local selection = require('telescope.actions.state').get_selected_entry()
@@ -241,7 +242,7 @@ M.launch_telescope_model_picker = function(on_complete)
   })
 
   pickers.new(opts, {
-    prompt_title = "models",
+    prompt_title = "pick a model",
     finder = require('telescope.finders').new_table {
       results = Store:llm_model_strings()
     },
