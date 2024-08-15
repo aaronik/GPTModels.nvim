@@ -776,7 +776,7 @@ describe("The code window", function()
       end_line = 2,
       start_column = 0,
       end_column = 10,
-      text = { "code_with_problem()", "code_without_problem()" }
+      lines = { "code_with_problem()", "code_without_problem()" }
     }
 
     -- make sure start/end lines contain the correct two diagnostics from helpers.diagnostic_response

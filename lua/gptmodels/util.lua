@@ -103,18 +103,24 @@ end
 ---Get useful data about the current visual selection
 ---@return Selection
 M.get_visual_selection = function()
-  local selection = {}
-  selection.start_line = vim.fn.getpos("'<")[2] - 1
-  selection.end_line = vim.fn.getpos("'>")[2] - 1
-  selection.start_column = vim.fn.getpos("'<")[3] - 1
-  selection.end_column = vim.fn.getpos("'>")[3]
+  local start_line = vim.fn.getpos("'<")[2] - 1
+  local end_line = vim.fn.getpos("'>")[2] - 1
+  local start_column = vim.fn.getpos("'<")[3] - 1
+  local end_column = vim.fn.getpos("'>")[3]
 
-  local end_col = math.min(selection.end_column, 2147483646)
-  local text = vim.api.nvim_buf_get_text(
-    0, selection.start_line, selection.start_column, selection.end_line, end_col, {}
+  local end_col = math.min(end_column, 2147483646)
+  local lines = vim.api.nvim_buf_get_text(
+    0, start_line, start_column, end_line, end_col, {}
   )
 
-  selection.text = text
+  ---@type Selection
+  local selection = {
+    start_line = start_line,
+    end_line = end_line,
+    start_column = start_column,
+    end_column = end_column,
+    lines = lines
+  }
 
   return selection
 end
@@ -136,7 +142,7 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
     if diagnostic.lnum >= selection.start_line and diagnostic.lnum <= selection.end_line then
       local selection_problem_code_start_line = diagnostic.lnum - selection.start_line + 1
       local selection_problem_code_end_line = diagnostic.end_lnum - selection.start_line + 1
-      local problem_code_lines = { unpack(selection.text, selection_problem_code_start_line, selection_problem_code_end_line) }
+      local problem_code_lines = { unpack(selection.lines, selection_problem_code_start_line, selection_problem_code_end_line) }
 
       local severity_label = constants.DIAGNOSTIC_SEVERITY_LABEL_MAP[diagnostic.severity]
 

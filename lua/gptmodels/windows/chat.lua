@@ -174,7 +174,7 @@ function M.build_and_mount(selection)
 
     -- clear / add selection to input
     Store.chat.input:clear()
-    vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selection.text)
+    vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selection.lines)
 
     -- Go to bottom of input and enter insert mode
     local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)

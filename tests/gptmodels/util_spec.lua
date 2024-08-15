@@ -100,7 +100,7 @@ describe("util", function()
       assert.is_true(res.end_line ~= nil)
       assert.is_true(res.start_column ~= nil)
       assert.is_true(res.end_column ~= nil)
-      assert.is_true(res.text ~= nil)
+      assert.is_true(res.lines ~= nil)
     end)
   end)
 
@@ -129,7 +129,7 @@ describe("util", function()
       local selection = {
         start_line = 1,
         end_line = 2,
-        text = {
+        lines = {
           "error_code()",
           "warning_code()",
           "info_code()",

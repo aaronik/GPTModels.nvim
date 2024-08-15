@@ -189,10 +189,10 @@ function M.build_and_mount(selection)
     end
 
     -- Put selection in left pane
-    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.text)
+    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.lines)
 
     -- And into the store, so the next window open can have it
-    Store.code.left:append(table.concat(selection.text, "\n"))
+    Store.code.left:append(table.concat(selection.lines, "\n"))
 
     -- If selected lines are given, it's like a new session, so we'll nuke all else
     local extent_job = Store:get_job()

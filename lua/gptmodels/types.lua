@@ -51,13 +51,12 @@
 ---@field chat fun(args: MakeChatRequestArgs): Job
 ---@field fetch_models fun(cb: fun(err: string | nil, models: string[] | nil)): Job
 
--- TODO Rename text to lines
 ---@class Selection
 ---@field start_line number
 ---@field end_line number
 ---@field start_column number
 ---@field end_column number
----@field text string[]
+---@field lines string[]
 
 
 -- -- Wish they exported types
