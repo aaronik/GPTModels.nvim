@@ -60,40 +60,36 @@ describe("util", function()
   end)
 
   describe("merge_tables", function()
-    it("merges hash style tables", function()
+    it("merges N hash style tables", function()
       local a = { a = true }
       local b = { b = true }
-      local c = util.merge_tables(a, b)
-      assert.same(c, { a = true, b = true })
+      local c = { c = true }
+      local d = util.merge_tables(a, b, c)
+      assert.same({ a = true, b = true, c = true }, d)
     end)
 
-    it("merges array style tables", function()
+    it("merges multiple array style tables", function()
       local a = { true }
       local b = { false }
-      local c = util.merge_tables(a, b)
-      assert.same(c, { true, false })
+      local c = { true, false }
+      local d = util.merge_tables(a, b, c)
+      assert.same({ true, false, true, false }, d)
     end)
 
     it("merges combo style tables", function()
       local a = { a = true }
-      local b = { false }
-      local c = util.merge_tables(a, b)
-      assert.same(c, { a = true, false })
-    end)
-
-    it("merges combo style tables", function()
-      local a = { a = true }
-      local b = { false }
-      local c = util.merge_tables(a, b)
-      assert.same(c, { a = true, false })
+      local b = { false, false }
+      local c = { true, true }
+      local d = util.merge_tables(a, b, c)
+      assert.same({ a = true, false, false, true, true }, d)
     end)
 
     it("does not overwrite arguments", function()
       local a = { a = true }
       local b = { b = true }
       util.merge_tables(a, b)
-      assert.same(a, { a = true })
-      assert.same(b, { b = true })
+      assert.same({ a = true }, a)
+      assert.same({ b = true }, b)
     end)
   end)
 
@@ -124,19 +120,40 @@ describe("util", function()
   describe("get_relevant_diagnostic_text", function()
     it("formats and returns relevant diagnostic messages within the given line range", function()
       local diagnostics = {
-        { lnum = 1, message = "Error on line 1\n  Second line of message" },
-        { lnum = 2, message = "Warning on line 2" },
-        { lnum = 3, message = "Note on line 3" },
+        { severity = 1, lnum = 1, end_lnum = 1, message = "Error on line 1\n  Second line of message" },
+        { severity = 2, lnum = 2, end_lnum = 2, message = "Warning on line 2" },
+        { severity = 3, lnum = 3, end_lnum = 3, message = "Info on line 3" },
       }
-      local start_line = 1
-      local end_line = 2
+
+      ---@type Selection
+      local selection = {
+        start_line = 1,
+        end_line = 2,
+        text = {
+          "error_code()",
+          "warning_code()",
+          "info_code()",
+        },
+        start_column = 0,
+        end_column = 0
+      }
+
       local expected_output = {
+        "Please fix the following 2 LSP Diagnostic(s) in this code:",
+        "",
+        "[LINE(S)]",
+        "error_code()",
+        "[ERROR]",
         "Error on line 1",
         "  Second line of message",
+        "",
+        "[LINE(S)]",
+        "warning_code()",
+        "[WARN]",
         "Warning on line 2"
       }
 
-      local result = util.get_relevant_diagnostics(diagnostics, start_line, end_line)
+      local result = util.get_relevant_diagnostics(diagnostics, selection)
       assert.are.same(expected_output, result)
     end)
   end)

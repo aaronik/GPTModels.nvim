@@ -51,6 +51,7 @@
 ---@field chat fun(args: MakeChatRequestArgs): Job
 ---@field fetch_models fun(cb: fun(err: string | nil, models: string[] | nil)): Job
 
+-- TODO Rename text to lines
 ---@class Selection
 ---@field start_line number
 ---@field end_line number

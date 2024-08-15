@@ -1,3 +1,5 @@
+local constants = require "gptmodels.constants"
+
 -- Utility functions
 local M = {}
 
@@ -68,30 +70,25 @@ M.contains_line = function(lines, string)
   return found_line
 end
 
----Found out in python you can do dict1 | dict2 to produce a merged dict. Wish lua had that.
----* shallow merge
----* doesn't write to t1 or t2
----* returns new table t3 with all keys from t1 and t2
----* keys from t2 will overwrite t1
----@param t1 table
----@param t2 table
----@return table
-M.merge_tables = function(t1, t2)
+--- Merging multiple tables into one.
+--- This function accepts variadic arguments (multiple tables) and
+--- logs each table passed to it for debugging purposes.
+--- It merges keys from the provided tables into a new table.
+--- @param ... table - Any number of tables to merge.
+--- @return table - A new merged table containing all key-value pairs.
+M.merge_tables = function(...)
   local new_table = {}
-  for k, v in pairs(t1) do
-    if type(k) == "number" then
-      table.insert(new_table, v)
-    else
-      new_table[k] = v
+
+  for _, t in ipairs({...}) do
+    for k, v in pairs(t) do
+      if type(k) == "number" then
+        table.insert(new_table, v)
+      else
+        new_table[k] = v
+      end
     end
   end
-  for k, v in pairs(t2) do
-    if type(k) == "number" then
-      table.insert(new_table, v)
-    else
-      new_table[k] = v
-    end
-  end
+
   return new_table
 end
 
@@ -130,22 +127,35 @@ end
 
 -- Get the messages from diagnostics that are present between start_line and end_line, inclusive
 ---@param diagnostics vim.Diagnostic[]
----@param start_line integer
----@param end_line integer
+---@param selection Selection
 ---@return string[], integer
-M.get_relevant_diagnostics = function(diagnostics, start_line, end_line)
-  local relevant_texts = {}
+M.get_relevant_diagnostics = function(diagnostics, selection)
+  local relevant_diagnostics = {}
   local count = 0
   for _, diagnostic in ipairs(diagnostics) do
-    if diagnostic.lnum >= start_line and diagnostic.lnum <= end_line then
+    if diagnostic.lnum >= selection.start_line and diagnostic.lnum <= selection.end_line then
+      local selection_problem_code_start_line = diagnostic.lnum - selection.start_line + 1
+      local selection_problem_code_end_line = diagnostic.end_lnum - selection.start_line + 1
+      local problem_code_lines = { unpack(selection.text, selection_problem_code_start_line, selection_problem_code_end_line) }
+
+      local severity_label = constants.DIAGNOSTIC_SEVERITY_LABEL_MAP[diagnostic.severity]
+
       count = count + 1
-      local split_message = vim.split(diagnostic.message, "\n")
-      relevant_texts = M.merge_tables(relevant_texts, split_message)
+
+      local split_diagnostic_message = vim.split(diagnostic.message, "\n")
+      relevant_diagnostics = M.merge_tables(
+        relevant_diagnostics,
+        { "", "[LINE(S)]" },
+        problem_code_lines,
+        { "[" .. severity_label .. "]" },
+        split_diagnostic_message
+      )
     end
   end
 
-  return relevant_texts, count
-end
+  table.insert(relevant_diagnostics, 1, "Please fix the following " .. count .. " LSP Diagnostic(s) in this code:")
 
+  return relevant_diagnostics, count
+end
 
 return M

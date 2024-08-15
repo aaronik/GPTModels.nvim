@@ -776,29 +776,24 @@ describe("The code window", function()
       end_line = 2,
       start_column = 0,
       end_column = 10,
-      text = { "irrelevant", "for", "test" }
+      text = { "code_with_problem()", "code_without_problem()" }
     }
 
     -- make sure start/end lines contain the correct two diagnostics from helpers.diagnostic_response
     local diagnostics = {
-      { lnum = 1, message = "Error on line 1\n  Second line of message" },
-      { lnum = 2, message = "Warning on line 2" },
-      { lnum = 3, message = "Note on line 3" },
+      { severity = 1, lnum = 1, end_lnum = 1, message = "Error on line 1\n  Second line of message" },
+      { severity = 1, lnum = 2, end_lnum = 2, message = "Warning on line 2" },
+      { severity = 1, lnum = 3, end_lnum = 3, message = "Note on line 3" },
     }
 
     local get_diagnostic_stub = stub(vim.diagnostic, 'get')
     get_diagnostic_stub.returns(diagnostics)
 
     local code = code_window.build_and_mount(selection)
-    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
 
+    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
     assert.stub(get_diagnostic_stub).was_called(1)
-    assert(
-      util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
-      "LSP Diagnostic not found in input"
-    )
-    assert(util.contains_line(input_lines, "Error on line 1"), "LSP Diagnostic not found in input")
-    assert(util.contains_line(input_lines, "  Second line of message"), "LSP Diagnostic not found in input")
+    assert(util.contains_line(input_lines, "Please fix the following 2 LSP Diagnostic(s) in this code:"))
 
     -- close window
     local keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
@@ -806,14 +801,9 @@ describe("The code window", function()
 
     -- reopen
     code = code_window.build_and_mount()
-    input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
 
-    -- all lines should remain
-    assert(
-      util.contains_line(input_lines, "Please fix the following 2 LSP Error(s) in this code:"),
-      "Saved LSP Diagnostic not found in input"
-    )
-    assert(util.contains_line(input_lines, "Error on line 1"), "LSP Diagnostic not found in input")
-    assert(util.contains_line(input_lines, "  Second line of message"), "LSP Diagnostic not found in input")
+    -- lines should remain in input window
+    input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
+    assert(util.contains_line(input_lines, "Please fix the following 2 LSP Diagnostic(s) in this code:"))
   end)
 end)

@@ -179,27 +179,19 @@ function M.build_and_mount(selection)
 
     -- Put diagnostics fix string into the input window
     local diagnostics = vim.diagnostic.get(0)
-    local diagnostic_prompt, diagnostic_count = util.get_relevant_diagnostics(
-      diagnostics,
-      selection.start_line,
-      selection.end_line
-    )
+    local relevant_diagnostics, relevant_diagnostic_count = util.get_relevant_diagnostics(diagnostics, selection)
 
-    if #diagnostic_prompt > 0 then
-      local input_lines = util.merge_tables({
-        "Please fix the following " .. diagnostic_count .. " LSP Error(s) in this code:",
-        "",
-      }, diagnostic_prompt)
-
-      vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, input_lines)
-      for _, line in ipairs(input_lines) do
+    if relevant_diagnostic_count > 0 then
+      vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, relevant_diagnostics)
+      for _, line in ipairs(relevant_diagnostics) do
         Store.code.input:append(line .. '\n')
       end
     end
 
+    -- Put selection in left pane
     vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.text)
 
-    -- On open, save the text to the store, so next open contains that text
+    -- And into the store, so the next window open can have it
     Store.code.left:append(table.concat(selection.text, "\n"))
 
     -- If selected lines are given, it's like a new session, so we'll nuke all else
