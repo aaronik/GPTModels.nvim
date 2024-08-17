@@ -5,7 +5,9 @@ local ollama = require('gptmodels.providers.ollama')
 
 local M = {}
 
+---@param title string
 function M.build_common_popup_opts(title)
+  ---@type nui_popup_options
   return {
     border = {
       style = "rounded",
@@ -13,7 +15,7 @@ function M.build_common_popup_opts(title)
         top = " " .. title .. " ",
         top_align = "center",
         bottom = "",
-        bottom_align = "center",
+        bottom_align = "right",
       },
     },
     focusable = true,
@@ -168,13 +170,9 @@ M.cycle_tabs_backward = function(win_index, bufs)
 end
 
 ---@param popup NuiPopup
----@param prefix string | nil
-M.set_window_title = function(popup, prefix)
-  if prefix then
-    popup.border:set_text("top", " " .. prefix .. M.model_display_name() .. " ", "center")
-  else
-    popup.border:set_text("top", " " .. M.model_display_name() .. " ", "center")
-  end
+---@param title string
+M.set_window_title = function(popup, title)
+  popup.border:set_text("top", " " .. title .. " ", "center")
 end
 
 -- Triggers the fetching / saving of available models from the ollama server

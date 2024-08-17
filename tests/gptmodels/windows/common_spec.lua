@@ -1,19 +1,11 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gptmodels.util")
+local util = require('gptmodels.util')
 local assert = require("luassert")
-local code_window = require('gptmodels.windows.code')
 local stub = require('luassert.stub')
-local spy = require('luassert.spy')
-local llm = require('gptmodels.llm')
-local cmd = require('gptmodels.cmd')
-local Store = require('gptmodels.store')
-local ollama = require('gptmodels.providers.ollama')
 local Popup = require('nui.popup')
 local common = require('gptmodels.windows.common')
 
-
--- TODO: Add preflight check to both windows. Looks for curl, ollama, etc
 
 describe("window common functions", function()
   describe("safe_render_buffer_from_text", function()
@@ -106,20 +98,15 @@ describe("window common functions", function()
   end)
 
   describe("set_window_title", function()
-    it("sets border text without given prefix", function()
-      ---@type NuiPopup
-      local popup = Popup({ title = "Test" })
-      local set_text_stub = stub(popup.border, 'set_text')
-      common.set_window_title(popup)
-      assert.stub(set_text_stub).was_called(1)
-    end)
-
     it("sets border text with given prefix", function()
       ---@type NuiPopup
       local popup = Popup({ title = "Test" })
       local set_text_stub = stub(popup.border, 'set_text')
-      common.set_window_title(popup, "title prefix ")
+      common.set_window_title(popup, "title")
       assert.stub(set_text_stub).was_called(1)
+      assert.same("top", set_text_stub.calls[1].refs[2])
+      assert.same(" title ", set_text_stub.calls[1].refs[3])
+      assert.same("center", set_text_stub.calls[1].refs[4])
     end)
   end)
 end)

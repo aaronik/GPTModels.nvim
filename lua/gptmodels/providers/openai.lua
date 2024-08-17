@@ -8,11 +8,6 @@ require('gptmodels.types')
 --   "messages": [{ "role": "user", "content": "Translate this text into French: Hello, world!" }]
 -- }' https://api.openai.com/v1/chat/completions
 
--- TODO: Got these two partial responses in a row from openai 4o - they are showing up with error messages in the windows:
--- {"id":"chatcmpl-9uaDnKCfZr5V6f32G3R2Ot53:'
--- fOUfn","object":"chat.completion.chunk","created":1723272631,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":" Simpsons"},"logprobs":null,"finish_reason":null}]}'
-
-
 -- Both endpoints will use the same onread, since it's actually the same endpoint for openai
 ---@param response string
 ---@return string | nil, LlmMessage[] | nil

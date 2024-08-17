@@ -107,7 +107,7 @@ function M.build_and_mount(selection)
 
   -- Fetch ollama models so user can work with what they have on their system
   com.trigger_ollama_models_etl(function()
-    com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+    com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
   end)
 
   -- Input window is text with no syntax
@@ -262,7 +262,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         com.launch_telescope_model_picker(function()
-          com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+          com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
         end)
       end
     })
@@ -284,7 +284,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+        com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
       end
     })
 
@@ -294,7 +294,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        com.set_window_title(chat, WINDOW_TITLE_PREFIX)
+        com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
       end
     })
 
