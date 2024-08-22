@@ -33,7 +33,8 @@ function M.close_popup(bufnr)
 end
 
 function M.model_display_name()
-  return Store.llm_provider .. "." .. Store.llm_model
+  local model_info = Store:get_model()
+  return model_info.provider .. "." .. model_info.model
 end
 
 -- Render text to a buffer _if the buffer is still valid_,
@@ -183,13 +184,16 @@ M.trigger_ollama_models_etl = function(on_complete)
     -- TODO If there's an issue fetching, I want to display that to the user.
     if err then return util.log(err) end
     if not ollama_models or #ollama_models == 0 then return end
-    Store.llm_models.ollama = ollama_models
-    local currently_selected_is_ollama = util.contains_line(ollama_models, Store.llm_model)
-    local currently_selected_is_openai = util.contains_line(Store.llm_models.openai, Store.llm_model)
+    Store:set_models("ollama", ollama_models)
+    -- TODO Just delete from here down. No reason to do all this if c-j and c-k still work with bad models.
+
+    -- TODO This will glitch if ollama has a model with the same name as an openai one
+    local is_currently_selected_model_from_ollama = util.contains_line(ollama_models, Store:get_model().model)
+    local is_currently_selected_model_from_openai = util.contains_line(Store:get_models("openai"), Store:get_model().model)
 
     -- If the currently selected model has been removed from the system
-    if not currently_selected_is_ollama and not currently_selected_is_openai then
-      Store:set_model("ollama", ollama_models[1])
+    if not is_currently_selected_model_from_ollama and not is_currently_selected_model_from_openai then
+      Store:set_model("ollama", ollama_models[1]) -- TODO This will explode on no ollama models when there are no persistent models
       on_complete()
     end
   end)

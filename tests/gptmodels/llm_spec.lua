@@ -1,6 +1,5 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gptmodels.util")
 local assert = require("luassert")
 local stub = require('luassert.stub')
 local llm = require('gptmodels.llm')
@@ -20,8 +19,8 @@ describe("gpt.llm", function()
 
     before_each(function()
       snapshot = assert:snapshot()
-      old_provider = Store.llm_provider
-      old_model = Store.llm_model
+      old_provider = Store:get_model().provider
+      old_model = Store:get_model().model
 
       ollama_chat_stub = stub(ollama, 'chat')
       ollama_generate_stub = stub(ollama, 'generate')
@@ -30,14 +29,12 @@ describe("gpt.llm", function()
     end)
 
     after_each(function()
-      Store.llm_provider = old_provider
-      Store.llm_model = old_model
+      Store:set_model(old_provider, old_model)
       snapshot:revert()
     end)
 
     it("for ollama/chat", function()
-      Store.llm_provider = "ollama"
-      Store.llm_model = "mawdle"
+      Store:set_model("ollama", "mawdle")
 
       llm.chat({
         llm = {
@@ -54,8 +51,7 @@ describe("gpt.llm", function()
     end)
 
     it("for ollama/generate", function()
-      Store.llm_provider = "ollama"
-      Store.llm_model = "mawdle"
+      Store:set_model("ollama", "mawdle")
 
       llm.generate({
         llm = {
@@ -73,8 +69,7 @@ describe("gpt.llm", function()
     end)
 
     it("for openai/chat", function()
-      Store.llm_provider = "openai"
-      Store.llm_model = "mawdle"
+      Store:set_model("openai", "mawdle")
 
       llm.chat({
         llm = {
@@ -91,8 +86,7 @@ describe("gpt.llm", function()
     end)
 
     it("for openai/generate", function()
-      Store.llm_provider = "openai"
-      Store.llm_model = "mawdle"
+      Store:set_model("openai", "mawdle")
 
       llm.generate({
         llm = {

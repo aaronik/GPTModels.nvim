@@ -40,7 +40,7 @@ local Provider = {
             args = curl_args,
             onread = vim.schedule_wrap(function(err, json_fragment)
                 if err then return args.on_read(err) end
-                if not json_fragment then return end
+                if not json_fragment then return end -- TODO return args.on_read()
 
                 json_fragment_aggregate = json_fragment_aggregate .. json_fragment
 

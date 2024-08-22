@@ -1,7 +1,7 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gptmodels.util")
-local Store = require("gptmodels.store")
+local util   = require("gptmodels.util")
+local Store  = require("gptmodels.store")
 local assert = require("luassert")
 
 describe("Store | setting / getting", function()
@@ -132,31 +132,68 @@ describe("Store | jobs", function()
 end)
 
 describe("Store | llm stuff", function()
+  before_each(function()
+    Store:clear()
+  end)
+
   it("set_llm assigns to local fields", function()
     Store:set_model("ollama", "llama3")
-    assert.equal("ollama", Store.llm_provider)
-    assert.equal("llama3", Store.llm_model)
+    local model_info = Store:get_model()
+    assert.equal("ollama", model_info.provider)
+    assert.equal("llama3", model_info.model)
 
     Store:set_model("openai", "gpt-4-turbo")
-    assert.equal("openai", Store.llm_provider)
-    assert.equal("gpt-4-turbo", Store.llm_model)
+    model_info = Store:get_model()
+    assert.equal("openai", model_info.provider)
+    assert.equal("gpt-4-turbo", model_info.model)
   end)
 
   it("cycles through llm models", function()
-    local first_model = Store.llm_model
+    Store:set_models("ollama", { "m1", "m2", "m3" })
+    Store:set_model("ollama", "m1")
+    local first_model = Store:get_model().model
 
     Store:cycle_model_forward()
-    assert.not_equal(first_model, Store.llm_model)
+    assert.not_equal(first_model, Store:get_model().model)
 
     Store:cycle_model_backward()
-    assert.equal(first_model, Store.llm_model)
+    assert.equal(first_model, Store:get_model().model)
   end)
 
   it("shows convenient list of models with llm_model_strings", function()
-    Store.llm_models.openai = { "m" }
-    Store.llm_models.ollama = { "m" }
+    Store:set_models("ollama", { "m" })
+    Store:set_models("openai", { "m" })
 
     assert(util.contains_line(Store:llm_model_strings(), "openai.m"))
     assert(util.contains_line(Store:llm_model_strings(), "openai.m"))
   end)
+
+  it("set_models and get_models set and return the available models", function()
+    Store:set_models("ollama", {})
+    assert.same({}, Store:get_models("ollama"))
+    Store:set_models("ollama", { "m1", "m2" })
+    assert.same({ "m1", "m2" }, Store:get_models("ollama"))
+  end)
+
 end)
+
+-- TODO Remove
+
+-- -- Once when nvim is opened, and once again on every window open?
+-- com.trigger_available_model_etl(function(openai_models, ollama_models)
+--   Store.set_models("openai", openai_models) -- internally ensures selected model is still amongst available models
+--   Store.set_models("ollama", ollama_models)
+--   set_window_titles()
+-- end)
+
+-- -- Once when nvim is opened, and once again on every window open?
+-- com.trigger_available_model_etl(
+--   function(openai_models)
+--     Store.set_models("openai", openai_models) -- internally ensures selected model is still
+--     set_window_titles()
+--   end,
+--   function(ollama_models)
+--     Store.set_models("ollama", ollama_models)
+--     set_window_titles()
+--   end
+-- )

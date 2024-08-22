@@ -40,7 +40,7 @@ end
 local function build_model_options(self)
   ---@type { model: string, provider: string }[]
   local model_options = {}
-  for provider, models in pairs(self.llm_models) do
+  for provider, models in pairs(self._llm_models) do
     for _, model in ipairs(models) do
       table.insert(model_options, { provider = provider, model = model })
     end
@@ -82,6 +82,8 @@ end
 ---@class ChatWindow : Window
 ---@field chat MessagePane
 
+---@alias Provider "openai" | "ollama"
+
 ---@class Store
 ---@field clear fun(self: Store)
 ---@field code CodeWindow
@@ -89,11 +91,14 @@ end
 ---@field register_job fun(self: Store, job: Job)
 ---@field get_job fun(self: Store): Job | nil
 ---@field clear_job fun(self: Store)
----@field llm_models { openai: string[], ollama: string[] }
----@field llm_model_strings fun(self: Store): string[]
----@field llm_provider string
----@field llm_model string
----@field set_model fun(self: Store, provider: "openai" | "ollama", model: string)
+---@field private _llm_models { openai: string[], ollama: string[] }
+---@field get_models fun(self: Store, provider: Provider): string[]
+---@field set_models fun(self: Store, provider: Provider, models: string[])
+---@field get_model fun(self: Store): { provider: string, model: string }
+---@field set_model fun(self: Store, provider: Provider, model: string)
+---@field llm_model_strings fun(self: Store): string[] -- TODO This doesn't belong here, it's a store utility. Maybe just somewhere else in this file.
+---@field private _llm_provider string
+---@field private _llm_model string
 ---@field cycle_model_forward fun(self: Store)
 ---@field cycle_model_backward fun(self: Store)
 ---@field private _job Job | nil
@@ -113,24 +118,41 @@ end
 
 ---@type Store
 local Store = {
-  llm_models = {
+  _llm_models = {
     openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini" },
-    ollama = { "llama3.1:latest", "mistral:latest" },
+    ollama = { "llama3.1:latest" },
   },
 
-  -- defaults
-  llm_provider = "ollama",
-  llm_model = "llama3.1:latest",
+  _llm_provider = "ollama",
+  _llm_model = "llama3.1:latest",
 
-  -- just to provide some order to the universe
+  -- model accessor
+  get_model = function(self)
+    return { provider = self._llm_provider, model = self._llm_model }
+  end,
+
+  -- set the active model
   set_model = function(self, provider, model)
-    self.llm_provider = provider
-    self.llm_model = model
+    self._llm_provider = provider
+    self._llm_model = model
+  end,
+
+  -- get all models for a provider
+  get_models = function(self, provider)
+    return self._llm_models[provider]
+  end,
+
+  -- set all models for a provider, overwriting previous values
+  set_models = function(self, provider, models)
+    self._llm_models[provider] = models
   end,
 
   cycle_model_forward = function(self)
     local model_options = build_model_options(self)
-    local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
+    local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
+    -- TODO This needs to be fixed. It can't just do a noop, it has to jump to an available model.
+    -- This right here is the fundamental bug leading to peoples' annoyance. If this is fixed, the store
+    -- might not need to intelligently reset its own active model when we set the available models?
     if not current_index then return end
     local selected_option = model_options[(current_index % #model_options) + 1]
     self:set_model(selected_option.provider, selected_option.model)
@@ -138,15 +160,16 @@ local Store = {
 
   cycle_model_backward = function(self)
     local model_options = build_model_options(self)
-    local current_index = find_model_index(model_options, self.llm_provider, self.llm_model)
+    local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
     if not current_index then return end
     local selected_option = model_options[(current_index - 2) % #model_options + 1]
     self:set_model(selected_option.provider, selected_option.model)
   end,
 
+  -- TODO Get rid of this, only used once in common. Just inline it.
   llm_model_strings = function(self)
     local model_strings = {}
-    for provider, models in pairs(self.llm_models) do
+    for provider, models in pairs(self._llm_models) do
       for _, model in ipairs(models) do
         table.insert(model_strings, provider .. "." .. model)
       end
@@ -157,6 +180,9 @@ local Store = {
   clear = function(self)
     self.code:clear()
     self.chat:clear()
+    self:set_models("ollama", {})
+    self:set_models("openai", {})
+    -- TODO Need to clear default model as well?
   end,
 
   code = {

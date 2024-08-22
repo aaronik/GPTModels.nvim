@@ -242,57 +242,45 @@ describe("The Chat window", function()
   end)
 
   it("cycles through available models with <C-j>", function()
+    Store:set_models("ollama", { "m1", "m2", "m3" })
+    Store:set_model("ollama", "m1")
+
+    local ctrl_j = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
+
     chat_window.build_and_mount()
 
-    local store_spy = spy.on(Store, "set_model")
+    assert.equal("m1", Store:get_model().model)
 
     -- Press <C-j>
-    local ctrl_j = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
     vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
 
-    assert.spy(store_spy).was_called(1)
-    local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[2]), "string")
-    assert.equal(type(first_args[3]), "string")
+    assert.equal("m2", Store:get_model().model)
 
     -- Press <C-j> again
     vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
 
-    assert.spy(store_spy).was_called(2)
-    local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[2]), "string")
-    assert.equal(type(second_args[3]), "string")
-
-    -- Make sure the model is different, which it definitely should be.
-    -- The provider might be the same.
-    assert.is_not.equal(first_args[3], second_args[3])
+    assert.equal("m3", Store:get_model().model)
   end)
 
   it("cycles through available models with <C-k>", function()
+    Store:set_models("ollama", { "m1", "m2", "m3" })
+    Store:set_model("ollama", "m1")
+
+    local ctrl_k = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
+
     chat_window.build_and_mount()
 
-    local store_spy = spy.on(Store, "set_model")
+    assert.equal("m1", Store:get_model().model)
 
-    -- Press <C-k>
-    local ctrl_k = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
+    -- Press <C-j>
     vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
 
-    assert.spy(store_spy).was_called(1)
-    local first_args = store_spy.calls[1].refs
-    assert.equal(type(first_args[2]), "string")
-    assert.equal(type(first_args[3]), "string")
+    assert.equal("m3", Store:get_model().model)
 
-    -- Press <C-k> again
+    -- Press <C-j> again
     vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
 
-    assert.spy(store_spy).was_called(2)
-    local second_args = store_spy.calls[2].refs
-    assert.equal(type(second_args[2]), "string")
-    assert.equal(type(second_args[3]), "string")
-
-    -- Make sure the model is different, which it definitely should be.
-    -- The provider might be the same.
-    assert.is_not.equal(first_args[3], second_args[3])
+    assert.equal("m2", Store:get_model().model)
   end)
 
   it("kills active job on <C-c>", function()
@@ -606,11 +594,14 @@ describe("The Chat window", function()
     assert.not_equals(og_nui_width, nui_width)
   end)
 
+  -- TODO Same test as in code_spec, good candidate for shared spec
   it("fetches ollama llms when started", function()
-    local first_openai_model = Store.llm_models.openai[1]
+    Store:set_models("openai", { "ma1", "ma2" })
+    Store:set_models("ollama", { "m1", "m2" })
+    Store:set_model("ollama", "m1")
+    local first_openai_model = Store:get_models("openai")[1]
 
     local fetch_models_stub = stub(ollama, "fetch_models")
-
     fetch_models_stub.invokes(function(cb)
       cb(nil, { "my-model", "your-model" })
     end)
@@ -618,19 +609,20 @@ describe("The Chat window", function()
     chat_window.build_and_mount()
 
     assert.stub(fetch_models_stub).was_called(1)
-    assert.same({ "my-model", "your-model" }, Store.llm_models.ollama)
+    assert.same({ "my-model", "your-model" }, Store:get_models("ollama"))
 
     -- and reassigns any bunk llm_model (which could happen from a user config or
     -- the user not having whatever model I determine to be the default in
     -- their local ollama)
-    assert.equal("my-model", Store.llm_model)
+    assert.equal("my-model", Store:get_model().model)
 
     -- Now ensure if we end up on an openai model, we will stay there on subsequent open
-    Store.llm_model = first_openai_model
+    -- Store.llm_model = first_openai_model
+    Store:set_model("openai", first_openai_model)
 
     chat_window.build_and_mount()
     assert.stub(fetch_models_stub).was_called(2)
-    assert.equal(first_openai_model, Store.llm_model)
+    assert.equal(first_openai_model, Store:get_model().model)
   end)
 
   it("alerts the user when required programs are not installed", function()
@@ -653,10 +645,12 @@ describe("The Chat window", function()
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
-    local exec_stub = stub(cmd, "exec")
-
     stub_schedule_wrap()
 
+    Store:set_models("ollama", { "m" })
+    Store:set_model("ollama", "m")
+
+    local exec_stub = stub(cmd, "exec")
     ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
       -- multiple calls will take place, only the one for ollama generation we care about
@@ -670,8 +664,7 @@ describe("The Chat window", function()
     local chat = chat_window.build_and_mount()
 
     -- Send a request
-    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
+    helpers.feed_keys('ihello<Esc><CR>')
 
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert(util.contains_line(chat_lines, "curl error"))
