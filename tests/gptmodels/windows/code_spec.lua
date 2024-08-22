@@ -1,15 +1,17 @@
 ---@diagnostic disable: undefined-global
 
-local util = require("gptmodels.util")
-local assert = require("luassert")
+local util        = require("gptmodels.util")
+local assert      = require("luassert")
 local code_window = require('gptmodels.windows.code')
-local stub = require('luassert.stub')
-local spy = require('luassert.spy')
-local llm = require('gptmodels.llm')
-local cmd = require('gptmodels.cmd')
-local Store = require('gptmodels.store')
-local ollama = require('gptmodels.providers.ollama')
-local helpers = require('tests.gptmodels.spec_helpers')
+local stub        = require('luassert.stub')
+local spy         = require('luassert.spy')
+local llm         = require('gptmodels.llm')
+local cmd         = require('gptmodels.cmd')
+local Store       = require('gptmodels.store')
+local ollama      = require('gptmodels.providers.ollama')
+local helpers     = require('tests.gptmodels.spec_helpers')
+local func        = require('vim.func')
+local com         = require('gptmodels.windows.common')
 
 -- For async functions that use vim.schedule_wrap, which writing to buffers requires
 -- TODO move to helpers
@@ -749,10 +751,6 @@ describe("The code window", function()
     assert.same({ "curl error" }, right_lines)
   end)
 
-  it("sets input bottom border text on launch", function()
-    -- TODO here and in chat spec
-  end)
-
   it("includes LSP diagnostics when present within selection", function()
     ---@type Selection
     local selection = {
@@ -789,5 +787,22 @@ describe("The code window", function()
     -- lines should remain in input window
     input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
     assert(util.contains_line(input_lines, "Please fix the following 2 LSP Diagnostic(s) in this code:"))
+  end)
+
+  it("sets input bottom border text on launch", function()
+    local set_text_stub = stub(com, "set_input_bottom_border_text")
+    local code = code_window.build_and_mount()
+    assert.stub(set_text_stub).was_called(1)
+    local args = set_text_stub.calls[1].refs
+    assert.equal(args[1], code.input)
+    assert.same(args[2], { "C-x xfer to deck" })
+  end)
+
+  it("doesn't block saved content when ollama command is not present", function()
+
+  end)
+
+  it("doesn't block saved content when ollama isn't serving", function()
+
   end)
 end)

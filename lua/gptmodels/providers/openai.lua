@@ -3,6 +3,17 @@ local cmd = require('gptmodels.cmd')
 local consts = require('gptmodels.constants')
 require('gptmodels.types')
 
+-- TODO sometimes openai will return an error in a response, ex:
+-- {
+--     "error": {
+--         "message": "The model `nooooooop` does not exist or you do not have access to it.",
+--         "type": "invalid_request_error",
+--         "param": null,
+--         "code": "model_not_found"
+--     }
+-- }
+-- This needs to be handled aka passed back up
+
 -- curl -X POST -H "Authorization: Bearer $OPENAI_API_KEY" -H "Content-Type: application/json" -d '{
 --   "model": "gpt-4-turbo",
 --   "messages": [{ "role": "user", "content": "Translate this text into French: Hello, world!" }]

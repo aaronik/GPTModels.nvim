@@ -7,6 +7,9 @@ require('gptmodels.types')
 
 -- TODO: How to get the LSP to recognize this file to have 2 spaces instead of 4? Why's it work fine in Store but not here?
 
+-- TODO When a model is not present, this response comes down. Need to check for error and
+-- {"error":"model \"nooooooop\" not found, try pulling it first"}
+
 ---@type LlmProvider
 local Provider = {
     name = 'ollama',
@@ -42,6 +45,7 @@ local Provider = {
                 if err then return args.on_read(err) end
                 if not json_fragment then return end -- TODO return args.on_read()
 
+                -- TODO Abstract this similar json aggregation logic into shared lib
                 json_fragment_aggregate = json_fragment_aggregate .. json_fragment
 
                 local status_ok, data = pcall(vim.fn.json_decode, json_fragment_aggregate)

@@ -11,6 +11,7 @@ local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
 local ollama = require('gptmodels.providers.ollama')
 local helpers = require('tests.gptmodels.spec_helpers')
+local com = require('gptmodels.windows.common')
 
 local function stub_schedule_wrap()
   stub(vim, "schedule_wrap").invokes(function(cb)
@@ -657,6 +658,23 @@ describe("The Chat window", function()
 
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     assert(util.contains_line(chat_lines, "curl error"))
+  end)
+
+  it("sets input bottom border text on launch", function()
+    local set_text_stub = stub(com, "set_input_bottom_border_text")
+    local chat = chat_window.build_and_mount()
+    assert.stub(set_text_stub).was_called(1)
+    local args = set_text_stub.calls[1].refs
+    assert.equal(args[1], chat.input)
+    assert.same(args[2], nil)
+  end)
+
+  it("doesn't block saved content when ollama command is not present", function()
+
+  end)
+
+  it("doesn't block saved content when ollama isn't serving", function()
+
   end)
 
 end)
