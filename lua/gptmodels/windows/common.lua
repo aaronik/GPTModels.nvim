@@ -73,33 +73,52 @@ function M.safe_render_buffer_from_lines(bufnr, lines)
 end
 
 -- Check for required programs, warn user if they're not there
----@return string | nil
+-- *NOTE*: the keys in the returned table must be one of vim.log.levels
+---@return { WARN: string | nil, ERROR: string | nil }
 function M.check_deps()
-  local failed = false
-  local return_string = [[
-Error - missing required dependencies.
-GPTModels.nvim requires the following programs installed, which are not detected in your path:
+  local has_error = false
+  local error_string = [[
+GPTModels.nvim requires the following programs be installed, which are not detected in your path:
   ]]
-
-  for _, prog in ipairs({ "ollama", "curl" }) do
+  for _, prog in ipairs({ "curl" }) do
     cmd.exec({
       sync = true,
       cmd = "which",
       args = { prog },
       onexit = function(code)
         if code ~= 0 then
-          return_string = return_string .. prog .. " "
-          failed = true
+          error_string = error_string .. prog .. " "
+          has_error = true
         end
-      end
+      end,
+      testid = "check-deps-errors"
     })
   end
 
-  if failed then
-    return return_string
-  else
-    return nil
+  -- TODO Turn this into a checkhealth?
+  local has_warning = false
+  local warning_string = [[
+GPTModels.nvim is missing the following optional dependencies
+  ]]
+  for _, prog in ipairs({ "ollama" }) do
+    cmd.exec({
+      sync = true,
+      cmd = "which",
+      args = { prog },
+      onexit = function(code)
+        if code ~= 0 then
+          warning_string = warning_string .. prog .. " "
+          has_warning = true
+        end
+      end,
+      testid = "check-deps-warnings"
+    })
   end
+
+  return {
+    ERROR = has_error and error_string or nil,
+    WARN = has_warning and warning_string or nil
+  }
 end
 
 -- Scroll to the bottom of a given window/buffer pair.

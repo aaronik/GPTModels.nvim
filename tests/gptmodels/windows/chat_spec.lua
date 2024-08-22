@@ -66,10 +66,10 @@ describe("The Chat window", function()
     assert.same(vim.api.nvim_get_current_line(), 'hello')
   end)
 
-  it("puts selected text into input buffer and puts newline under it", function()
+  it("puts selected text into input buffer", function()
     local chat = chat_window.build_and_mount(helpers.build_selection({ "selected text" }))
     local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
-    assert.same({ "selected text", "" }, input_lines)
+    assert.same({ "selected text" }, input_lines)
   end)
 
   it("opens with last chat", function()
@@ -128,7 +128,7 @@ describe("The Chat window", function()
     local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
     local input_lines = vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true)
     assert.same({ "" }, chat_lines)
-    assert.same({ "second", "" }, input_lines)
+    assert.same({ "second" }, input_lines)
 
     -- files were removed
     assert.same({}, Store.chat:get_files())
@@ -616,22 +616,41 @@ describe("The Chat window", function()
   end)
 
   it("alerts the user when required programs are not installed", function()
-    local exec_stub = stub(cmd, "exec")
+    local notify_stub = stub(vim, 'notify_once')
 
+    local exec_stub = stub(cmd, "exec")
     ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
-      if exec_args.onexit then
+      if exec_args.testid == "check-deps-errors" or exec_args.testid == "check-deps-warnings" then
+        -- simulate a miss from `which`
         exec_args.onexit(1, 15)
       end
     end)
 
-    local chat = chat_window.build_and_mount()
-    local chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
-    assert.equal("  ollama curl ", chat_lines[3])
+    chat_window.build_and_mount()
+    assert.stub(notify_stub).was_called(2)
 
-    chat = chat_window.build_and_mount(helpers.build_selection({ "with selected text" }))
-    chat_lines = vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true)
-    assert.equal("  ollama curl ", chat_lines[3])
+    -----Leaving here for the full type hint
+    -----@type [string, integer|nil, table|nil]
+    --local notify_args = notify_stub.calls[1].refs
+
+    -- Ensure that one call contains the missing required dep "curl" and the
+    -- other contains the optional "ollama"
+    local ollama_found = false
+    local curl_found = false
+
+    for i = 1, 2 do
+      ---@type string | integer
+      local ref = notify_stub.calls[i].refs[1]
+      if ref:match("ollama") then
+        ollama_found = true
+      elseif ref:match("curl") then
+        curl_found = true
+      end
+    end
+
+    assert(ollama_found, "None of the notifications matched 'ollama'")
+    assert(curl_found, "None of the notifications matched 'curl'")
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
@@ -678,3 +697,5 @@ describe("The Chat window", function()
   end)
 
 end)
+
+

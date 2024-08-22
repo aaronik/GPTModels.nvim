@@ -123,7 +123,6 @@ local Provider = {
                 local parse_error, messages = parse_llm_response(response)
 
                 if parse_error then
-                    -- return args.on_read(parse_error)
                     response_aggregate = response
                 end
 

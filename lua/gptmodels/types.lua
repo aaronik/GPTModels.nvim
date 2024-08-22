@@ -33,6 +33,8 @@
 ---@alias TestIds
 ---| "ollama-generate"
 ---| "ollama-chat"
+---| "check-deps-warnings"
+---| "check-deps-errors"
 
 ---@class ExecArgs
 ---@field cmd string

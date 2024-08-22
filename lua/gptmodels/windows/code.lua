@@ -206,11 +206,6 @@ function M.build_and_mount(selection)
     safe_render_from_store()
   end
 
-  local missing_deps_error_message = com.check_deps()
-  if missing_deps_error_message then
-    com.safe_render_buffer_from_text(right.bufnr, missing_deps_error_message)
-  end
-
   local layout = Layout(
     {
       position = "50%",
@@ -229,17 +224,6 @@ function M.build_and_mount(selection)
     }, { dir = "col" })
   )
 
-  -- For input, set <CR>
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    {
-      noremap = true,
-      silent = true,
-      callback = function()
-        on_CR(input.bufnr, left.bufnr, right.bufnr)
-      end
-    }
-  )
-
   -- recalculate nui window when vim window resizes
   input:on("VimResized", function()
     layout:update()
@@ -252,6 +236,17 @@ function M.build_and_mount(selection)
       Store.code.input:clear()
       Store.code.input:append(table.concat(input_lines, "\n"))
     end
+  )
+
+  -- For input, set <CR>
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
+    {
+      noremap = true,
+      silent = true,
+      callback = function()
+        on_CR(input.bufnr, left.bufnr, right.bufnr)
+      end
+    }
   )
 
   -- Further Keymaps
@@ -382,6 +377,13 @@ function M.build_and_mount(selection)
   vim.wo[left.winid].wrap = true
   vim.wo[right.winid].wrap = true
   vim.wo[input.winid].wrap = true
+
+  -- Notify of any errors / warnings
+  for level, message in pairs(com.check_deps()) do
+    if message then
+      vim.notify_once(message, vim.log.levels[level])
+    end
+  end
 
   return {
     input = input,

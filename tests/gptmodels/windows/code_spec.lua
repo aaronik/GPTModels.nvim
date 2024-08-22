@@ -703,24 +703,42 @@ describe("The code window", function()
     assert.equal(first_openai_model, Store:get_model().model)
   end)
 
-  it("alerts the user when required programs are not installed", function()
-    local exec_stub = stub(cmd, "exec")
+  it("alerts the user when required dependencies are not installed", function()
+    local notify_stub = stub(vim, 'notify_once')
 
+    local exec_stub = stub(cmd, "exec")
     ---@param exec_args ExecArgs
     exec_stub.invokes(function(exec_args)
-      -- multiple calls will take place, only the one with onexit we care about
-      if exec_args.onexit then
+      if exec_args.testid == "check-deps-errors" or exec_args.testid == "check-deps-warnings" then
+        -- simulate a miss from `which`
         exec_args.onexit(1, 15)
       end
     end)
 
-    local code = code_window.build_and_mount()
-    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert(util.contains_line(right_lines, "  ollama curl "))
+    code_window.build_and_mount()
+    assert.stub(notify_stub).was_called(2)
 
-    code = code_window.build_and_mount(helpers.build_selection({ "with selected text" }))
-    right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert(util.contains_line(right_lines, "  ollama curl "))
+    -----Leaving here for the full type hint
+    -----@type [string, integer|nil, table|nil]
+    --local notify_args = notify_stub.calls[1].refs
+
+    -- Ensure that one call contains the missing required dep "curl" and the
+    -- other contains the optional "ollama"
+    local ollama_found = false
+    local curl_found = false
+
+    for i = 1, 2 do
+      ---@type string | integer
+      local ref = notify_stub.calls[i].refs[1]
+      if ref:match("ollama") then
+        ollama_found = true
+      elseif ref:match("curl") then
+        curl_found = true
+      end
+    end
+
+    assert(ollama_found, "None of the notifications matched 'ollama'")
+    assert(curl_found, "None of the notifications matched 'curl'")
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()

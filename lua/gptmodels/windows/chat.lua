@@ -120,42 +120,6 @@ function M.build_and_mount(selection)
   -- Chat in markdown
   vim.bo[chat.bufnr].filetype = 'markdown'
 
-  local layout = Layout(
-    {
-      position = "50%",
-      relative = "editor",
-      size = {
-        width = "90%",
-        height = "90%",
-      },
-    },
-    Layout.Box({
-      Layout.Box(chat, { size = "80%" }),
-      Layout.Box(input, { size = "22%" }),
-    }, { dir = "col" })
-  )
-
-  -- recalculate nui window when vim window resizes
-  input:on("VimResized", function()
-    layout:update()
-  end)
-
-  -- For input, save to populate on next open
-  input:on("InsertLeave",
-    function()
-      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
-      Store.chat.input:clear()
-      Store.chat.input:append(table.concat(input_lines, "\n"))
-    end
-  )
-
-  -- Once this mounts, our popups now have a winid for as long as the layout is mounted
-  layout:mount()
-
-  -- Wrap lines for modern Neovim API
-  vim.wo[chat.winid].wrap = true
-  vim.wo[input.winid].wrap = true
-
   -- Add text selection to input buf
   if selection then
     -- If selected lines are given, it's like a new session, so we'll nuke all else
@@ -191,10 +155,34 @@ function M.build_and_mount(selection)
     com.set_input_top_border_text(input, Store.chat:get_files())
   end
 
-  local missing_deps_error_message = com.check_deps()
-  if missing_deps_error_message then
-    com.safe_render_buffer_from_text(chat.bufnr, missing_deps_error_message)
-  end
+  local layout = Layout(
+    {
+      position = "50%",
+      relative = "editor",
+      size = {
+        width = "90%",
+        height = "90%",
+      },
+    },
+    Layout.Box({
+      Layout.Box(chat, { size = "80%" }),
+      Layout.Box(input, { size = "22%" }),
+    }, { dir = "col" })
+  )
+
+  -- recalculate nui window when vim window resizes
+  input:on("VimResized", function()
+    layout:update()
+  end)
+
+  -- For input, save to populate on next open
+  input:on("InsertLeave",
+    function()
+      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
+      Store.chat.input:clear()
+      Store.chat.input:append(table.concat(input_lines, "\n"))
+    end
+  )
 
   -- keymaps
   vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
@@ -304,6 +292,19 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function() layout:unmount() end,
     })
+  end
+
+  -- Once this mounts, our popups now have a winid for as long as the layout is mounted
+  layout:mount()
+
+  vim.wo[chat.winid].wrap = true
+  vim.wo[input.winid].wrap = true
+
+  -- Notify of any errors / warnings
+  for level, message in pairs(com.check_deps()) do
+    if message then
+      vim.notify_once(message, vim.log.levels[level])
+    end
   end
 
   return {
