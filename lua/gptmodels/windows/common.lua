@@ -199,9 +199,13 @@ end
 ---@param on_complete fun(): nil
 M.trigger_ollama_models_etl = function(on_complete)
   ollama.fetch_models(function(err, ollama_models)
-    -- TODO If there's an issue fetching, I want to display that to the user.
-    if err then return util.log(err) end
-    if not ollama_models or #ollama_models == 0 then return end
+    -- If there's an error fetching, assume we have no models
+    -- TODO We still need to inform the user somehow that their ollama models
+    -- fetching didn't work. Just not if we earlier detected a missing ollama
+    -- executable. Store.detected_missing_ollama_exe = true?
+    if err or not ollama_models or #ollama_models == 0 then
+      return Store:set_models("ollama", {})
+    end
     Store:set_models("ollama", ollama_models)
     on_complete()
   end)
