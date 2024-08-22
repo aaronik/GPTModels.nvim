@@ -186,6 +186,54 @@ describe("Store | llm stuff", function()
     assert.same({ "m1", "m2" }, Store:get_models("ollama"))
   end)
 
+  describe("correct_potentially_removed_current_model", function()
+    it("does nothing if currently selected model is available", function()
+      Store:set_models("ollama", {})
+      Store:set_models("openai", { "gpt-4o-mini", "gpt-4o" })
+
+      Store:set_model("openai", "gpt-4o")
+      assert.equals("gpt-4o", Store:get_model().model)
+      assert.equals("openai", Store:get_model().provider)
+
+      -- Call the method to correct the potentially removed current model
+      Store:correct_potentially_removed_current_model()
+
+      -- Verify that it selects a default model since the current model is not available
+      assert.equals("gpt-4o", Store:get_model().model)
+      assert.equals("openai", Store:get_model().provider)
+    end)
+
+    it("corrects missing models with ones in defaults", function()
+      Store:set_models("ollama", {})
+      Store:set_models("openai", { "gpt-4o-mini", "gpt-4o" })
+
+      Store:set_model("ollama", "not-present")
+      assert.equals("not-present", Store:get_model().model)
+      assert.equals("ollama", Store:get_model().provider)
+
+      -- Call the method to correct the potentially removed current model
+      Store:correct_potentially_removed_current_model()
+
+      -- Verify that it selects a default model since the current model is not available
+      assert.equals("gpt-4o-mini", Store:get_model().model)
+      assert.equals("openai", Store:get_model().provider)
+    end)
+
+    it("picks first from available if no defaults are available", function()
+      -- If no preferred are available, it goes to first in list
+      Store:set_models("ollama", { "not-in-defaults", "not-in-defaults-either" })
+      Store:set_models("openai", { "not-in-defaults-for-sure", "definitely-not-in-defaults" })
+
+      Store:set_model("openai", "not-present")
+      assert.equals(Store:get_model().model, "not-present")
+
+      Store:correct_potentially_removed_current_model()
+
+      assert.equals(Store:get_model().model, "not-in-defaults")
+      assert.equals(Store:get_model().provider, "ollama")
+    end)
+
+  end)
 end)
 
 -- TODO Remove
@@ -200,11 +248,9 @@ end)
 -- -- Once when nvim is opened, and once again on every window open?
 -- com.trigger_available_model_etl(
 --   function(openai_models)
---     Store.set_models("openai", openai_models) -- internally ensures selected model is still
 --     set_window_titles()
 --   end,
 --   function(ollama_models)
---     Store.set_models("ollama", ollama_models)
 --     set_window_titles()
 --   end
 -- )

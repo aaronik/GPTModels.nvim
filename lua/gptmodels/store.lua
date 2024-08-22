@@ -22,7 +22,7 @@ local concat_chat = function(chat, message)
   end
 end
 
--- Finds the index of the model/provider pair where model == provider
+-- Finds the index of the model/provider pair where model == model and provider == provider
 ---@param model_options { model: string, provider: string }[]
 ---@param provider string
 ---@param model string
@@ -85,25 +85,24 @@ end
 ---@alias Provider "openai" | "ollama"
 
 ---@class Store
----@field clear fun(self: Store)
+---@field private _llm_models { openai: string[], ollama: string[] }
+---@field private _llm_provider string
+---@field private _llm_model string
+---@field private _job Job | nil
 ---@field code CodeWindow
 ---@field chat ChatWindow
+---@field clear fun(self: Store)
 ---@field register_job fun(self: Store, job: Job)
 ---@field get_job fun(self: Store): Job | nil
 ---@field clear_job fun(self: Store)
----@field private _llm_models { openai: string[], ollama: string[] }
 ---@field get_models fun(self: Store, provider: Provider): string[]
 ---@field set_models fun(self: Store, provider: Provider, models: string[])
 ---@field get_model fun(self: Store): { provider: string, model: string }
 ---@field set_model fun(self: Store, provider: Provider, model: string)
----@field llm_model_strings fun(self: Store): string[] -- TODO This doesn't belong here, it's a store utility. Maybe just somewhere else in this file.
----@field private _llm_provider string
----@field private _llm_model string
 ---@field cycle_model_forward fun(self: Store)
 ---@field cycle_model_backward fun(self: Store)
----@field private _job Job | nil
-
--- TODO store should store lines (string[]) instead of string. More neovim centric data structure. Less munging.
+---@field llm_model_strings fun(self: Store): string[]
+---@field correct_potentially_removed_current_model fun(self: Store)
 
 ---@return StrPane
 local function build_strpane()
@@ -172,6 +171,59 @@ local Store = {
       end
     end
     return model_strings
+  end,
+
+  -- Introspects on the current model and the available models.
+  -- Mutates own current model with set_model() to best option from a hardcoded
+  -- list of defaults. Used on startup and after model etls.
+  correct_potentially_removed_current_model = function(self)
+    local current_model_info = self:get_model()
+    local current_model = current_model_info.model
+    local current_provider = current_model_info.provider
+
+    -- Define available models as a table with providers and their corresponding models
+    local available_models = {
+      ollama = self:get_models("ollama"),
+      openai = self:get_models("openai")
+    }
+
+    -- TODO Handle the case where available_models might be empty
+    if not available_models.ollama and not available_models.openai then return end
+
+    -- Check if the current model is still present in the available models list
+    for _, provider in ipairs { "ollama", "openai" } do
+      for _, available_model in ipairs(available_models[provider]) do
+        if available_model == current_model then
+          -- The currently selected model is present in our lists, no work need be done.
+          return
+        end
+      end
+    end
+
+    -- Current model is not available; select a default model
+    local preferred_defaults = { "llama3.1:latest", "deepseek-v2:latest", "gpt-4o-mini", "gpt-4o" }
+    for _, preferred_default in ipairs(preferred_defaults) do
+      for _, provider in ipairs { "ollama", "openai" } do
+        for _, available_model in ipairs(available_models[provider]) do
+          if available_model == preferred_default then
+            self:set_model(provider, preferred_default)
+            return
+          end
+        end
+      end
+    end
+
+    -- If no preferred defaults are available, user gets the first available one
+    for _, provider in ipairs { "ollama", "openai" } do
+      if #available_models[provider] > 0 then
+        -- Set the model to the first available option from the corresponding provider
+        self:set_model(provider, available_models[provider][1])
+        return
+      end
+    end
+
+    -- If we reach this point, it means there are no available models. Plugin is useless.
+    -- TODO Need to handle this though with some user feedback
   end,
 
   clear = function(self)

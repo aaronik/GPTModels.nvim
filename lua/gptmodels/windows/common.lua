@@ -204,9 +204,15 @@ M.trigger_ollama_models_etl = function(on_complete)
     -- fetching didn't work. Just not if we earlier detected a missing ollama
     -- executable. Store.detected_missing_ollama_exe = true?
     if err or not ollama_models or #ollama_models == 0 then
-      return Store:set_models("ollama", {})
+      Store:set_models("ollama", {})
+      Store:correct_potentially_removed_current_model()
+      return on_complete()
     end
+
     Store:set_models("ollama", ollama_models)
+    -- TODO Test at least that this gets called, at most that it corrects any
+    -- messed up current models.
+    Store:correct_potentially_removed_current_model()
     on_complete()
   end)
 end
