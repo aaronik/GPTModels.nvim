@@ -245,42 +245,36 @@ describe("The Chat window", function()
     Store:set_models("ollama", { "m1", "m2", "m3" })
     Store:set_model("ollama", "m1")
 
-    local ctrl_j = vim.api.nvim_replace_termcodes("<C-j>", true, true, true)
-
     chat_window.build_and_mount()
 
     assert.equal("m1", Store:get_model().model)
-
-    -- Press <C-j>
-    vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
-
+    helpers.feed_keys("<C-j>")
     assert.equal("m2", Store:get_model().model)
-
-    -- Press <C-j> again
-    vim.api.nvim_feedkeys(ctrl_j, 'mtx', true)
-
+    helpers.feed_keys("<C-j>")
     assert.equal("m3", Store:get_model().model)
+
+    -- When initially set to a model that isn't present
+    Store:set_model("ollama", "absent-model")
+    helpers.feed_keys("<C-j>")
+    assert.equal("m1", Store:get_model().model)
   end)
 
   it("cycles through available models with <C-k>", function()
     Store:set_models("ollama", { "m1", "m2", "m3" })
     Store:set_model("ollama", "m1")
 
-    local ctrl_k = vim.api.nvim_replace_termcodes("<C-k>", true, true, true)
-
     chat_window.build_and_mount()
 
     assert.equal("m1", Store:get_model().model)
-
-    -- Press <C-j>
-    vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
-
+    helpers.feed_keys("<C-k>")
     assert.equal("m3", Store:get_model().model)
-
-    -- Press <C-j> again
-    vim.api.nvim_feedkeys(ctrl_k, 'mtx', true)
-
+    helpers.feed_keys("<C-k>")
     assert.equal("m2", Store:get_model().model)
+
+    -- When initially set to a model that isn't present
+    Store:set_model("ollama", "absent-model")
+    helpers.feed_keys("<C-k>")
+    assert.equal("m3", Store:get_model().model)
   end)
 
   it("kills active job on <C-c>", function()
@@ -610,11 +604,6 @@ describe("The Chat window", function()
 
     assert.stub(fetch_models_stub).was_called(1)
     assert.same({ "my-model", "your-model" }, Store:get_models("ollama"))
-
-    -- and reassigns any bunk llm_model (which could happen from a user config or
-    -- the user not having whatever model I determine to be the default in
-    -- their local ollama)
-    assert.equal("my-model", Store:get_model().model)
 
     -- Now ensure if we end up on an openai model, we will stay there on subsequent open
     -- Store.llm_model = first_openai_model

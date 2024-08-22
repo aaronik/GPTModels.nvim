@@ -151,13 +151,24 @@ describe("Store | llm stuff", function()
   it("cycles through llm models", function()
     Store:set_models("ollama", { "m1", "m2", "m3" })
     Store:set_model("ollama", "m1")
+    local models = Store:get_models("ollama")
     local first_model = Store:get_model().model
+    local last_model = models[#models]
 
     Store:cycle_model_forward()
     assert.not_equal(first_model, Store:get_model().model)
 
     Store:cycle_model_backward()
     assert.equal(first_model, Store:get_model().model)
+
+    -- And resets on bogus models
+    Store:set_model("ollama", "not-present")
+    Store:cycle_model_forward()
+    assert.equal(first_model, Store:get_model().model)
+
+    Store:set_model("ollama", "not-present")
+    Store:cycle_model_backward()
+    assert.equal(last_model, Store:get_model().model)
   end)
 
   it("shows convenient list of models with llm_model_strings", function()

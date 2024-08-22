@@ -150,10 +150,7 @@ local Store = {
   cycle_model_forward = function(self)
     local model_options = build_model_options(self)
     local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
-    -- TODO This needs to be fixed. It can't just do a noop, it has to jump to an available model.
-    -- This right here is the fundamental bug leading to peoples' annoyance. If this is fixed, the store
-    -- might not need to intelligently reset its own active model when we set the available models?
-    if not current_index then return end
+    if not current_index then current_index = #model_options end
     local selected_option = model_options[(current_index % #model_options) + 1]
     self:set_model(selected_option.provider, selected_option.model)
   end,
@@ -161,7 +158,7 @@ local Store = {
   cycle_model_backward = function(self)
     local model_options = build_model_options(self)
     local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
-    if not current_index then return end
+    if not current_index then current_index = 1 end
     local selected_option = model_options[(current_index - 2) % #model_options + 1]
     self:set_model(selected_option.provider, selected_option.model)
   end,

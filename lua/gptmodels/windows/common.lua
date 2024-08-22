@@ -177,7 +177,6 @@ M.set_window_title = function(popup, title)
 end
 
 -- Triggers the fetching / saving of available models from the ollama server
--- TODO This is only tested via window tests
 ---@param on_complete fun(): nil
 M.trigger_ollama_models_etl = function(on_complete)
   ollama.fetch_models(function(err, ollama_models)
@@ -185,17 +184,7 @@ M.trigger_ollama_models_etl = function(on_complete)
     if err then return util.log(err) end
     if not ollama_models or #ollama_models == 0 then return end
     Store:set_models("ollama", ollama_models)
-    -- TODO Just delete from here down. No reason to do all this if c-j and c-k still work with bad models.
-
-    -- TODO This will glitch if ollama has a model with the same name as an openai one
-    local is_currently_selected_model_from_ollama = util.contains_line(ollama_models, Store:get_model().model)
-    local is_currently_selected_model_from_openai = util.contains_line(Store:get_models("openai"), Store:get_model().model)
-
-    -- If the currently selected model has been removed from the system
-    if not is_currently_selected_model_from_ollama and not is_currently_selected_model_from_openai then
-      Store:set_model("ollama", ollama_models[1]) -- TODO This will explode on no ollama models when there are no persistent models
-      on_complete()
-    end
+    on_complete()
   end)
 end
 
