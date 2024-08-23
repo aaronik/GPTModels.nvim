@@ -2,6 +2,7 @@ local Store = require('gptmodels.store')
 local cmd = require('gptmodels.cmd')
 local util = require('gptmodels.util')
 local ollama = require('gptmodels.providers.ollama')
+local openai = require('gptmodels.providers.openai')
 
 local M = {}
 
@@ -77,7 +78,8 @@ end
 ---@return { INFO: string | nil, ERROR: string | nil }
 function M.check_deps()
   local has_error = false
-  local error_string = "GPTModels.nvim requires the following programs be installed, which are not detected in your path: "
+  local error_string =
+  "GPTModels.nvim requires the following programs be installed, which are not detected in your path: "
   for _, prog in ipairs({ "curl" }) do
     cmd.exec({
       sync = true,
@@ -109,6 +111,11 @@ function M.check_deps()
       end,
       testid = "check-deps-warnings"
     })
+  end
+
+  if not util.has_env_var("OPENAI_API_KEY") then
+    info_string = info_string .. "OPENAI_API_KEY "
+    has_info = true
   end
 
   return {
@@ -191,25 +198,42 @@ M.set_window_title = function(popup, title)
   popup.border:set_text("top", " " .. title .. " ", "center")
 end
 
--- Triggers the fetching / saving of available models from the ollama server
+-- Triggers the fetching / saving of available models from the ollama and openai servers
 ---@param on_complete fun(): nil
-M.trigger_ollama_models_etl = function(on_complete)
-  ollama.fetch_models(function(err, ollama_models)
+M.trigger_models_etl = function(on_complete)
+  ---@param err string | nil
+  ---@param models string[] | nil
+  ---@param provider Provider
+  local function handle_models_fetch(err, models, provider)
     -- If there's an error fetching, assume we have no models
     -- TODO We still need to inform the user somehow that their ollama models
     -- fetching didn't work. Just not if we earlier detected a missing ollama
     -- executable. Store.detected_missing_ollama_exe = true?
-    if err or not ollama_models or #ollama_models == 0 then
-      Store:set_models("ollama", {})
+    -- BUT DO WE? Maybe the models not appearing is sufficient feedback!
+    -- I think passing the err back is a good idea, because that can include
+    -- provider information
+    if err or not models or #models == 0 then
+      Store:set_models(provider, {})
       Store:correct_potentially_removed_current_model()
       return on_complete()
     end
 
-    Store:set_models("ollama", ollama_models)
-    -- TODO Test at least that this gets called, at most that it corrects any
-    -- messed up current models.
+    Store:set_models(provider, models)
+    -- TODO Test that this gets called
     Store:correct_potentially_removed_current_model()
     on_complete()
+  end
+
+  -- Fetch models from ollama server
+  ollama.fetch_models(function(err, ollama_models)
+    handle_models_fetch(err, ollama_models, "ollama")
+  end)
+
+  -- Fetch models from openai server
+  ---@param err string
+  ---@param openai_models string[]
+  openai.fetch_models(function(err, openai_models)
+    handle_models_fetch(err, openai_models, "openai")
   end)
 end
 

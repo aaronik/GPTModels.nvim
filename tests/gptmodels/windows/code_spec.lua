@@ -12,6 +12,7 @@ local ollama      = require('gptmodels.providers.ollama')
 local helpers     = require('tests.gptmodels.spec_helpers')
 local func        = require('vim.func')
 local com         = require('gptmodels.windows.common')
+local openai      = require('gptmodels.providers.openai')
 
 -- For async functions that use vim.schedule_wrap, which writing to buffers requires
 -- TODO move to helpers
@@ -678,29 +679,34 @@ describe("The code window", function()
     assert.equal(expected_scroll, actual_scroll)
   end)
 
-  it("fetches ollama llms when started", function()
+  it("fetches ollama models when started (etl)", function()
     Store:set_models("openai", { "ma1", "ma2" })
     Store:set_models("ollama", { "m1", "m2" })
     Store:set_model("ollama", "m1")
-    local first_openai_model = Store:get_models("openai")[1]
 
-    local fetch_models_stub = stub(ollama, "fetch_models")
-    fetch_models_stub.invokes(function(cb)
-      cb(nil, { "my-model", "your-model" })
+    local fetch_ollama_models_stub = stub(ollama, "fetch_models")
+    fetch_ollama_models_stub.invokes(function(on_complete)
+      on_complete(nil, { "ollama1", "ollama2" })
+    end)
+
+    local fetch_openai_models_stub = stub(openai, "fetch_models")
+    fetch_openai_models_stub.invokes(function(on_complete)
+      on_complete(nil, { "openai1", "openai2" })
     end)
 
     code_window.build_and_mount()
 
-    assert.stub(fetch_models_stub).was_called(1)
-    assert.same({ "my-model", "your-model" }, Store:get_models("ollama"))
-
-    -- Now ensure if we end up on an openai model, we will stay there on subsequent open
-    -- Store.llm_model = first_openai_model
-    Store:set_model("openai", first_openai_model)
+    assert.stub(fetch_ollama_models_stub).was_called(1)
+    assert.stub(fetch_openai_models_stub).was_called(1)
+    assert.same({ "ollama1", "ollama2" }, Store:get_models("ollama"))
+    assert.same({ "openai1", "openai2" }, Store:get_models("openai"))
 
     code_window.build_and_mount()
-    assert.stub(fetch_models_stub).was_called(2)
-    assert.equal(first_openai_model, Store:get_model().model)
+
+    assert.stub(fetch_ollama_models_stub).was_called(2)
+    assert.stub(fetch_openai_models_stub).was_called(2)
+    assert.same({ "ollama1", "ollama2" }, Store:get_models("ollama"))
+    assert.same({ "openai1", "openai2" }, Store:get_models("openai"))
   end)
 
   it("alerts the user when required dependencies are not installed", function()
@@ -715,7 +721,12 @@ describe("The code window", function()
       end
     end)
 
+    local has_env_var_stub = stub(util, "has_env_var")
+    has_env_var_stub.returns(false)
+
     code_window.build_and_mount()
+
+    assert.stub(has_env_var_stub).was_called(1)
     assert.stub(notify_stub).was_called(2)
 
     -----Leaving here for the full type hint
@@ -724,8 +735,9 @@ describe("The code window", function()
 
     -- Ensure that one call contains the missing required dep "curl" and the
     -- other contains the optional "ollama"
-    local required_message = "GPTModels.nvim requires the following programs be installed, which are not detected in your path: curl "
-    local optional_message = "GPTModels.nvim is missing optional dependencies: ollama "
+    local required_message =
+    "GPTModels.nvim requires the following programs be installed, which are not detected in your path: curl "
+    local optional_message = "GPTModels.nvim is missing optional dependencies: ollama OPENAI_API_KEY "
 
     for i = 1, 2 do
       ---@type string | integer
@@ -809,13 +821,5 @@ describe("The code window", function()
     local args = set_text_stub.calls[1].refs
     assert.equal(args[1], code.input)
     assert.same(args[2], { "C-x xfer to deck" })
-  end)
-
-  it("doesn't block saved content when ollama command is not present", function()
-
-  end)
-
-  it("doesn't block saved content when ollama isn't serving", function()
-
   end)
 end)

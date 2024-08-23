@@ -102,7 +102,7 @@ local Provider = {
             "--data",
             vim.fn.json_encode(args.llm),
             "-H",
-            "Authorization: Bearer " .. os.getenv("OPENAI_API_KEY"),
+            "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""),
             "-H",
             "Content-Type: application/json",
             "--no-progress-meter",
@@ -158,7 +158,7 @@ local Provider = {
             "--data",
             vim.fn.json_encode(args.llm),
             "-H",
-            "Authorization: Bearer " .. os.getenv("OPENAI_API_KEY"),
+            "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""),
             "-H",
             "Content-Type: application/json",
             "--no-buffer",
@@ -203,8 +203,54 @@ local Provider = {
         return job
     end,
 
+    --curl -s https://api.openai.com/v1/models \
+    ----header "Authorization: Bearer $OPENAI_API_KEY" \
+    --| jq -r '.data[].id'
+
     fetch_models = function(cb)
-        error("openai model fetching not yet implemented")
+        local job = cmd.exec({
+            cmd = "curl",
+            args = {
+                "--no-progress-meter",
+                "--header",
+                "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""),
+                "https://api.openai.com/v1/models"
+            },
+            ---@param err string | nil
+            ---@param json_response string | nil
+            onread = vim.schedule_wrap(function(err, json_response)
+                util.log(json_response)
+                if err then return cb(err) end
+                if not json_response then return end
+
+                ---@type boolean, nil | { data: nil | { id: string }[], error: nil | { message: string } }
+                local status_ok, response = pcall(vim.fn.json_decode, json_response)
+
+                -- Failed fetches
+                if not status_ok or not response then
+                    return cb("error retrieving openai models")
+                end
+
+                -- Server error
+                if response.error then
+                    return cb(response.error.message)
+                end
+
+                ---@type string[]
+                local models = {}
+
+                for _, model in ipairs(response.data) do
+                    -- Many models are offered, only gpt* or chatgpt* models are chat bots, which is what this plugin uses.
+                    if model.id:sub(1, 3) == "gpt" or model.id:sub(1, 7) == "chatgpt" then
+                        table.insert(models, model.id)
+                    end
+                end
+
+                return cb(nil, models)
+            end)
+        })
+
+        return job
     end
 }
 

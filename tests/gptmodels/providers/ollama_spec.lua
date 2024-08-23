@@ -164,8 +164,10 @@ describe("ollama.fetch_models", function()
     local finished = false
     ---@type string[] | nil
     local models = {}
+    local error = nil
 
-    ollama.fetch_models(function(_, ms)
+    ollama.fetch_models(function(err, ms)
+      error = err
       models = ms
       finished = true
     end)
@@ -173,7 +175,7 @@ describe("ollama.fetch_models", function()
     ---@type ExecArgs
     local exec_args = exec_stub.calls[1].refs[1]
 
-    local response = [[
+    local ollama_response = [[
     {
       "models": [
         { "name": "deepseek-coder:33b" },
@@ -187,11 +189,11 @@ describe("ollama.fetch_models", function()
     }
     ]]
 
-    exec_args.onread(nil, response)
+    exec_args.onread(nil, ollama_response)
 
     vim.wait(20, function() return finished end)
 
-    assert.is_nil(err)
+    assert.is_nil(error)
     assert.same(
       { "deepseek-coder:33b", "dolphin-mistral:latest", "dolphincoder:15b", "gemma:latest", "llama2-uncensored:latest",
         "llama3:latest", "mistral:latest" }, models)

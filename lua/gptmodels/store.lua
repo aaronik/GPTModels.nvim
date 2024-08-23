@@ -179,7 +179,6 @@ local Store = {
   correct_potentially_removed_current_model = function(self)
     local current_model_info = self:get_model()
     local current_model = current_model_info.model
-    local current_provider = current_model_info.provider
 
     -- Define available models as a table with providers and their corresponding models
     local available_models = {

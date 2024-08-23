@@ -36,7 +36,7 @@ describe("openai.generate", function()
       assert.equal(true, llm_data.stream)
 
       -- Ensure OPENAI_API_KEY is passed in correctly
-      assert.equal("Authorization: Bearer " .. os.getenv("OPENAI_API_KEY"), exec_args.args[5])
+      assert.equal("Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""), exec_args.args[5])
 
       -- This is how it comes in from openai for whatever reason. Note role needs to be injected most of the time
       exec_args.onread(nil, 'data: { "choices": [{ "delta": { "content": "hi from llm" } } ] }\r\n')
@@ -64,8 +64,10 @@ describe("openai.generate", function()
 
     -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
     -- All messages are just "hello"
-    local response_1 = 'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
-    local response_2 = 'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
+    local response_1 =
+    'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+    local response_2 =
+    'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
@@ -123,7 +125,7 @@ describe("openai.chat", function()
       assert.equal(true, llm_data.stream)
 
       -- Ensure OPENAI_API_KEY is passed in correctly
-      assert.equal("Authorization: Bearer " .. os.getenv("OPENAI_API_KEY"), exec_args.args[5])
+      assert.equal("Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""), exec_args.args[5])
 
       local sample_llm_response =
       'data: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":"both"},"logprobs":null,"finish_reason":null}]}'
@@ -172,8 +174,10 @@ describe("openai.chat", function()
 
     -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
     -- All messages are just "hello"
-    local response_1 = 'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
-    local response_2 = 'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
+    local response_1 =
+    'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+    local response_2 =
+    'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
@@ -198,5 +202,76 @@ describe("openai.chat", function()
     vim.wait(20)
     assert.stub(exec_stub).was_called(1)
     assert.equal(3, on_read_call_count)
+  end)
+end)
+
+describe("openai.fetch_models", function()
+  it("returns list of available openai models", function()
+    local exec_stub = stub(cmd, "exec")
+
+    ---@type string[] | nil
+    local models = {}
+    local finished = false
+    local error = nil
+
+    openai.fetch_models(function(err, ms)
+      error = err
+      models = ms
+      finished = true
+    end)
+
+    ---@type ExecArgs
+    local exec_args = exec_stub.calls[1].refs[1]
+
+    local openai_response = [[
+    {
+      "data": [
+        { "id": "gpt-4o" },
+        { "id": "gpt-4o-mini" },
+        { "id": "gpt-3.5-turbo-1106" },
+        { "id": "chatgpt-4o-latest" },
+        { "id": "babbage-002" },
+        { "id": "whisper-1" },
+        { "id": "davinci-002" }
+      ]
+    }
+    ]]
+
+    exec_args.onread(nil, openai_response)
+    vim.wait(20, function() return finished end)
+
+    assert.is_nil(error)
+    assert.same(
+      { "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo-1106", "chatgpt-4o-latest" },
+      models
+    )
+  end)
+
+  it("correctly handles openai errors", function()
+    local exec_stub = stub(cmd, "exec")
+    local error = nil
+    openai.fetch_models(function(err)
+      error = err
+    end)
+
+    ---@type ExecArgs
+    local exec_args = exec_stub.calls[1].refs[1]
+    local openai_response = '{"error": {"message": "Error message"}}'
+    exec_args.onread(nil, openai_response)
+    vim.wait(20, function() return finished end)
+    assert.equal(error, "Error message")
+  end)
+
+  it("doesn't explode when no OPENAI_API_KEY is set", function()
+    stub(os, "getenv").invokes(function(env_var)
+      if env_var == "OPENAI_API_KEY" then
+        return nil
+      else
+        return os.getenv(env_var)
+      end
+    end)
+
+    openai.fetch_models(function (err, models)
+    end)
   end)
 end)

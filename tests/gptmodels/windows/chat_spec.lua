@@ -590,15 +590,15 @@ describe("The Chat window", function()
   end)
 
   -- TODO Same test as in code_spec, good candidate for shared spec
-  it("fetches ollama llms when started", function()
+  it("fetches ollama models when started (etl)", function()
     Store:set_models("openai", { "ma1", "ma2" })
     Store:set_models("ollama", { "m1", "m2" })
     Store:set_model("ollama", "m1")
     local first_openai_model = Store:get_models("openai")[1]
 
     local fetch_models_stub = stub(ollama, "fetch_models")
-    fetch_models_stub.invokes(function(cb)
-      cb(nil, { "my-model", "your-model" })
+    fetch_models_stub.invokes(function(on_complete)
+      on_complete(nil, { "my-model", "your-model" })
     end)
 
     chat_window.build_and_mount()
@@ -627,7 +627,12 @@ describe("The Chat window", function()
       end
     end)
 
+    local has_env_var_stub = stub(util, "has_env_var")
+    has_env_var_stub.returns(false)
+
     chat_window.build_and_mount()
+
+    assert.stub(has_env_var_stub).was_called(1)
     assert.stub(notify_stub).was_called(2)
 
     -----Leaving here for the full type hint
@@ -636,21 +641,17 @@ describe("The Chat window", function()
 
     -- Ensure that one call contains the missing required dep "curl" and the
     -- other contains the optional "ollama"
-    local ollama_found = false
-    local curl_found = false
+    local required_message =
+    "GPTModels.nvim requires the following programs be installed, which are not detected in your path: curl "
+    local optional_message = "GPTModels.nvim is missing optional dependencies: ollama OPENAI_API_KEY "
 
     for i = 1, 2 do
       ---@type string | integer
       local ref = notify_stub.calls[i].refs[1]
-      if ref:match("ollama") then
-        ollama_found = true
-      elseif ref:match("curl") then
-        curl_found = true
+      if ref ~= required_message and ref ~= optional_message then
+        assert(false, "Received unexpected notification: " .. ref)
       end
     end
-
-    assert(ollama_found, "None of the notifications matched 'ollama'")
-    assert(curl_found, "None of the notifications matched 'curl'")
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
@@ -687,15 +688,6 @@ describe("The Chat window", function()
     assert.equal(args[1], chat.input)
     assert.same(args[2], nil)
   end)
-
-  it("doesn't block saved content when ollama command is not present", function()
-
-  end)
-
-  it("doesn't block saved content when ollama isn't serving", function()
-
-  end)
-
 end)
 
 

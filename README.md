@@ -138,6 +138,7 @@ Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for t
 
 #### TODO
 
+* Smooth out experience when someone doesn't have ollama or their OPENAI_API_KEY set
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out

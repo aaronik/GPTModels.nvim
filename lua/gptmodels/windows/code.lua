@@ -154,7 +154,7 @@ function M.build_and_mount(selection)
   Store.code.input.popup = input
 
   -- Fetch ollama models so user can work with what they have on their system
-  com.trigger_ollama_models_etl(function()
+  com.trigger_models_etl(function()
     com.set_window_title(right, com.model_display_name())
   end)
 
