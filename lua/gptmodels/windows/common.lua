@@ -74,12 +74,10 @@ end
 
 -- Check for required programs, warn user if they're not there
 -- *NOTE*: the keys in the returned table must be one of vim.log.levels
----@return { WARN: string | nil, ERROR: string | nil }
+---@return { INFO: string | nil, ERROR: string | nil }
 function M.check_deps()
   local has_error = false
-  local error_string = [[
-GPTModels.nvim requires the following programs be installed, which are not detected in your path:
-  ]]
+  local error_string = "GPTModels.nvim requires the following programs be installed, which are not detected in your path: "
   for _, prog in ipairs({ "curl" }) do
     cmd.exec({
       sync = true,
@@ -96,10 +94,8 @@ GPTModels.nvim requires the following programs be installed, which are not detec
   end
 
   -- TODO Turn this into a checkhealth?
-  local has_warning = false
-  local warning_string = [[
-GPTModels.nvim is missing the following optional dependencies
-  ]]
+  local has_info = false
+  local info_string = "GPTModels.nvim is missing optional dependencies: "
   for _, prog in ipairs({ "ollama" }) do
     cmd.exec({
       sync = true,
@@ -107,8 +103,8 @@ GPTModels.nvim is missing the following optional dependencies
       args = { prog },
       onexit = function(code)
         if code ~= 0 then
-          warning_string = warning_string .. prog .. " "
-          has_warning = true
+          info_string = info_string .. prog .. " "
+          has_info = true
         end
       end,
       testid = "check-deps-warnings"
@@ -117,7 +113,7 @@ GPTModels.nvim is missing the following optional dependencies
 
   return {
     ERROR = has_error and error_string or nil,
-    WARN = has_warning and warning_string or nil
+    INFO = has_info and info_string or nil
   }
 end
 

@@ -724,21 +724,16 @@ describe("The code window", function()
 
     -- Ensure that one call contains the missing required dep "curl" and the
     -- other contains the optional "ollama"
-    local ollama_found = false
-    local curl_found = false
+    local required_message = "GPTModels.nvim requires the following programs be installed, which are not detected in your path: curl "
+    local optional_message = "GPTModels.nvim is missing optional dependencies: ollama "
 
     for i = 1, 2 do
       ---@type string | integer
       local ref = notify_stub.calls[i].refs[1]
-      if ref:match("ollama") then
-        ollama_found = true
-      elseif ref:match("curl") then
-        curl_found = true
+      if ref ~= required_message and ref ~= optional_message then
+        assert(false, "Received unexpected notification: " .. ref)
       end
     end
-
-    assert(ollama_found, "None of the notifications matched 'ollama'")
-    assert(curl_found, "None of the notifications matched 'curl'")
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
