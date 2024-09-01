@@ -77,50 +77,57 @@ end
 -- *NOTE*: the keys in the returned table must be one of vim.log.levels
 ---@return { INFO: string | nil, ERROR: string | nil }
 function M.check_deps()
-  local has_error = false
-  local error_string =
-  "GPTModels.nvim requires the following programs be installed, which are not detected in your path: "
-  for _, prog in ipairs({ "curl" }) do
-    cmd.exec({
-      sync = true,
-      cmd = "which",
-      args = { prog },
-      onexit = function(code)
-        if code ~= 0 then
-          error_string = error_string .. prog .. " "
-          has_error = true
-        end
-      end,
-      testid = "check-deps-errors"
-    })
+  local has_curl = true
+  local error_string = ""
+
+  local has_ollama = true
+  local info_string = ""
+
+  cmd.exec({
+    sync = true,
+    cmd = "which",
+    args = { "curl" },
+    onexit = function(code)
+      if code ~= 0 then
+        has_curl = false
+      end
+    end,
+    testid = "check-deps-errors"
+  })
+
+  cmd.exec({
+    sync = true,
+    cmd = "which",
+    args = { "ollama" },
+    onexit = function(code)
+      if code ~= 0 then
+        has_ollama = false
+      end
+    end,
+    testid = "check-deps-warnings"
+  })
+
+  local has_openai_api_key = util.has_env_var("OPENAI_API_KEY")
+
+  if not has_curl then
+    error_string = error_string .. "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. "
   end
 
-  -- TODO Turn this into a checkhealth?
-  local has_info = false
-  local info_string = "GPTModels.nvim is missing optional dependencies: "
-  for _, prog in ipairs({ "ollama" }) do
-    cmd.exec({
-      sync = true,
-      cmd = "which",
-      args = { prog },
-      onexit = function(code)
-        if code ~= 0 then
-          info_string = info_string .. prog .. " "
-          has_info = true
-        end
-      end,
-      testid = "check-deps-warnings"
-    })
+  if not has_ollama then
+    info_string = info_string .. "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
   end
 
-  if not util.has_env_var("OPENAI_API_KEY") then
-    info_string = info_string .. "OPENAI_API_KEY "
-    has_info = true
+  if not has_openai_api_key then
+    info_string = info_string .. "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+  end
+
+  if not has_openai_api_key and not has_ollama then
+    error_string = error_string .. "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
   end
 
   return {
-    ERROR = has_error and error_string or nil,
-    INFO = has_info and info_string or nil
+    ERROR = error_string and error_string or nil,
+    INFO = info_string and info_string or nil
   }
 end
 

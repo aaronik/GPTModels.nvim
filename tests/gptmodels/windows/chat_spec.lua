@@ -641,14 +641,17 @@ describe("The Chat window", function()
 
     -- Ensure that one call contains the missing required dep "curl" and the
     -- other contains the optional "ollama"
-    local required_message =
-    "GPTModels.nvim requires the following programs be installed, which are not detected in your path: curl "
-    local optional_message = "GPTModels.nvim is missing optional dependencies: ollama OPENAI_API_KEY "
+    -- TODO Move this test and the one in chat_spec to common_spec and just check in both of these
+    -- that check_deps is being called
+    local error_message =
+    "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
+    local info_message = "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
 
+    -- number of notify calls
     for i = 1, 2 do
       ---@type string | integer
       local ref = notify_stub.calls[i].refs[1]
-      if ref ~= required_message and ref ~= optional_message then
+      if ref ~= error_message and ref ~= info_message then
         assert(false, "Received unexpected notification: " .. ref)
       end
     end
