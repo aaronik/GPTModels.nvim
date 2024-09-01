@@ -2,6 +2,7 @@
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support .. Very hard as it turns out
+    * https://github.com/B00TK1D/copilot-api/blob/main/api.py -- python implementation
 * Protect against opening windows many times?
 * Figure out how to test nui border text and test all the titles
 * Help window
