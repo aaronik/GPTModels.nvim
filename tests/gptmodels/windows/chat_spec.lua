@@ -13,14 +13,6 @@ local ollama = require('gptmodels.providers.ollama')
 local helpers = require('tests.gptmodels.spec_helpers')
 local com = require('gptmodels.windows.common')
 
-local function stub_schedule_wrap()
-  stub(vim, "schedule_wrap").invokes(function(cb)
-    return function(...)
-      cb(...)
-    end
-  end)
-end
-
 describe("The Chat window", function()
   local snapshot
 
@@ -658,7 +650,7 @@ describe("The Chat window", function()
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
-    stub_schedule_wrap()
+    helpers.stub_schedule_wrap()
 
     Store:set_models("ollama", { "m" })
     Store:set_model("ollama", "m")

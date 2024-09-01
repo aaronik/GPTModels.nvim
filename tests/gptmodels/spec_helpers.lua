@@ -1,3 +1,5 @@
+local stub = require('luassert.stub')
+
 local M = {}
 
 ---@param lines string[]
@@ -19,6 +21,15 @@ end
 M.feed_keys = function(keys)
     local termcodes = vim.api.nvim_replace_termcodes(keys, true, true, true)
     vim.api.nvim_feedkeys(termcodes, 'mtx', false)
+end
+
+-- For async functions that use vim.schedule_wrap, which writing to buffers requires
+M.stub_schedule_wrap = function ()
+  stub(vim, "schedule_wrap").invokes(function(cb)
+    return function(...)
+      cb(...)
+    end
+  end)
 end
 
 return M

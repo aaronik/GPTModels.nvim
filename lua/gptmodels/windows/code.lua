@@ -155,7 +155,9 @@ function M.build_and_mount(selection)
 
   -- Fetch ollama models so user can work with what they have on their system
   com.trigger_models_etl(function()
-    com.set_window_title(right, com.model_display_name())
+    if right.bufnr and right.winid and vim.api.nvim_buf_is_valid(right.bufnr) and vim.api.nvim_win_is_valid(right.winid) then
+      com.set_window_title(right, com.model_display_name())
+    end
   end)
 
   -- Turn off syntax highlighting for input buffer.

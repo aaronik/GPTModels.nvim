@@ -14,16 +14,6 @@ local func        = require('vim.func')
 local com         = require('gptmodels.windows.common')
 local openai      = require('gptmodels.providers.openai')
 
--- For async functions that use vim.schedule_wrap, which writing to buffers requires
--- TODO move to helpers
-local function stub_schedule_wrap()
-  stub(vim, "schedule_wrap").invokes(function(cb)
-    return function(...)
-      cb(...)
-    end
-  end)
-end
-
 describe("The code window", function()
   local snapshot
 
@@ -739,7 +729,8 @@ describe("The code window", function()
     -- that check_deps is being called
     local error_message =
     "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
-    local info_message = "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+    local info_message =
+    "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
 
     -- number of notify calls
     for i = 1, 2 do
@@ -752,7 +743,7 @@ describe("The code window", function()
   end)
 
   it("handles errors gracefully - curl error messages appear on screen", function()
-    stub_schedule_wrap()
+    helpers.stub_schedule_wrap()
 
     Store:set_models("ollama", { "m" })
     Store:set_model("ollama", "m")

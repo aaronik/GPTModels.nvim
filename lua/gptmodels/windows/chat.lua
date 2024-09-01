@@ -107,7 +107,9 @@ function M.build_and_mount(selection)
 
   -- Fetch ollama models so user can work with what they have on their system
   com.trigger_models_etl(function()
-    com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
+    if chat.bufnr and chat.winid and vim.api.nvim_buf_is_valid(chat.bufnr) and vim.api.nvim_win_is_valid(chat.winid) then
+      com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
+    end
   end)
 
   -- Input window is text with no syntax
