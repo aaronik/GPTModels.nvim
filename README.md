@@ -135,25 +135,3 @@ vnoremap <leader>c :GPTModelsChat<CR>
 ### Thanks
 
 Big thanks to [@jackMort](https://github.com/jackMort) for the inspiration for the code window. I used [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim) for a long time before deciding to write this plugin.
-
-#### TODO
-
-* Smooth out experience when someone doesn't have ollama or their OPENAI_API_KEY set
-* code needs C-y?
-* Focus same buffer on nui exit?
-* Add copilot support .. Very hard as it turns out
-* Protect against opening windows many times?
-* Figure out how to test nui border text and test all the titles
-* Help window
-    * with detailed descriptions of commands
-    * input bottom border is just q, Enter, and Ctrl-h maybe, or maybe just Ctrl-h
-* :help docs
-* Model showing / hiding
-    * Show all openai models?
-    * Remove openai models when OPENAI_API_KEY is not set
-        * Render in the chat/right window, at the top above all else, that this is happening?
-    * Remove all ollama models when ollama.fetch_models fails indicating server isn't running?
-        * Or is it better to alert that the server isn't running? Or both?
-
-#### Bugs
-* If you open the code window, get a buncha code in there, then switch to a file of a different filetype, then open again, the syntax highlighting is lost
