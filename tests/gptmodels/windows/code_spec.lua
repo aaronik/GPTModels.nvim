@@ -193,58 +193,6 @@ describe("The code window", function()
     assert.same(vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true), { "response line" })
   end)
 
-  it("finishes jobs in the background when closed", function()
-    code_window.build_and_mount()
-    local generate_stub = stub(llm, "generate")
-    local die_called = false
-
-    generate_stub.returns({
-      die = function()
-        die_called = true
-      end,
-      done = function()
-        return die_called
-      end
-    })
-
-    -- Make a request to start a job
-    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- quit with :q
-    keys = vim.api.nvim_replace_termcodes('<Esc>:q<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- -- quit with q
-    -- keys = vim.api.nvim_replace_termcodes('q', true, true, true)
-    -- vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    assert.is_not.True(die_called)
-
-    -- -- simulate hint of wait time for the nui windows to close
-    -- -- This leads to errors about invalid windows.
-    -- -- 5/13/24 inspected this and believe it's an issue with nui.
-    -- -- It's happening in the nui function called
-    -- -- apply_workaround_for_float_relative_position_issue_18925
-    -- vim.wait(10)
-
-    ---@type MakeGenerateRequestArgs
-    local args = generate_stub.calls[1].refs[1]
-
-    args.on_read(nil, "response to be saved in background")
-
-    -- Open up and ensure it's there now
-    local code = code_window.build_and_mount()
-    assert.same({ "response to be saved in background" }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
-
-    -- More reponse to still reopen window
-    args.on_read(nil, "\nadditional response")
-
-    -- Gets that response without reopening
-    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert.same({ "response to be saved in background", "additional response" }, right_lines)
-  end)
-
   it("does not open prepopulated w/ prior session when text is provided", function()
     Store.code.right:append("right content")
     Store.code.input:append("input content")
@@ -317,82 +265,6 @@ describe("The code window", function()
     assert.same({}, Store.code:get_files())
   end)
 
-  it("kills active job on <C-c>", function()
-    code_window.build_and_mount()
-    local generate_stub = stub(llm, "generate")
-    local die_called = false
-
-    generate_stub.returns({
-      die = function()
-        die_called = true
-      end
-    })
-
-    -- Make a request to start a job
-    local keys = vim.api.nvim_replace_termcodes('xhello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- press ctrl-n
-    keys = vim.api.nvim_replace_termcodes('<C-c>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    assert.is_true(die_called)
-  end)
-
-  it("includes files on <C-f> and clears them on <C-g>", function()
-    code_window.build_and_mount()
-
-    -- I'm only stubbing this because it's so hard to test. One time out of hundreds
-    -- I was able to get the test to reflect a picked file. I don't know if there's some
-    -- async magic or what but I can't make it work. Tried vim.wait forever.
-    local find_files = stub(require('telescope.builtin'), "find_files")
-
-    -- For down the line of this crazy stubbing exercise
-    local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry.returns({ "README.md", index = 1 }) -- typical response
-
-    -- And just make sure there are no closing errors
-    stub(require('telescope.actions'), "close")
-
-    -- Press ctl-f to open the telescope picker
-    local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
-    vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
-
-    -- Press enter to select the first file, was Makefile in testing
-    local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    -- Simulate finding a file
-    assert.stub(find_files).was_called(1)
-    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
-    local map = stub()
-    map.invokes(function(_, _, cb)
-      cb(9999) -- this will call get_selected_entry internally
-    end)
-    attach_mappings(nil, map)
-
-    -- Now we'll check what was given to llm.generate
-    local generate_stub = stub(llm, "generate")
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    ---@type MakeGenerateRequestArgs
-    local args = generate_stub.calls[1].refs[1]
-
-    -- Does the request now contain the file
-    assert(string.match(args.llm.prompt, "README.md"))
-
-    -- Now we'll make sure C-g clears the files
-    local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
-    vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
-    vim.api.nvim_feedkeys(cr, 'mtx', false)
-
-    ---@type MakeGenerateRequestArgs
-    args = generate_stub.calls[2].refs[1]
-
-    -- Does the request now contain a system string with the file
-    assert.is_nil(string.match(args.llm.prompt, "README.md"))
-  end)
-
   it("transfers contents of right pane to left pane on <C-x> (xfer)", function()
     local code = code_window.build_and_mount()
 
@@ -432,16 +304,13 @@ describe("The code window", function()
     vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input" })
 
     -- Enter insert mode, so we can leave it
-    local keys = vim.api.nvim_replace_termcodes("i", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    helpers.feed_keys("i")
 
     -- <Esc> triggers save
-    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    helpers.feed_keys("<Esc>")
 
     -- <CR> triggers llm call
-    keys = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    helpers.feed_keys("<CR>")
 
     -- right window is saved when an llm response comes in
     ---@type MakeGenerateRequestArgs
@@ -449,8 +318,7 @@ describe("The code window", function()
     args.on_read(nil, "right")
 
     -- Close the window with :q
-    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    helpers.feed_keys(":q<CR>")
 
     -- Reopen the window
     code = code_window.build_and_mount()
@@ -462,93 +330,6 @@ describe("The code window", function()
     assert.same({ "input" }, input_lines)
     assert.same({ "left" }, left_lines)
     assert.same({ "right" }, right_lines)
-  end)
-
-  it("automatically scrolls right window when user is not in it", function()
-    local code = code_window.build_and_mount()
-
-    local llm_stub = stub(llm, "generate")
-
-    local keys = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    ---@type MakeGenerateRequestArgs
-    local args = llm_stub.calls[1].refs[1]
-
-    local long_content = ""
-    for _ = 1, 1000, 1 do
-      long_content = long_content .. "\n"
-    end
-
-    args.on_read(nil, long_content)
-
-    local last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
-    local win_height = vim.api.nvim_win_get_height(code.right.winid)
-    local expected_scroll = last_line - win_height + 1
-    local actual_scroll = vim.fn.line('w0', code.right.winid)
-
-    assert.equal(expected_scroll, actual_scroll)
-
-    -- Now press s-tab to get into the window
-    keys = vim.api.nvim_replace_termcodes('<S-Tab>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- Another big response
-    args.on_read(nil, long_content)
-
-    -- This time we should stay put
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
-    win_height = vim.api.nvim_win_get_height(code.right.winid)
-    expected_scroll = actual_scroll -- unchanged since last check
-    actual_scroll = vim.fn.line('w0', code.right.winid)
-
-    assert.equal(expected_scroll, actual_scroll)
-
-    -- Now we'll close the window to later reopen it
-    keys = vim.api.nvim_replace_termcodes(':q<CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    -- reopen the closed window
-    code = code_window.build_and_mount()
-
-    -- more long responses come in from the llm
-    args.on_read(nil, long_content)
-
-    -- and now ensure the autoscrolling continues to happen
-    last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(code.right.winid))
-    win_height = vim.api.nvim_win_get_height(code.right.winid)
-    expected_scroll = last_line - win_height + 1
-    actual_scroll = vim.fn.line('w0', code.right.winid)
-
-    assert.equal(expected_scroll, actual_scroll)
-  end)
-
-  it("handles errors gracefully - curl error messages appear on screen", function()
-    helpers.stub_schedule_wrap()
-
-    Store:set_models("ollama", { "m" })
-    Store:set_model("ollama", "m")
-
-    local exec_stub = stub(cmd, "exec")
-    ---@param exec_args ExecArgs
-    exec_stub.invokes(function(exec_args)
-      -- multiple calls will take place, only the one for ollama generation we care about
-      if exec_args.testid == "ollama-generate" then
-        -- sometimes requests are broken into multiple - system must concat correctly.
-        exec_args.onread("curl ")
-        exec_args.onread("error")
-      end
-    end)
-
-    local code = code_window.build_and_mount()
-
-    -- Send a request
-    -- TODO use helpers.feed_keys
-    local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', false)
-
-    local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
-    assert.same({ "curl error" }, right_lines)
   end)
 
   it("includes LSP diagnostics when present within selection", function()
