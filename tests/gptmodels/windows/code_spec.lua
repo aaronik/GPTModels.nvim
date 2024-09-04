@@ -15,44 +15,7 @@ local com         = require('gptmodels.windows.common')
 local openai      = require('gptmodels.providers.openai')
 
 describe("The code window", function()
-  local snapshot
-
-  before_each(function()
-    -- Set current window dims, otherwise it defaults to 0 and nui.layout complains about not having a pos integer height
-    vim.api.nvim_win_set_height(0, 100)
-    vim.api.nvim_win_set_width(0, 100)
-
-    stub(cmd, "exec")
-
-    Store:clear()
-    snapshot = assert:snapshot()
-  end)
-
-  after_each(function()
-    snapshot:revert()
-  end)
-
-  it("returns buffer numbers, winids", function()
-    local code = code_window.build_and_mount()
-    assert.is_not.equal(code.input.bufnr, nil)
-    assert.is_not.equal(code.right.bufnr, nil)
-    assert.is_not.equal(code.left.bufnr, nil)
-    assert.is_not.equal(code.input.winid, nil)
-    assert.is_not.equal(code.right.winid, nil)
-    assert.is_not.equal(code.left.winid, nil)
-  end)
-
-  it("sets wrap on all bufs, because these are small windows and that works better", function()
-    -- First disable it globally, so the popups don't inherit this wrap
-    -- vim.api.nvim_win_set_option(0, 'wrap', false)
-    vim.wo[0].wrap = false
-
-    local code = code_window.build_and_mount()
-
-    assert.equal(vim.wo[code.left.winid].wrap, true)
-    assert.equal(vim.wo[code.right.winid].wrap, true)
-    assert.equal(vim.wo[code.input.winid].wrap, true)
-  end)
+  helpers.reset_state()
 
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
@@ -376,42 +339,6 @@ describe("The code window", function()
     assert.is_true(die_called)
   end)
 
-  it("cycles through available models with <C-j>", function()
-    Store:set_models("ollama", { "m1", "m2", "m3" })
-    Store:set_model("ollama", "m1")
-
-    code_window.build_and_mount()
-
-    assert.equal("m1", Store:get_model().model)
-    helpers.feed_keys("<C-j>")
-    assert.equal("m2", Store:get_model().model)
-    helpers.feed_keys("<C-j>")
-    assert.equal("m3", Store:get_model().model)
-
-    -- When initially set to a model that isn't present
-    Store:set_model("ollama", "absent-model")
-    helpers.feed_keys("<C-j>")
-    assert.equal("m1", Store:get_model().model)
-  end)
-
-  it("cycles through available models with <C-k>", function()
-    Store:set_models("ollama", { "m1", "m2", "m3" })
-    Store:set_model("ollama", "m1")
-
-    code_window.build_and_mount()
-
-    assert.equal("m1", Store:get_model().model)
-    helpers.feed_keys("<C-k>")
-    assert.equal("m3", Store:get_model().model)
-    helpers.feed_keys("<C-k>")
-    assert.equal("m2", Store:get_model().model)
-
-    -- When initially set to a model that isn't present
-    Store:set_model("ollama", "absent-model")
-    helpers.feed_keys("<C-k>")
-    assert.equal("m3", Store:get_model().model)
-  end)
-
   it("includes files on <C-f> and clears them on <C-g>", function()
     code_window.build_and_mount()
 
@@ -466,43 +393,6 @@ describe("The code window", function()
     assert.is_nil(string.match(args.llm.prompt, "README.md"))
   end)
 
-  it("opens a model picker on <C-p>", function()
-    -- For down the line of this crazy stubbing exercise
-    local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
-    get_selected_entry_stub.returns({ "abc.123.pie", index = 1 }) -- typical response
-
-    -- And just make sure there are no closing errors
-    stub(require('telescope.actions'), "close")
-
-    local set_model_stub = stub(Store, "set_model")
-
-    local new_picker_stub = stub(require('telescope.pickers'), "new")
-    new_picker_stub.returns({ find = function() end })
-
-    code_window.build_and_mount()
-
-    -- Open model picker
-    local c_m = vim.api.nvim_replace_termcodes("<C-p>", true, true, true)
-    vim.api.nvim_feedkeys(c_m, 'mtx', true)
-
-    assert.stub(new_picker_stub).was_called(1)
-
-    -- Type whatever nonsense and press enter
-    local search = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
-    vim.api.nvim_feedkeys(search, 'mtx', true)
-
-    local attach_mappings = new_picker_stub.calls[1].refs[1].attach_mappings
-    local map = stub()
-    map.invokes(function(_, _, cb)
-      cb(9999) -- this will call get_selected_entry internally
-    end)
-    attach_mappings(nil, map)
-
-    assert.stub(set_model_stub).was_called(1)
-    assert.equal('abc', set_model_stub.calls[1].refs[2])
-    assert.equal('123.pie', set_model_stub.calls[1].refs[3])
-  end)
-
   it("transfers contents of right pane to left pane on <C-x> (xfer)", function()
     local code = code_window.build_and_mount()
 
@@ -530,42 +420,6 @@ describe("The code window", function()
 
     -- And not in the right pane
     assert.same({ "" }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
-  end)
-
-  it("closes the window on q", function()
-    local code = code_window.build_and_mount()
-
-    -- Send a request
-    local q_key = vim.api.nvim_replace_termcodes("q", true, true, true)
-    vim.api.nvim_feedkeys(q_key, 'mtx', true)
-
-    -- assert window was closed, which apparently this means in nui
-    assert.is_nil(code.input.bufnr)
-    assert.is_nil(code.input.winid)
-  end)
-
-  it("saves input text on InsertLeave and prepopulates on reopen", function()
-    local initial_input = "some initial input"
-    local code = code_window.build_and_mount()
-
-    -- Enter insert mode
-    local keys = vim.api.nvim_replace_termcodes("i" .. initial_input, true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- <Esc> to trigger save
-    keys = vim.api.nvim_replace_termcodes("<Esc>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- Close the window with :q
-    keys = vim.api.nvim_replace_termcodes(":q<CR>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
-
-    -- Reopen the window
-    code = code_window.build_and_mount()
-
-    local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
-
-    assert.same({ initial_input }, input_lines)
   end)
 
   it("saves state of all three windows and prepopulates them on reopen", function()
@@ -669,79 +523,6 @@ describe("The code window", function()
     assert.equal(expected_scroll, actual_scroll)
   end)
 
-  it("fetches ollama models when started (etl)", function()
-    Store:set_models("openai", { "ma1", "ma2" })
-    Store:set_models("ollama", { "m1", "m2" })
-    Store:set_model("ollama", "m1")
-
-    local fetch_ollama_models_stub = stub(ollama, "fetch_models")
-    fetch_ollama_models_stub.invokes(function(on_complete)
-      on_complete(nil, { "ollama1", "ollama2" })
-    end)
-
-    local fetch_openai_models_stub = stub(openai, "fetch_models")
-    fetch_openai_models_stub.invokes(function(on_complete)
-      on_complete(nil, { "openai1", "openai2" })
-    end)
-
-    code_window.build_and_mount()
-
-    assert.stub(fetch_ollama_models_stub).was_called(1)
-    assert.stub(fetch_openai_models_stub).was_called(1)
-    assert.same({ "ollama1", "ollama2" }, Store:get_models("ollama"))
-    assert.same({ "openai1", "openai2" }, Store:get_models("openai"))
-
-    code_window.build_and_mount()
-
-    assert.stub(fetch_ollama_models_stub).was_called(2)
-    assert.stub(fetch_openai_models_stub).was_called(2)
-    assert.same({ "ollama1", "ollama2" }, Store:get_models("ollama"))
-    assert.same({ "openai1", "openai2" }, Store:get_models("openai"))
-  end)
-
-  it("alerts the user when required dependencies are not installed", function()
-    local notify_stub = stub(vim, 'notify_once')
-
-    local exec_stub = stub(cmd, "exec")
-    ---@param exec_args ExecArgs
-    exec_stub.invokes(function(exec_args)
-      if exec_args.testid == "check-deps-errors" or exec_args.testid == "check-deps-warnings" then
-        -- simulate a miss from `which`
-        exec_args.onexit(1, 15)
-      end
-    end)
-
-    local has_env_var_stub = stub(util, "has_env_var")
-    has_env_var_stub.returns(false)
-
-    code_window.build_and_mount()
-
-    assert.stub(has_env_var_stub).was_called(1)
-    assert.stub(notify_stub).was_called(2)
-
-    -----Leaving here for the full type hint
-    -----@type [string, integer|nil, table|nil]
-    --local notify_args = notify_stub.calls[1].refs
-
-    -- Ensure that one call contains the missing required dep "curl" and the
-    -- other contains the optional "ollama"
-    -- TODO Move this test and the one in chat_spec to common_spec and just check in both of these
-    -- that check_deps is being called
-    local error_message =
-    "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
-    local info_message =
-    "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
-
-    -- number of notify calls
-    for i = 1, 2 do
-      ---@type string | integer
-      local ref = notify_stub.calls[i].refs[1]
-      if ref ~= error_message and ref ~= info_message then
-        assert(false, "Received unexpected notification: " .. ref)
-      end
-    end
-  end)
-
   it("handles errors gracefully - curl error messages appear on screen", function()
     helpers.stub_schedule_wrap()
 
@@ -806,14 +587,5 @@ describe("The code window", function()
     -- lines should remain in input window
     input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
     assert(util.contains_line(input_lines, "Please fix the following 2 LSP Diagnostic(s) in this code:"))
-  end)
-
-  it("sets input bottom border text on launch", function()
-    local set_text_stub = stub(com, "set_input_bottom_border_text")
-    local code = code_window.build_and_mount()
-    assert.stub(set_text_stub).was_called(1)
-    local args = set_text_stub.calls[1].refs
-    assert.equal(args[1], code.input)
-    assert.same(args[2], { "C-x xfer to deck" })
   end)
 end)

@@ -1,5 +1,3 @@
----@diagnostic disable: undefined-global
-
 local util = require('gptmodels.util')
 local assert = require("luassert")
 local stub = require('luassert.stub')

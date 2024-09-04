@@ -105,7 +105,7 @@ function M.build_and_mount(selection)
   Store.chat.chat.popup = chat
   Store.chat.input.popup = input
 
-  -- Fetch ollama models so user can work with what they have on their system
+  -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
     if chat.bufnr and chat.winid and vim.api.nvim_buf_is_valid(chat.bufnr) and vim.api.nvim_win_is_valid(chat.winid) then
       com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())

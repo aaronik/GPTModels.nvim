@@ -153,8 +153,9 @@ function M.build_and_mount(selection)
   Store.code.left.popup = left
   Store.code.input.popup = input
 
-  -- Fetch ollama models so user can work with what they have on their system
+  -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
+    -- all providers, but especially openai, can have the etl finish after a window has been closed, if it opens then closes real fast
     if right.bufnr and right.winid and vim.api.nvim_buf_is_valid(right.bufnr) and vim.api.nvim_win_is_valid(right.winid) then
       com.set_window_title(right, com.model_display_name())
     end
