@@ -9,6 +9,9 @@
     * with detailed descriptions of commands
     * input bottom border is just q, Enter, and Ctrl-h maybe, or maybe just Ctrl-h
 * :help docs
+* make target for project wide type check pass
+* Switch to actual busted for testing, remove plenary if possible
+    * Might could leverage lazy.nvim's built-in luarocks package management system
 
 #### Big Ideas
 * window for project wide patch actions, similar to aider
