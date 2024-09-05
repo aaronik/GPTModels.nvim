@@ -1,7 +1,7 @@
 <span><img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple"></span>
 <a href="https://neovim.io/"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim"></a>
 
-# GPTModels.nvim - a window based AI plugin that makes it simple to query against both openai and locally hosted ollama models.
+# GPTModels.nvim - a window based AI plugin
 
 <img width="1271" alt="image of :GPTChat window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/3e642a48-ce56-4295-a5fa-368b523bab2e">
 <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
@@ -20,7 +20,8 @@ The plugin code itself is well tested and leverages the lua type system, which m
 ### Features
 
 * **Two popup windows to facilitate AI integration**
-* **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it super simple to switch between different models. I often get "second opinions" on code I'm getting LLM help with.
+* **Works out of the box** - There's no configuration; the plugin is meant to just work. 
+* **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it simple to query different models. I often get "second opinions" on code I'm getting LLMs help with.
 * **LSP Diagnostic inclusion** - LSP diagnostics in selected code are transferred to the code window for easy diagnostic fixing.
 * **File inclusion** - Include files with your request by hitting <C-f> and picking from the telescope picker.
 * **Background processing** - Close the window while the AI responds, open the window and the response will continue streaming in the background.
