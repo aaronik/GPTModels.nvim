@@ -62,7 +62,7 @@ a selection, include files, cancel requests, etc.
 
 #### Keymaps
 
-The keymaps work from within the popup windows.
+The keymaps work in normal mode within the popup windows.
 
 The keymaps strive to be labaled and easily visible from within the plugin so you don't need to reference
 them here. But here they are anyways:
@@ -79,8 +79,6 @@ them here. But here they are anyways:
 | `C-j/k`    | cycle models     | cycle through which LLM model to use for further requests |
 | `C-p`      | pick model       | open a popup window to pick a model. Useful when you have many models |
 | `C-n`      | clear all        | clear the whole state, all the windows and files |
-
-All keybindings work from normal mode.
 
 ---
 
