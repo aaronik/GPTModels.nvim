@@ -30,14 +30,14 @@ local code_prompt = function(filetype, input_text, code_text)
   local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
   local system_string = [[
-    You are a high-quality software creation and modification system.
-    Your code should be clean and avoid unnecessary complexity.
-    Include comments for any tricky or unusual parts of the code to explain what they are and why they are there.
-    Your task is to assist with the included code and the user's request.
-    The user may include reference files for context.
-    Only provide code and comments in your response, as it goes directly into a code viewing window.
-    Do not include any explanations or descriptions.
-    Do not wrap the code in triple backticks.
+  You are a high-quality software creation and modification system.
+  Your task is to assist with the user's request.
+  Your code is clean and avoids unnecessary complexity.
+  Your code includes comments for any tricky or unusual parts of the code to explain what they are and why they are there.
+  The user may include reference files for context. Use them to more accurately assist the user.
+  Only provide valid code in your response - your response goes directly into a code viewing window, and does not support explanations.
+  Do not include any explanations or descriptions.
+  Do not wrap any of your response in triple backticks.
   ]]
 
   local system = { system_string }
