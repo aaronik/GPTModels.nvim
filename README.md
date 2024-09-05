@@ -62,6 +62,8 @@ a selection, include files, cancel requests, etc.
 
 #### Keymaps
 
+The keymaps work from within the popup windows.
+
 The keymaps strive to be labaled and easily visible from within the plugin so you don't need to reference
 them here. But here they are anyways:
 
