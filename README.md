@@ -1,18 +1,19 @@
 <span><img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple"></span>
-<a href="https://www.vim.org/"><img src="https://img.shields.io/badge/VIM-%2311AB00.svg?style=for-the-badge&amp;logo=vim&amp;logoColor=white" alt="Vim"></a>
 <a href="https://neovim.io/"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim"></a>
 
-# GPTModels.nvim - an LLM AI plugin for neovim
+# GPTModels.nvim - a window based AI plugin that makes it simple to query against both openai and locally hosted ollama models.
 
 <img width="1271" alt="image of :GPTChat window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/3e642a48-ce56-4295-a5fa-368b523bab2e">
 <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
+
+---
 
 This is an iteration on the window features of [jackMort/ChatGPT.nvim](https://github.com/jackMort/ChatGPT.nvim).
 It's an AI plugin designed to tighten your neovim workflow with AI LLMs.
 It offers two windows: one for chat, and one for code editing.
 
 The plugin is developed with a focus on **stability** and **user experience**.
-The plugin code is **well tested**, and leverages the **EmmyLua** type system for robustness.
+The plugin code itself is well tested and leverages the lua type system, which makes it more robust.
 
 ---
 
