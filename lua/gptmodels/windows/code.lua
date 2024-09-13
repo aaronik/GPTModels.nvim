@@ -223,7 +223,7 @@ function M.build_and_mount(selection)
         Layout.Box(left, { size = "50%" }),
         Layout.Box(right, { size = "50%" }),
       }, { dir = "row", size = "80%" }),
-      Layout.Box(input, { size = "20%" }),
+      Layout.Box(input, { size = "22%" }),
     }, { dir = "col" })
   )
 
