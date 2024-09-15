@@ -1,19 +1,19 @@
-local util        = require('gptmodels.util')
-local com         = require('gptmodels.windows.common')
-local Layout      = require("nui.layout")
-local Popup       = require("nui.popup")
-local llm         = require('gptmodels.llm')
-local Store       = require('gptmodels.store')
+local util           = require('gptmodels.util')
+local com            = require('gptmodels.windows.common')
+local Layout         = require("nui.layout")
+local Popup          = require("nui.popup")
+local llm            = require('gptmodels.llm')
+local Store          = require('gptmodels.store')
 
-local M           = {}
+local M              = {}
 
 -- The system prompt for the LLM
 ---@param filetype string
 ---@param input_text string
 ---@param code_text string
 ---@return string, string[]
-local code_prompt = function(filetype, input_text, code_text)
-  local prompt_template = [[
+local project_prompt = function(filetype, input_text, code_text)
+  local prompt_string = [[
     \[USER INPUT\]:
     %s
     \n\n
@@ -27,33 +27,32 @@ local code_prompt = function(filetype, input_text, code_text)
     \n\n
   ]]
 
-  local formatted_prompt = string.format(prompt_template, input_text, filetype, code_text)
+  local prompt = string.format(prompt_string, input_text, filetype, code_text)
 
-  for _, filename in ipairs(Store.code:get_filenames()) do
+  local system_string = [[
+    You are a high-quality software creation and modification system.
+    Your code should be clean and avoid unnecessary complexity.
+    Include comments for any tricky or unusual parts of the code to explain what they are and why they are there.
+
+    Your task is to assist with the included code and the user's request.
+    The user may include reference files for context.
+    Only provide code and comments in your response, as it goes directly into a code viewing window.
+    Do not include any explanations or descriptions.
+    Do not wrap the code in triple backticks.
+  ]]
+
+  local system = { system_string }
+
+  for _, filename in ipairs(Store.code:get_files()) do
     local file = io.open(filename, "r")
     if not file then break end
     local content = file:read("*all")
     file:close()
 
-    formatted_prompt = formatted_prompt .. "-------------- [BEGIN " .. filename .. "] --------------\n\n"
-    formatted_prompt = formatted_prompt .. content
-    formatted_prompt = formatted_prompt .. "-------------- [END " .. filename .. "] --------------\n\n"
+    prompt = prompt .. filename .. ":\n\n" .. content .. "\n\n---\n\n"
   end
 
-  local system_string = [[
-  You are a high-quality software creation and modification system.
-  Your task is to assist with the user's request.
-  Your code is clean and avoids unnecessary complexity.
-  Your code includes comments for any tricky or unusual parts of the code to explain what they are and why they are there.
-  The user may include reference files for context. Use them to more accurately assist the user.
-  Only provide valid code in your response - your response goes directly into a code viewing window, and does not support explanations.
-  Do not include any explanations or descriptions.
-  Do not wrap any of your response in triple backticks.
-  ]]
-
-  local system = { system_string }
-
-  return formatted_prompt, system
+  return prompt, system
 end
 
 local function safe_render_right_text_from_store()
@@ -82,7 +81,7 @@ local function safe_render_from_store()
   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
   -- Get the files back
-  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_filenames())
+  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
 end
 
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
@@ -93,7 +92,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
 
   local filetype = vim.bo[left_bufnr].filetype
 
-  local prompt, system = code_prompt(filetype, input_text, left_text)
+  local prompt, system = project_prompt(filetype, input_text, left_text)
 
   -- Clear the right window so the next response doesn't append to the previous one
   Store.code.right:clear()
@@ -138,99 +137,131 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
   Store:register_job(job)
 end
 
----@param selection Selection | nil
----@return { input: NuiPopup, right: NuiPopup, left: NuiPopup }
+-- ---@param selection Selection | nil
+-- ---@return { input: NuiPopup, top: NuiPopup }
 function M.build_and_mount(selection)
   ---@type NuiPopup
-  local left = Popup(com.build_common_popup_opts("On Deck"))
+  local top = Popup(com.build_common_popup_opts(com.model_display_name()))
   ---@type NuiPopup
-  local right = Popup(com.build_common_popup_opts(com.model_display_name()))
-  ---@type NuiPopup
-  local input = Popup(com.build_common_popup_opts("Prompt"))
-
-  com.set_input_bottom_border_text(input, { "C-x xfer to deck" })
-
-  -- Register popups with store
-  Store.code.right.popup = right
-  Store.code.left.popup = left
-  Store.code.input.popup = input
+  local input = Popup(com.build_common_popup_opts("Project"))
 
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
     -- all providers, but especially openai, can have the etl finish after a window has been closed, if it opens then closes real fast
-    if right.bufnr and right.winid and vim.api.nvim_buf_is_valid(right.bufnr) and vim.api.nvim_win_is_valid(right.winid) then
-      com.set_window_title(right, com.model_display_name())
+    if top.bufnr and top.winid and vim.api.nvim_buf_is_valid(top.bufnr) and vim.api.nvim_win_is_valid(top.winid) then
+      com.set_window_title(top, com.model_display_name())
     end
   end)
 
-  -- Turn off syntax highlighting for input buffer.
-  vim.bo[input.bufnr].filetype = "txt"
-  vim.bo[input.bufnr].syntax = ""
+  -- -- Turn off syntax highlighting for input buffer.
+  -- vim.bo[input.bufnr].filetype = "txt"
+  -- vim.bo[input.bufnr].syntax = ""
 
-  -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.bo[input.bufnr].buftype = "nofile"
+  -- -- Make input a 'scratch' buffer, effectively making it a temporary buffer
+  -- vim.bo[input.bufnr].buftype = "nofile"
 
-  -- Set buffers to same filetype as current file, for highlighting
-  vim.bo[left.bufnr].filetype = vim.bo.filetype
-  vim.bo[right.bufnr].filetype = vim.bo.filetype
+  -- -- Set buffers to same filetype as current file, for highlighting
+  -- vim.bo[left.bufnr].filetype = vim.bo.filetype
+  -- vim.bo[right.bufnr].filetype = vim.bo.filetype
 
-  -- When the user opened this from visual mode with text
-  if selection then
-    -- start by clearing all existing state
-    Store.code.input:clear()
-    Store.code.left:clear()
-    Store.code.right:clear()
-    Store.code:clear_files()
+  -- -- When the user opened this from visual mode with text
+  -- if selection then
+  --   -- start by clearing all existing state
+  --   Store.code.input:clear()
+  --   Store.code.left:clear()
+  --   Store.code.right:clear()
+  --   Store.code:clear_files()
 
-    -- Put diagnostics fix string into the input window
-    local diagnostics = vim.diagnostic.get(0)
-    local relevant_diagnostics, relevant_diagnostic_count = util.get_relevant_diagnostics(diagnostics, selection)
+  --   -- Put diagnostics fix string into the input window
+  --   local diagnostics = vim.diagnostic.get(0)
+  --   local relevant_diagnostics, relevant_diagnostic_count = util.get_relevant_diagnostics(diagnostics, selection)
 
-    if relevant_diagnostic_count > 0 then
-      vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, relevant_diagnostics)
-      for _, line in ipairs(relevant_diagnostics) do
-        Store.code.input:append(line .. '\n')
+  --   if relevant_diagnostic_count > 0 then
+  --     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, relevant_diagnostics)
+  --     for _, line in ipairs(relevant_diagnostics) do
+  --       Store.code.input:append(line .. '\n')
+  --     end
+  --   end
+
+  --   -- Put selection in left pane
+  --   vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.lines)
+
+  --   -- And into the store, so the next window open can have it
+  --   Store.code.left:append(table.concat(selection.lines, "\n"))
+
+  --   -- If selected lines are given, it's like a new session, so we'll nuke all else
+  --   local extent_job = Store:get_job()
+  --   if extent_job then
+  --     extent_job.die()
+  --     vim.wait(100, function() return extent_job.done() end)
+  --   end
+  -- else
+  --   -- When the store already has some data
+  --   -- If a selection is passed in, though, then it gets a new session
+  --   safe_render_from_store()
+  -- end
+
+  ---@param num_boxes integer
+  ---@return NuiLayout.Box
+  local function make_layout_boxes(num_boxes)
+    local height = string.format("%.2f%%", 100 / (num_boxes > 5 and 5 or num_boxes))
+
+    local inner_boxes = {}
+    for i = 1, num_boxes do
+      local pup = Popup(com.build_common_popup_opts("Project"))
+      table.insert(inner_boxes, Layout.Box(pup, { size = { width = "100%", height = height } }))
+    end
+
+    local column_size = num_boxes > 5 and { width = "50%" } or { width = "100%" }
+    local box_layout = {}
+
+    for i = 1, math.ceil(num_boxes / 5) do
+      local start_index = (i - 1) * 5 + 1
+      local end_index = math.min(i * 5, num_boxes)
+      local column_boxes = {}
+
+      for j = start_index, end_index do
+        table.insert(column_boxes, inner_boxes[j])
       end
+
+      table.insert(box_layout, Layout.Box(column_boxes, { dir = "col", size = column_size }))
     end
 
-    -- Put selection in left pane
-    vim.api.nvim_buf_set_lines(left.bufnr, 0, -1, true, selection.lines)
-
-    -- And into the store, so the next window open can have it
-    Store.code.left:append(table.concat(selection.lines, "\n"))
-
-    -- If selected lines are given, it's like a new session, so we'll nuke all else
-    local extent_job = Store:get_job()
-    if extent_job then
-      extent_job.die()
-      vim.wait(100, function() return extent_job.done() end)
-    end
-  else
-    -- When the store already has some data
-    -- If a selection is passed in, though, then it gets a new session
-    safe_render_from_store()
-  end
-
-  local layout = Layout(
-    {
-      position = "50%",
-      relative = "editor",
-      size = {
-        width = "90%",
-        height = "90%",
-      },
-    },
-    Layout.Box({
-      Layout.Box({
-        Layout.Box(left, { size = "50%" }),
-        Layout.Box(right, { size = "50%" }),
-      }, { dir = "row", size = "80%" }),
+    return Layout.Box({
+      Layout.Box(box_layout, { dir = "row", size = "80%" }),
       Layout.Box(input, { size = "22%" }),
     }, { dir = "col" })
-  )
+  end
 
-  -- Once this mounts, our popups now have a winid for as long as the layout is mounted
+  local layout_config = {
+    position = "50%",
+    relative = "editor",
+    size = {
+      width = "90%",
+      height = "90%",
+    },
+  }
+
+  local layout = Layout(layout_config, make_layout_boxes(13))
+
   layout:mount()
+
+  vim.api.nvim_set_current_win(input.winid)
+
+  -- for i = 2, 20 do
+  --   vim.wait(500)
+  --   layout:update(layout_config, make_layout_boxes(i))
+  --   vim.api.nvim_set_current_win(input.winid)
+  -- end
+
+  vim.api.nvim_buf_set_lines(top.bufnr, 0, -1, true, { "fun", "lines", "wooo" })
+  local ns_id = vim.api.nvim_create_namespace("")
+  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffAdd", 0, 0, 999)
+  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffDelete", 1, 0, 999)
+  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffChange", 2, 0, 999)
+
+  -- vim.wait(500)
+  -- vim.api.nvim_buf_clear_namespace(right.bufnr, ns_id, 0, -1)
 
   -- recalculate nui window when vim window resizes
   input:on("VimResized", function()
@@ -252,13 +283,13 @@ function M.build_and_mount(selection)
       noremap = true,
       silent = true,
       callback = function()
-        on_CR(input.bufnr, left.bufnr, right.bufnr)
+        on_CR(input.bufnr, top.bufnr)
       end
     }
   )
 
   -- Further Keymaps
-  local bufs = { left.bufnr, right.bufnr, input.bufnr }
+  local bufs = { top.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -287,7 +318,7 @@ function M.build_and_mount(selection)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        com.set_input_top_border_text(input, Store.code:get_filenames())
+        com.set_input_top_border_text(input, Store.code:get_files())
       end
     })
 
@@ -308,7 +339,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         com.launch_telescope_model_picker(function()
-          com.set_window_title(right, com.model_display_name())
+          com.set_window_title(top, com.model_display_name())
         end)
       end
     })
@@ -319,7 +350,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        com.set_window_title(right, com.model_display_name())
+        com.set_window_title(top, com.model_display_name())
       end
     })
 
@@ -329,7 +360,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        com.set_window_title(right, com.model_display_name())
+        com.set_window_title(top, com.model_display_name())
       end
     })
 
@@ -339,7 +370,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = com.launch_telescope_file_picker(function(filename)
         Store.code:append_file(filename)
-        com.set_input_top_border_text(input, Store.code:get_filenames())
+        com.set_input_top_border_text(input, Store.code:get_files())
       end)
     })
 
@@ -349,7 +380,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store.code:clear_files()
-        com.set_input_top_border_text(input, Store.code:get_filenames())
+        com.set_input_top_border_text(input, Store.code:get_files())
       end
     })
 
@@ -363,8 +394,7 @@ function M.build_and_mount(selection)
         Store.code.left:clear()
         Store.code.left:append(right_text)
         Store.code.right:clear()
-        com.safe_render_buffer_from_text(right.bufnr, Store.code.right:read() or "")
-        com.safe_render_buffer_from_text(left.bufnr, Store.code.left:read() or "")
+        com.safe_render_buffer_from_text(top.bufnr, Store.code.right:read() or "")
       end
     })
 
@@ -378,23 +408,26 @@ function M.build_and_mount(selection)
     })
   end
 
-  -- Wrap lines, because these are small windows and it's nicer
-  vim.wo[left.winid].wrap = true
-  vim.wo[right.winid].wrap = true
-  vim.wo[input.winid].wrap = true
+  -- Once this mounts, our popups now have a winid for as long as the layout is mounted
+  layout:mount()
 
-  -- Notify of any errors / warnings
-  for level, message in pairs(com.check_deps()) do
-    if message then
-      vim.notify_once(message, vim.log.levels[level])
-    end
-  end
+  -- -- Wrap lines, because these are small windows and it's nicer
+  -- vim.wo[left.winid].wrap = true
+  -- vim.wo[right.winid].wrap = true
+  -- vim.wo[input.winid].wrap = true
 
-  return {
-    input = input,
-    right = right,
-    left = left
-  }
+  -- -- Notify of any errors / warnings
+  -- for level, message in pairs(com.check_deps()) do
+  --   if message then
+  --     vim.notify_once(message, vim.log.levels[level])
+  --   end
+  -- end
+
+  -- return {
+  --   input = input,
+  --   right = right,
+  --   left = left
+  -- }
 end
 
 return M

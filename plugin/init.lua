@@ -10,8 +10,8 @@ function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
   }
 
   -- For development only
-  -- util.R('gptmodels').code(gpt_opts);
-  require('gptmodels').code(gpt_opts)
+  util.R('gptmodels').code(gpt_opts);
+  -- require('gptmodels').code(gpt_opts)
 end
 
 function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
@@ -20,8 +20,18 @@ function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
   }
 
   -- For development only
-  -- util.R('gptmodels').chat(gpt_opts);
-  require('gptmodels').chat(gpt_opts)
+  util.R('gptmodels').chat(gpt_opts);
+  -- require('gptmodels').chat(gpt_opts)
+end
+
+function InvokeGptModelsProject(opts, preview_ns, preview_buffer)
+  local gpt_opts = {
+    visual_mode = opts.count ~= -1
+  }
+
+  -- For development only
+  util.R('gptmodels').project(gpt_opts);
+  -- require('gptmodels').project(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(
@@ -33,5 +43,11 @@ vim.api.nvim_create_user_command(
 vim.api.nvim_create_user_command(
   "GPTModelsChat",
   InvokeGptModelsChat,
+  { nargs = "?", range = "%", addr = "lines" }
+)
+
+vim.api.nvim_create_user_command(
+  "GPTModelsProject",
+  InvokeGptModelsProject,
   { nargs = "?", range = "%", addr = "lines" }
 )
