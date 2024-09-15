@@ -206,22 +206,37 @@ function M.build_and_mount(selection)
   local function make_layout_boxes(num_boxes)
     local height = string.format("%.2f%%", 100 / (num_boxes > 5 and 5 or num_boxes))
 
-    local inner_boxes = {}
+    local boxes = {}
     for i = 1, num_boxes do
       local pup = Popup(com.build_common_popup_opts("Project"))
-      table.insert(inner_boxes, Layout.Box(pup, { size = { width = "100%", height = height } }))
+      table.insert(boxes, Layout.Box(pup, { size = { width = "100%", height = height } }))
     end
 
-    local column_size = num_boxes > 5 and { width = "50%" } or { width = "100%" }
-    local box_layout = {}
+    local column_size
+    if num_boxes > 25 then
+      column_size = { width = "17%" }
+    elseif num_boxes > 20 then
+      column_size = { width = "20%" }
+    elseif num_boxes > 15 then
+      column_size = { width = "25%" }
+    elseif num_boxes > 10 then
+      column_size = { width = "33.33%" }
+    elseif num_boxes > 5 then
+      column_size = { width = "50%" }
+    else
+      column_size = { width = "100%" }
+    end
 
-    for i = 1, math.ceil(num_boxes / 5) do
-      local start_index = (i - 1) * 5 + 1
-      local end_index = math.min(i * 5, num_boxes)
+    local box_layout = {}
+    local boxes_per_column = num_boxes > 5 and 5 or num_boxes
+
+    for i = 1, math.ceil(num_boxes / boxes_per_column) do
+      local start_index = (i - 1) * boxes_per_column + 1
+      local end_index = math.min(i * boxes_per_column, num_boxes)
       local column_boxes = {}
 
       for j = start_index, end_index do
-        table.insert(column_boxes, inner_boxes[j])
+        table.insert(column_boxes, boxes[j])
       end
 
       table.insert(box_layout, Layout.Box(column_boxes, { dir = "col", size = column_size }))
@@ -242,17 +257,17 @@ function M.build_and_mount(selection)
     },
   }
 
-  local layout = Layout(layout_config, make_layout_boxes(13))
+  local layout = Layout(layout_config, make_layout_boxes(1))
 
   layout:mount()
 
   vim.api.nvim_set_current_win(input.winid)
 
-  -- for i = 2, 20 do
-  --   vim.wait(500)
-  --   layout:update(layout_config, make_layout_boxes(i))
-  --   vim.api.nvim_set_current_win(input.winid)
-  -- end
+  for i = 2, 30 do
+    vim.wait(200)
+    layout:update(layout_config, make_layout_boxes(i))
+    vim.api.nvim_set_current_win(input.winid)
+  end
 
   vim.api.nvim_buf_set_lines(top.bufnr, 0, -1, true, { "fun", "lines", "wooo" })
   local ns_id = vim.api.nvim_create_namespace("")
