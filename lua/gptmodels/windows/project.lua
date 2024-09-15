@@ -202,13 +202,23 @@ function M.build_and_mount(selection)
   -- end
 
   ---@param num_boxes integer
-  ---@return NuiLayout.Box
-  local function make_layout_boxes(num_boxes)
+  ---@param existing_pups NuiPopup[]
+  ---@return NuiPopup[], NuiLayout.Box
+  local function make_layout_boxes(num_boxes, existing_pups)
     local height = string.format("%.2f%%", 100 / (num_boxes > 5 and 5 or num_boxes))
 
     local boxes = {}
+    local pups = {}
     for i = 1, num_boxes do
-      local pup = Popup(com.build_common_popup_opts("Project"))
+      -- reuse existing popups to avoid memory leak in nui
+      ---@type NuiPopup
+      local pup
+      if i <= #existing_pups then
+        pup = existing_pups[i]
+      else
+        pup = Popup(com.build_common_popup_opts("Project"))
+      end
+      table.insert(pups, pup)
       table.insert(boxes, Layout.Box(pup, { size = { width = "100%", height = height } }))
     end
 
@@ -242,7 +252,7 @@ function M.build_and_mount(selection)
       table.insert(box_layout, Layout.Box(column_boxes, { dir = "col", size = column_size }))
     end
 
-    return Layout.Box({
+    return pups, Layout.Box({
       Layout.Box(box_layout, { dir = "row", size = "80%" }),
       Layout.Box(input, { size = "22%" }),
     }, { dir = "col" })
@@ -257,23 +267,25 @@ function M.build_and_mount(selection)
     },
   }
 
-  local layout = Layout(layout_config, make_layout_boxes(1))
+  local pups, boxes = make_layout_boxes(1, {})
+  local layout = Layout(layout_config, boxes)
 
   layout:mount()
 
   vim.api.nvim_set_current_win(input.winid)
 
   for i = 2, 30 do
-    vim.wait(200)
-    layout:update(layout_config, make_layout_boxes(i))
+    vim.wait(50)
+    pups, boxes = make_layout_boxes(i, pups)
+    layout:update(boxes)
     vim.api.nvim_set_current_win(input.winid)
   end
 
-  vim.api.nvim_buf_set_lines(top.bufnr, 0, -1, true, { "fun", "lines", "wooo" })
+  vim.api.nvim_buf_set_lines(pups[1].bufnr, 0, -1, true, { "fun", "lines", "wooo" })
   local ns_id = vim.api.nvim_create_namespace("")
-  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffAdd", 0, 0, 999)
-  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffDelete", 1, 0, 999)
-  vim.api.nvim_buf_add_highlight(top.bufnr, ns_id, "DiffChange", 2, 0, 999)
+  vim.api.nvim_buf_add_highlight(pups[1].bufnr, ns_id, "DiffAdd", 0, 0, 999)
+  vim.api.nvim_buf_add_highlight(pups[1].bufnr, ns_id, "DiffDelete", 1, 0, 999)
+  vim.api.nvim_buf_add_highlight(pups[1].bufnr, ns_id, "DiffChange", 2, 0, 999)
 
   -- vim.wait(500)
   -- vim.api.nvim_buf_clear_namespace(right.bufnr, ns_id, 0, -1)
@@ -304,7 +316,10 @@ function M.build_and_mount(selection)
   )
 
   -- Further Keymaps
-  local bufs = { top.bufnr, input.bufnr }
+  local bufs = util.merge_tables({ input }, pups)
+  for i, popup in ipairs(bufs) do
+    bufs[i] = popup.bufnr
+  end
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
