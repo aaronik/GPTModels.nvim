@@ -118,12 +118,12 @@ end
 ---@type Store
 local Store = {
   _llm_models = {
-    openai = { "gpt-4-turbo", "gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini" },
-    ollama = { "llama3.1:latest" },
+    openai = {},
+    ollama = {},
   },
 
-  _llm_provider = "ollama",
-  _llm_model = "llama3.1:latest",
+  _llm_provider = "",
+  _llm_model = "",
 
   -- model accessor
   get_model = function(self)
