@@ -1,4 +1,5 @@
 #### Little Things
+* chat window should auto scroll when opened with autosaved session
 * code needs C-y?
 * Focus same buffer on nui exit?
 * Add copilot support
