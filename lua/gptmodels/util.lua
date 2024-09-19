@@ -70,12 +70,12 @@ M.contains_line = function(lines, string)
   return found_line
 end
 
---- Merging multiple tables into one.
---- This function accepts variadic arguments (multiple tables) and
---- logs each table passed to it for debugging purposes.
+--- Merging multiple tables into one. Works on both map like and array like tables.
+--- This function accepts variadic arguments (multiple tables)
 --- It merges keys from the provided tables into a new table.
---- @param ... table - Any number of tables to merge.
---- @return table - A new merged table containing all key-value pairs.
+--- @generic T
+--- @param ... T - Any number of tables to merge.
+--- @return T - A new merged table of the same type as the input tables.
 M.merge_tables = function(...)
   local new_table = {}
 
