@@ -102,7 +102,7 @@ end
 ---@field cycle_model_forward fun(self: Store)
 ---@field cycle_model_backward fun(self: Store)
 ---@field llm_model_strings fun(self: Store): string[]
----@field correct_potentially_removed_current_model fun(self: Store)
+---@field correct_potentially_missing_current_model fun(self: Store)
 
 ---@return StrPane
 local function build_strpane()
@@ -176,7 +176,7 @@ local Store = {
   -- Introspects on the current model and the available models.
   -- Mutates own current model with set_model() to best option from a hardcoded
   -- list of defaults. Used on startup and after model etls.
-  correct_potentially_removed_current_model = function(self)
+  correct_potentially_missing_current_model = function(self)
     local current_model_info = self:get_model()
     local current_model = current_model_info.model
 

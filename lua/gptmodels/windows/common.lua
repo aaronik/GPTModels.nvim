@@ -221,13 +221,13 @@ M.trigger_models_etl = function(on_complete)
     -- provider information
     if err or not models or #models == 0 then
       Store:set_models(provider, {})
-      Store:correct_potentially_removed_current_model()
+      Store:correct_potentially_missing_current_model()
       return on_complete()
     end
 
     Store:set_models(provider, models)
     -- TODO Test that this gets called
-    Store:correct_potentially_removed_current_model()
+    Store:correct_potentially_missing_current_model()
     on_complete()
   end
 

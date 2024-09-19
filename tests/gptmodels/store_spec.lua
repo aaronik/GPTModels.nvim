@@ -196,7 +196,7 @@ describe("Store | llm stuff", function()
       assert.equals("openai", Store:get_model().provider)
 
       -- Call the method to correct the potentially removed current model
-      Store:correct_potentially_removed_current_model()
+      Store:correct_potentially_missing_current_model()
 
       -- Verify that it selects a default model since the current model is not available
       assert.equals("gpt-4o", Store:get_model().model)
@@ -212,7 +212,7 @@ describe("Store | llm stuff", function()
       assert.equals("ollama", Store:get_model().provider)
 
       -- Call the method to correct the potentially removed current model
-      Store:correct_potentially_removed_current_model()
+      Store:correct_potentially_missing_current_model()
 
       -- Verify that it selects a default model since the current model is not available
       assert.equals("gpt-4o-mini", Store:get_model().model)
@@ -227,7 +227,7 @@ describe("Store | llm stuff", function()
       Store:set_model("openai", "not-present")
       assert.equals(Store:get_model().model, "not-present")
 
-      Store:correct_potentially_removed_current_model()
+      Store:correct_potentially_missing_current_model()
 
       assert.equals(Store:get_model().model, "not-in-defaults")
       assert.equals(Store:get_model().provider, "ollama")
