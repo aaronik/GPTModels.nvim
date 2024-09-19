@@ -1,5 +1,10 @@
+---@alias Role
+---| "user"
+---| "assistant"
+---| "system"
+
 ---@class LlmMessage
----@field role string
+---@field role Role
 ---@field content string
 
 ---@class LlmGenerateArgs
@@ -71,4 +76,3 @@
 -- ---@field winid integer | nil
 -- ---@field border NuiBorder
 -- ---@field on fun(self: NuiPopup, vim_event: string, function)
-
