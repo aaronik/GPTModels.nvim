@@ -16,6 +16,7 @@ local openai      = require('gptmodels.providers.openai')
 
 describe("The code window", function()
   helpers.reset_state()
+  helpers.seed_store()
 
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }

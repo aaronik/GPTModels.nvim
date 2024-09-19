@@ -15,6 +15,7 @@ local com = require('gptmodels.windows.common')
 
 describe("The Chat window", function()
   helpers.reset_state()
+  helpers.seed_store()
 
   pending("opens in input mode", function()
     chat_window.build_and_mount()
@@ -222,5 +223,3 @@ describe("The Chat window", function()
     assert.not_equals(og_nui_width, nui_width)
   end)
 end)
-
-

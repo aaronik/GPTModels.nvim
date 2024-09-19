@@ -36,6 +36,7 @@ local they = it
 for _, doe in pairs(doze) do
   describe("[" .. doe.name .. "] Both windows", function()
     helpers.reset_state()
+    helpers.seed_store()
 
     they("set wrap on all bufs, because these are small windows and that works better", function()
       -- First disable it globally, so the popups don't inherit the wrap from this test
@@ -117,6 +118,7 @@ for _, doe in pairs(doze) do
     end)
 
     they("cycle through available models with <C-j>", function()
+      Store:set_models("openai", {})
       Store:set_models("ollama", { "m1", "m2", "m3" })
       Store:set_model("ollama", "m1")
 
@@ -137,6 +139,7 @@ for _, doe in pairs(doze) do
     end)
 
     they("cycle through available models with <C-k>", function()
+      Store:set_models("openai", {})
       Store:set_models("ollama", { "m1", "m2", "m3" })
       Store:set_model("ollama", "m1")
 

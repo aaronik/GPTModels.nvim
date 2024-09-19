@@ -59,4 +59,12 @@ M.reset_state = function()
   end)
 end
 
+M.seed_store = function ()
+  before_each(function()
+    Store:set_models("ollama", { "ollama1", "ollama2" })
+    Store:set_models("openai", { "openai1", "openai2" })
+    Store:correct_potentially_missing_current_model()
+  end)
+end
+
 return M
