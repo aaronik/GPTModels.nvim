@@ -36,6 +36,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
   Store.chat.input:clear()
 
+  -- Put input text into chat window
   Store.chat.chat:append({ role = "user", content = input_text })
 
   safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
@@ -45,15 +46,15 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
   -- Attach included files
   local file_messages = {}
-  for _, filename in ipairs(Store.chat:get_files()) do
-    local file = io.open(filename, "r")
+  for _, file_name in ipairs(Store.chat:get_files()) do
+    local file = io.open(file_name, "r")
     if not file then break end
-    local content = file:read("*all")
+    local file_content = file:read("*all")
     file:close()
 
     table.insert(file_messages, {
-      role = "system",
-      content = filename .. ":\n\n" .. content
+      role = "user",
+      content = "[INCLUDED FILE]\n* file name: " .. file_name .. "\n* file content: \n" .. file_content .. "\n\n------\n\n"
     })
   end
 
