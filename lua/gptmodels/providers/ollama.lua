@@ -16,11 +16,6 @@ local Provider = {
     generate = function(args)
         local url = "http://localhost:11434/api/generate"
 
-        -- default model
-        if not args.llm.model then
-            args.llm.model = "llama3.1"
-        end
-
         -- system prompt
         if args.llm.system then
             ---@diagnostic disable-next-line: assign-type-mismatch -- do some last minute munging to get it happy for ollama
@@ -69,10 +64,6 @@ local Provider = {
 
     chat = function(args)
         local url = "http://localhost:11434/api/chat"
-
-        if not args.llm.model then
-            args.llm.model = "llama3.1"
-        end
 
         local curl_args = {
             url,

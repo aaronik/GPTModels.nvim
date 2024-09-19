@@ -29,7 +29,6 @@ describe("openai.generate", function()
         error("vim.fn.json_decode returned unexpected nil")
       end
 
-      assert.equal("gpt-4-turbo", llm_data.model)
       assert.equal(nil, llm_data.prompt)
       ---@diagnostic disable-next-line: undefined-field
       assert.same({ { role = "user", content = "pr0mpT" }, { role = "system", content = "system" } }, llm_data.messages)
@@ -120,7 +119,6 @@ describe("openai.chat", function()
         error("vim.fn.json_decode returned unexpected nil")
       end
 
-      assert.equal("gpt-4-turbo", llm_data.model)
       assert.same(llm_data.messages, messages)
       assert.equal(true, llm_data.stream)
 

@@ -76,11 +76,7 @@ local Provider = {
     generate = function(args)
         local url = "https://api.openai.com/v1/chat/completions"
 
-        if not args.llm.model then
-            args.llm.model = "gpt-4-turbo"
-        end
-
-        -- openai changes their stuff around a bit, and now there's no prompt, only messages
+        -- openai changed their stuff around a bit, and now there's no prompt, only messages
         ---@type LlmMessage[]
         ---@diagnostic disable-next-line: inject-field
         args.llm.messages = {
@@ -147,11 +143,6 @@ local Provider = {
 
     chat = function(args)
         local url = "https://api.openai.com/v1/chat/completions"
-
-        -- TODO remove this and rely on store's automatic defaults
-        if not args.llm.model then
-            args.llm.model = "gpt-4-turbo"
-        end
 
         local curl_args = {
             url,
