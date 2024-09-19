@@ -55,20 +55,23 @@ end
 ---@class StrPane : Pane
 ---@field append fun(self: StrPane, text: string)
 ---@field read fun(self: StrPane): string | nil
+---@field clear fun(self: StrPane)
 ---@field private _text string
 
 ---@class LinesPane : Pane
 ---@field append fun(self: LinesPane, lines: string[])
 ---@field read fun(self: LinesPane): string[] | nil
+---@field clear fun(self: LinesPane)
 ---@field private _lines string[]
 
 ---@class MessagePane : Pane
 ---@field append fun(self: MessagePane, message: LlmMessage)
 ---@field read fun(self: MessagePane): LlmMessage[]
+---@field clear fun(self: MessagePane)
 ---@field private _messages LlmMessage[]
 
 ---@class Window
----@field clear fun(self: ChatWindow | CodeWindow)
+---@field clear fun(self: ChatWindow | CodeWindow | ProjectWindow)
 ---@field input StrPane
 ---@field append_file fun(self: Window, filename: string)
 ---@field get_filenames fun(self: Window): string[]
@@ -82,6 +85,9 @@ end
 ---@class ChatWindow : Window
 ---@field chat MessagePane
 
+---@class ProjectWindow : Window
+---@field response_popups NuiPopup[]
+
 ---@alias Provider "openai" | "ollama"
 
 ---@class Store
@@ -91,6 +97,7 @@ end
 ---@field private _job Job | nil
 ---@field code CodeWindow
 ---@field chat ChatWindow
+---@field project ProjectWindow
 ---@field clear fun(self: Store)
 ---@field register_job fun(self: Store, job: Job)
 ---@field get_job fun(self: Store): Job | nil
@@ -228,6 +235,7 @@ local Store = {
   clear = function(self)
     self.code:clear()
     self.chat:clear()
+    self.project:clear()
     self:set_models("ollama", {})
     self:set_models("openai", {})
     -- TODO Need to clear default model as well?
@@ -250,6 +258,7 @@ local Store = {
       self:clear_files()
     end
   },
+
   chat = {
     input = build_strpane(),
 
@@ -268,6 +277,27 @@ local Store = {
     clear = function(self)
       self.input:clear()
       self.chat:clear()
+      self:clear_files()
+    end
+  },
+
+  project = {
+    input = build_strpane(),
+    response_popups = {},
+    changes = {
+      _changes = {},
+      clear = function (self)
+        self._changes = {}
+      end
+    },
+
+    _files = {},
+    append_file = function(self, filename) table.insert(self._files, filename) end,
+    get_files = function(self) return self._files end,
+    clear_files = function(self) self._files = {} end,
+
+    clear = function(self)
+      self.input:clear()
       self:clear_files()
     end
   },
