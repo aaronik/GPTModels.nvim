@@ -56,6 +56,8 @@ local code_prompt = function(filetype, input_text, code_text)
   return formatted_prompt, system
 end
 
+-- TODO This was a nice idea for the unidirectional data flow but it ended up being
+-- gross because it implicitly requires certain state be set on the store before it works.
 local function safe_render_right_text_from_store()
   -- if the window is closed and reopened again while a response is streaming in,
   -- right_bufnr will be wrong, and it won't get repopulated.

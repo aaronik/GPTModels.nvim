@@ -49,7 +49,6 @@ local function build_model_options(self)
 end
 
 ---@class Pane
----@field clear fun(self: StrPane | LinesPane | MessagePane)
 ---@field popup NuiPopup
 
 ---@class StrPane : Pane
@@ -85,8 +84,16 @@ end
 ---@class ChatWindow : Window
 ---@field chat MessagePane
 
+---@class ProjectResponse
+---@field append fun(self: ProjectResponse, text: string)
+---@field read fun(self: ProjectResponse): string | nil
+---@field clear fun(self: ProjectResponse)
+---@field private _text string
+
 ---@class ProjectWindow : Window
 ---@field response_popups NuiPopup[]
+---@field response ProjectResponse
+---@field layout NuiLayout | nil
 
 ---@alias Provider "openai" | "ollama"
 
@@ -283,13 +290,14 @@ local Store = {
 
   project = {
     input = build_strpane(),
-    response_popups = {},
-    changes = {
-      _changes = {},
-      clear = function (self)
-        self._changes = {}
-      end
+    response = {
+      _text = "",
+      read = function (self) return self._text end,
+      append = function(self, text) self._text = self._text .. text end,
+      clear = function(self) self._text = "" end
     },
+    response_popups = {},
+    layout = nil,
 
     _files = {},
     append_file = function(self, filename) table.insert(self._files, filename) end,
@@ -298,6 +306,7 @@ local Store = {
 
     clear = function(self)
       self.input:clear()
+      self.response:clear()
       self:clear_files()
     end
   },

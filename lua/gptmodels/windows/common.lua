@@ -114,15 +114,18 @@ function M.check_deps()
   end
 
   if not has_ollama then
-    info_string = info_string .. "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
+    info_string = info_string ..
+        "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
   end
 
   if not has_openai_api_key then
-    info_string = info_string .. "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+    info_string = info_string ..
+        "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
   end
 
   if not has_openai_api_key and not has_ollama then
-    error_string = error_string .. "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
+    error_string = error_string ..
+        "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
   end
 
   return {
@@ -295,6 +298,19 @@ M.launch_telescope_model_picker = function(on_complete)
     },
     sorter = conf.generic_sorter({}),
   }):find()
+end
+
+-- Convenience function to set a keymap on a buffer
+-- ex. set_keymap(0, "<C-k>", function () Store:cycle_model_backward() end)
+---@param buf integer
+---@param key string
+---@param callback fun(): nil
+M.set_keymap = function(buf, key, callback)
+  vim.api.nvim_buf_set_keymap(buf, "", key, "", {
+    noremap = true,
+    silent = true,
+    callback = callback
+  })
 end
 
 return M
