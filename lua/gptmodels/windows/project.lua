@@ -119,40 +119,42 @@ local function build_layout_ui(input, num_boxes, existing_pups)
 end
 
 
-local function safe_render_right_text_from_store()
-  -- if the window is closed and reopened again while a response is streaming in,
-  -- right_bufnr will be wrong, and it won't get repopulated.
-  -- So we're assigning to ..right.bufnr every time the window opens.
-  local right_text = Store.code.right:read()
-  local bufnr = Store.code.right.popup.bufnr
-  if right_text and bufnr then
-    com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
-  end
-end
+-- local function safe_render_right_text_from_store()
+--   -- if the window is closed and reopened again while a response is streaming in,
+--   -- right_bufnr will be wrong, and it won't get repopulated.
+--   -- So we're assigning to ..right.bufnr every time the window opens.
+--   local right_text = Store.code.right:read()
+--   local bufnr = Store.code.right.popup.bufnr
+--   if right_text and bufnr then
+--     com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
+--   end
+-- end
 
 
--- Render the whole code window from the Store, respecting closed windows/buffers
-local function safe_render_from_store()
-  local left_text = Store.code.left:read()
-  local left_buf = Store.code.left.popup.bufnr or -1
-  if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
+-- -- Render the whole code window from the Store, respecting closed windows/buffers
+-- local function safe_render_from_store()
+--   local left_text = Store.code.left:read()
+--   local left_buf = Store.code.left.popup.bufnr or -1
+--   if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
 
-  local right_text = Store.code.right:read()
-  local right_buf = Store.code.right.popup.bufnr or -1
-  if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
+--   local right_text = Store.code.right:read()
+--   local right_buf = Store.code.right.popup.bufnr or -1
+--   if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
 
-  local input_text = Store.code.input:read()
-  local input_buf = Store.code.input.popup.bufnr or -1
-  if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
+--   local input_text = Store.code.input:read()
+--   local input_buf = Store.code.input.popup.bufnr or -1
+--   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
-  -- Get the files back
-  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
-end
+--   -- Get the files back
+--   com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
+-- end
 
 
+---TODO Bring this to everyone
 ---Set all the keymaps that apply to all bufs; input and top bufs
+---@param input NuiPopup
 ---@param bufs integer[]
-local function set_common_keymaps(bufs)
+local function set_common_keymaps(input, bufs)
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -235,7 +237,7 @@ local function set_common_keymaps(bufs)
       silent = true,
       callback = com.launch_telescope_file_picker(function(filename)
         Store.project:append_file(filename)
-        -- com.set_input_top_border_text(input, Store.code:get_files())
+        com.set_input_top_border_text(input, Store.project:get_files())
       end)
     })
 
@@ -268,17 +270,75 @@ local function set_common_settings(all_popups)
     vim.bo[pup.bufnr].filetype = vim.bo.filetype
     vim.wo[pup.winid].wrap = true
   end
-
 end
 
 
----@param input_bufnr integer
----@param top_bufnr integer
-local on_CR = function(input_bufnr, top_bufnr)
-  local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
+-- turns one llm response string to lists of text lines
+---@param text string
+---@return string[][]
+local function llm_text_to_chunk_lines(text)
+  ---@type string[][]
+  local chunk_lines = {}
+
+  local chunks = vim.split(text, "```diff")
+
+  for _, chunk in ipairs(chunks) do
+    local lines = vim.split(chunk, "\n")
+    table.insert(chunk_lines, lines)
+  end
+
+  util.log("chunk_lines:", chunk_lines)
+  return chunk_lines
+end
+
+
+--- Take information (store state), render it, then return a bundle of view data
+---@param input NuiPopup
+---@param layout NuiLayout | nil
+---@param previous_response_popups NuiPopup[]
+---@param llm_text string
+---@return NuiLayout, NuiPopup[]
+local function render_project(input, layout, previous_response_popups, llm_text)
+  local layout_config = {
+    position = "50%",
+    relative = "editor",
+    size = {
+      width = "90%",
+      height = "90%",
+    },
+  }
+
+  local llm_text_chunks = llm_text_to_chunk_lines(llm_text)
+
+  local response_popups, layout_boxes = build_layout_ui(input, #llm_text_chunks, previous_response_popups)
+
+  if not layout then
+    layout = Layout(layout_config, layout_boxes)
+  end
+
+  layout:update(layout_boxes)
+  layout:mount()
+  vim.api.nvim_set_current_win(input.winid)
+
+  -- Put llm response into popups
+  for i, response_popup in ipairs(response_popups) do
+    vim.api.nvim_buf_set_lines(response_popup.bufnr, 0, -1, true, llm_text_chunks[i])
+  end
+
+  return layout, response_popups
+end
+
+
+---@param input NuiPopup
+---@param previous_response_popups NuiPopup[]
+---@param layout NuiLayout
+local on_CR = function(input, previous_response_popups, layout)
+  -- TODO I don't like the assumption that there'll always be one here
+  local top = previous_response_popups[1]
+  local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
 
-  local filetype = vim.bo[top_bufnr].filetype
+  local filetype = vim.bo[top.bufnr].filetype
 
   local prompt, system = project_prompt(filetype, input_text)
 
@@ -286,7 +346,7 @@ local on_CR = function(input_bufnr, top_bufnr)
   -- Store.code.right:clear()
 
   -- Loading indicator
-  com.safe_render_buffer_from_text(top_bufnr, "Loading...")
+  com.safe_render_buffer_from_text(top.bufnr, "Loading...")
 
   -- Nuke existing jobs
   if Store:get_job() then
@@ -313,7 +373,9 @@ local on_CR = function(input_bufnr, top_bufnr)
 
       -- safe_render_right_text_from_store()
 
-      util.log(Store.project.response:read())
+      local layout, response_popups = render_project(input, layout, previous_response_popups, Store.project.response:read() or "")
+      Store.project.layout = layout
+      Store.project.response_popups = response_popups
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
@@ -327,6 +389,7 @@ local on_CR = function(input_bufnr, top_bufnr)
   Store:register_job(job)
 end
 
+---
 ---@param selection Selection | nil
 ---@return { input: NuiPopup, response_popups: NuiPopup[] }
 function M.build_and_mount(selection)
@@ -369,39 +432,19 @@ function M.build_and_mount(selection)
   --     safe_render_from_store()
   --   end
 
-  local layout_config = {
-    position = "50%",
-    relative = "editor",
-    size = {
-      width = "90%",
-      height = "90%",
-    },
-  }
+  -- First time rendering; don't yet have layout
+  local layout, response_popups = render_project(input, nil, {top}, "")
 
-  local response_popups, layout_boxes = build_layout_ui(input, 1, { top })
-  local layout = Layout(layout_config, layout_boxes)
-
-  layout:mount()
-
-  vim.api.nvim_set_current_win(input.winid)
-
-  for i = 2, 7 do
-    vim.wait(70)
-    response_popups, layout_boxes = build_layout_ui(input, i, response_popups)
-    layout:update(layout_boxes)
-    vim.api.nvim_set_current_win(input.winid)
-  end
-
-  Store.project.response_popups = util.merge_tables(Store.project.response_popups, response_popups)
-  Store.project.layout = layout
+  Store.project.response_popups = response_popups
+  Store.project.layout          = layout
 
   local all_popups = util.merge_tables({ input }, response_popups)
 
-  -- vim.api.nvim_buf_set_lines(response_popups[1].bufnr, 0, -1, true, { "fun", "lines", "wooo" })
-  -- local ns_id = vim.api.nvim_create_namespace("")
-  -- vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffAdd", 0, 0, 999)
-  -- vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffDelete", 1, 0, 999)
-  -- vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffChange", 2, 0, 999)
+  vim.api.nvim_buf_set_lines(response_popups[1].bufnr, 0, -1, true, { "fun", "lines", "wooo" })
+  local ns_id = vim.api.nvim_create_namespace("")
+  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffAdd", 0, 0, 999)
+  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffDelete", 1, 0, 999)
+  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffChange", 2, 0, 999)
   -- vim.api.nvim_buf_clear_namespace(right.bufnr, ns_id, 0, -1)
 
   -- Turn off syntax highlighting for input buffer.
@@ -431,7 +474,7 @@ function M.build_and_mount(selection)
       noremap = true,
       silent = true,
       callback = function()
-        on_CR(input.bufnr, top.bufnr)
+        on_CR(input, response_popups, layout)
       end
     }
   )
@@ -439,7 +482,7 @@ function M.build_and_mount(selection)
   -- Further Keymaps
   ---@type integer[]
   local bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
-  set_common_keymaps(bufs)
+  set_common_keymaps(input, bufs)
   set_common_settings(all_popups)
 
   -- Notify of any errors / warnings

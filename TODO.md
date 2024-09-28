@@ -2,6 +2,7 @@
 * chat window's prompt needs to be adjusted so the user request counts as much as the included files,
   currently it's dominated by the files and many llms end up just explaining what's in the files
 * Get live reloading of C-p telescope model picker when openai results come in
+* Need to ensure no util.logs are used before each deploy
 * chat window should auto scroll when opened with autosaved session
 * code needs C-y?
 * Focus same buffer on nui exit?
