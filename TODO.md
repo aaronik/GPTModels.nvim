@@ -1,4 +1,5 @@
 #### Little Things
+* Need to ensure no util.logs are used before each deploy
 * chat window should auto scroll when opened with autosaved session
 * code needs C-y?
 * Focus same buffer on nui exit?
