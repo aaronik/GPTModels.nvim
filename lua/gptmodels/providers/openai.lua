@@ -210,7 +210,6 @@ local Provider = {
             ---@param err string | nil
             ---@param json_response string | nil
             onread = vim.schedule_wrap(function(err, json_response)
-                util.log(json_response)
                 if err then return cb(err) end
                 if not json_response then return end
 
