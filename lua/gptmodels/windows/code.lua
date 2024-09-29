@@ -13,7 +13,7 @@ local M           = {}
 ---@param code_text string
 ---@return string, string[]
 local code_prompt = function(filetype, input_text, code_text)
-  local prompt_string = [[
+  local prompt_template = [[
     \[USER INPUT\]:
     %s
     \n\n
@@ -27,7 +27,18 @@ local code_prompt = function(filetype, input_text, code_text)
     \n\n
   ]]
 
-  local prompt = string.format(prompt_string, input_text, filetype, code_text)
+  local formatted_prompt = string.format(prompt_template, input_text, filetype, code_text)
+
+  for _, filename in ipairs(Store.code:get_files()) do
+    local file = io.open(filename, "r")
+    if not file then break end
+    local content = file:read("*all")
+    file:close()
+
+    formatted_prompt = formatted_prompt .. "-------------- [BEGIN " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. content
+    formatted_prompt = formatted_prompt .. "-------------- [END " .. filename .. "] --------------\n\n"
+  end
 
   local system_string = [[
   You are a high-quality software creation and modification system.
@@ -42,16 +53,7 @@ local code_prompt = function(filetype, input_text, code_text)
 
   local system = { system_string }
 
-  for _, filename in ipairs(Store.code:get_files()) do
-    local file = io.open(filename, "r")
-    if not file then break end
-    local content = file:read("*all")
-    file:close()
-
-    prompt = prompt .. filename .. ":\n\n" .. content .. "\n\n---\n\n"
-  end
-
-  return prompt, system
+  return formatted_prompt, system
 end
 
 local function safe_render_right_text_from_store()

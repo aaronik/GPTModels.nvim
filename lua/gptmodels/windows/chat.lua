@@ -54,7 +54,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
 
     table.insert(file_messages, {
       role = "user",
-      content = "[INCLUDED FILE]\n* file name: " .. file_name .. "\n* file content: \n" .. file_content .. "\n\n------\n\n"
+      content = "[INCLUDED FILE]\n* file name: " .. file_name .. "\n* file content: \n" .. file_content .. "\n\n----------- [EOF] -----------\n\n"
     })
   end
 
