@@ -1,12 +1,11 @@
-local util   = require('gptmodels.util')
-local com    = require('gptmodels.windows.common')
-local Layout = require("nui.layout")
-local Popup  = require("nui.popup")
-local llm    = require('gptmodels.llm')
-local Store  = require('gptmodels.store')
+local util           = require('gptmodels.util')
+local com            = require('gptmodels.windows.common')
+local Layout         = require("nui.layout")
+local Popup          = require("nui.popup")
+local llm            = require('gptmodels.llm')
+local Store          = require('gptmodels.store')
 
-local M      = {}
-
+local M              = {}
 
 -- The system prompt for the LLM
 ---@param filetype string
@@ -26,7 +25,6 @@ local project_prompt = function(filetype, input_text)
 
   local formatted_prompt = string.format(prompt_template, input_text, filetype)
 
-  util.log("Store.project:get_files() ", Store.project:get_files())
   -- Attach files to prompt
   for _, filename in ipairs(Store.project:get_files()) do
     local file = io.open(filename, "r")
@@ -48,7 +46,10 @@ local project_prompt = function(filetype, input_text)
     The code you produce must be in Unified Diff Format.
     The code may only apply to the files the user has included.
     Each diff should be wrapped in ```dif and ```
-    For each change, provide an explanation of the change, the diff itself, and also include this separator on a new line: ######
+    For each change provide:
+      * this separator (must be on its own line):  ~~~~~~~
+      * an explanation of the change
+      * the diff itself.
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
     Stylistic Notes:
@@ -279,7 +280,8 @@ end
 local function set_common_settings(all_popups)
   -- Set buffers to same filetype as current file, for highlighting
   for _, pup in ipairs(all_popups) do
-    vim.bo[pup.bufnr].filetype = vim.bo.filetype
+    -- vim.bo[pup.bufnr].filetype = vim.bo.filetype
+    vim.bo[pup.bufnr].filetype = "md"
     vim.wo[pup.winid].wrap = true
   end
 end
@@ -292,7 +294,8 @@ local function llm_text_to_chunks_lines(text)
   ---@type string[][]
   local chunk_lines = {}
 
-  local chunks = vim.split(text, "######")
+  local chunks = vim.split(text, "~~~~~~", { trimempty = true })
+
   -- local chunks = {}
   -- for chunk in string.gmatch(text, "(```diff[^\n\r]*```%f[^\n\r]*)") do
   --   table.insert(chunks, chunk)
