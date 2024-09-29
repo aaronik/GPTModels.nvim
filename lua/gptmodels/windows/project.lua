@@ -13,7 +13,7 @@ local M      = {}
 ---@param input_text string
 ---@return string, string[]
 local project_prompt = function(filetype, input_text)
-  local prompt_string = [[
+  local prompt_template = [[
     \[USER REQUEST\]:
     %s
     \n\n
@@ -24,7 +24,22 @@ local project_prompt = function(filetype, input_text)
     \n\n
   ]]
 
-  local prompt = string.format(prompt_string, input_text, filetype)
+  local formatted_prompt = string.format(prompt_template, input_text, filetype)
+
+  util.log("Store.project:get_files() ", Store.project:get_files())
+  -- Attach files to prompt
+  for _, filename in ipairs(Store.project:get_files()) do
+    local file = io.open(filename, "r")
+    if not file then break end
+    local content = file:read("*all")
+    file:close()
+
+    formatted_prompt = formatted_prompt .. "-------------- [BEGIN " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. content
+    formatted_prompt = formatted_prompt .. "-------------- [END " .. filename .. "] --------------\n\n"
+  end
+
+  util.log("## formatted_prompt:", formatted_prompt)
 
   local system_string = [[
     You are a high-quality software creation and modification system.
@@ -32,6 +47,8 @@ local project_prompt = function(filetype, input_text)
     You produce code to accomplish the user's request.
     The code you produce must be in Unified Diff Format.
     The code may only apply to the files the user has included.
+    Each diff should be wrapped in ```dif and ```
+    For each change, provide an explanation of the change, the diff itself, and also include this separator on a new line: ######
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
     Stylistic Notes:
@@ -42,16 +59,7 @@ local project_prompt = function(filetype, input_text)
 
   local system = { system_string }
 
-  for _, filename in ipairs(Store.code:get_files()) do
-    local file = io.open(filename, "r")
-    if not file then break end
-    local content = file:read("*all")
-    file:close()
-
-    prompt = prompt .. filename .. ":\n\n" .. content .. "\n\n---\n\n"
-  end
-
-  return prompt, system
+  return formatted_prompt, system
 end
 
 
@@ -153,8 +161,9 @@ end
 ---TODO Bring this to everyone
 ---Set all the keymaps that apply to all bufs; input and top bufs
 ---@param input NuiPopup
+---@param top NuiPopup
 ---@param bufs integer[]
-local function set_common_keymaps(input, bufs)
+local function set_common_keymaps(input, top, bufs)
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -174,18 +183,18 @@ local function set_common_keymaps(input, bufs)
       end
     })
 
-    -- -- Ctl-n to reset session
-    -- vim.api.nvim_buf_set_keymap(buf, "", "<C-n>", "", {
-    --   noremap = true,
-    --   silent = true,
-    --   callback = function()
-    --     Store.code:clear()
-    --     for _, bu in ipairs(bufs) do
-    --       vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
-    --     end
-    --     com.set_input_top_border_text(input, Store.code:get_files())
-    --   end
-    -- })
+    -- Ctl-n to reset session
+    vim.api.nvim_buf_set_keymap(buf, "", "<C-n>", "", {
+      noremap = true,
+      silent = true,
+      callback = function()
+        Store.code:clear()
+        for _, bu in ipairs(bufs) do
+          vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
+        end
+        com.set_input_top_border_text(input, Store.project:get_files())
+      end
+    })
 
     -- Ctrl-c to kill active job
     vim.api.nvim_buf_set_keymap(buf, "", "<C-c>", "", {
@@ -204,7 +213,7 @@ local function set_common_keymaps(input, bufs)
       silent = true,
       callback = function()
         com.launch_telescope_model_picker(function()
-          -- com.set_window_title(top, com.model_display_name())
+          com.set_window_title(top, com.model_display_name())
         end)
       end
     })
@@ -215,19 +224,22 @@ local function set_common_keymaps(input, bufs)
       silent = true,
       callback = function()
         Store:cycle_model_forward()
-        -- com.set_window_title(top, com.model_display_name())
+        com.set_window_title(top, com.model_display_name())
       end
     })
 
-    -- -- Ctrl-k to cycle forward through llms
-    -- com.set_keymap(buf, "<C-k", function() Store:cycle_model_backward() end) -- TODO here and everywhere
+    -- -- Ctrl-k to cycle backward through llms
+    -- com.set_keymap(buf, "<C-k", function()
+    --   Store:cycle_model_backward()
+    --   com.set_window_title(top, com.model_display_name())
+    -- end) -- TODO here and everywhere
 
     vim.api.nvim_buf_set_keymap(buf, "", "<C-k>", "", {
       noremap = true,
       silent = true,
       callback = function()
         Store:cycle_model_backward()
-        -- com.set_window_title(top, com.model_display_name())
+        com.set_window_title(top, com.model_display_name())
       end
     })
 
@@ -246,8 +258,8 @@ local function set_common_keymaps(input, bufs)
       noremap = true,
       silent = true,
       callback = function()
-        Store.code:clear_files()
-        -- com.set_input_top_border_text(input, Store.code:get_files())
+        Store.project:clear_files()
+        com.set_input_top_border_text(input, Store.project:get_files())
       end
     })
 
@@ -276,19 +288,33 @@ end
 -- turns one llm response string to lists of text lines
 ---@param text string
 ---@return string[][]
-local function llm_text_to_chunk_lines(text)
+local function llm_text_to_chunks_lines(text)
   ---@type string[][]
   local chunk_lines = {}
 
-  local chunks = vim.split(text, "```diff")
+  local chunks = vim.split(text, "######")
+  -- local chunks = {}
+  -- for chunk in string.gmatch(text, "(```diff[^\n\r]*```%f[^\n\r]*)") do
+  --   table.insert(chunks, chunk)
+  -- end
 
   for _, chunk in ipairs(chunks) do
     local lines = vim.split(chunk, "\n")
     table.insert(chunk_lines, lines)
   end
 
-  util.log("chunk_lines:", chunk_lines)
   return chunk_lines
+end
+
+
+---@param input NuiPopup
+---@param response_popups NuiPopup[]
+local function set_keymaps_and_settings(input, response_popups)
+  local all_popups = util.merge_tables({ input }, response_popups)
+  ---@type integer[]
+  local bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
+  set_common_keymaps(input, response_popups[1], bufs)
+  set_common_settings(all_popups)
 end
 
 
@@ -298,32 +324,43 @@ end
 ---@param previous_response_popups NuiPopup[]
 ---@param llm_text string
 ---@return NuiLayout, NuiPopup[]
-local function render_project(input, layout, previous_response_popups, llm_text)
-  local layout_config = {
-    position = "50%",
-    relative = "editor",
-    size = {
-      width = "90%",
-      height = "90%",
-    },
-  }
+local function safe_render_project(input, layout, previous_response_popups, llm_text)
+  util.log("## llm_text:", llm_text)
 
-  local llm_text_chunks = llm_text_to_chunk_lines(llm_text)
+  local llm_text_chunks_lines = llm_text_to_chunks_lines(llm_text)
+  util.log("## llm_text_chunks_lines:", llm_text_chunks_lines)
 
-  local response_popups, layout_boxes = build_layout_ui(input, #llm_text_chunks, previous_response_popups)
+  -- Minimum of one upper box for this layout
+  local num_popups = #llm_text_chunks_lines >= 1 and #llm_text_chunks_lines or 1
 
+  local response_popups, layout_boxes = build_layout_ui(input, num_popups, previous_response_popups)
+
+  -- Instantiate new layout if one wasn't passed in
   if not layout then
+    local layout_config = {
+      position = "50%",
+      relative = "editor",
+      size = {
+        width = "90%",
+        height = "90%",
+      },
+    }
+
     layout = Layout(layout_config, layout_boxes)
   end
 
-  layout:update(layout_boxes)
+  -- TODO I don't think this belongs here
   layout:mount()
+  layout:update(layout_boxes)
+
   vim.api.nvim_set_current_win(input.winid)
 
   -- Put llm response into popups
-  for i, response_popup in ipairs(response_popups) do
-    vim.api.nvim_buf_set_lines(response_popup.bufnr, 0, -1, true, llm_text_chunks[i])
+  for i, llm_text_chunk_lines in ipairs(llm_text_chunks_lines) do
+    vim.api.nvim_buf_set_lines(response_popups[i].bufnr, 0, -1, true, llm_text_chunk_lines)
   end
+
+  set_keymaps_and_settings(input, response_popups)
 
   return layout, response_popups
 end
@@ -333,6 +370,8 @@ end
 ---@param previous_response_popups NuiPopup[]
 ---@param layout NuiLayout
 local on_CR = function(input, previous_response_popups, layout)
+  Store.project.response:clear()
+
   -- TODO I don't like the assumption that there'll always be one here
   local top = previous_response_popups[1]
   local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, false)
@@ -371,9 +410,13 @@ local on_CR = function(input, previous_response_popups, layout)
 
       Store.project.response:append(response)
 
-      -- safe_render_right_text_from_store()
-
-      local layout, response_popups = render_project(input, layout, previous_response_popups, Store.project.response:read() or "")
+      -- Render
+      local layout, response_popups = safe_render_project(
+        input,
+        layout,
+        previous_response_popups,
+        Store.project.response:read() or ""
+      )
       Store.project.layout = layout
       Store.project.response_popups = response_popups
 
@@ -433,12 +476,10 @@ function M.build_and_mount(selection)
   --   end
 
   -- First time rendering; don't yet have layout
-  local layout, response_popups = render_project(input, nil, {top}, "")
+  local layout, response_popups = safe_render_project(input, nil, { top }, Store.project.response:read() or "")
 
   Store.project.response_popups = response_popups
   Store.project.layout          = layout
-
-  local all_popups = util.merge_tables({ input }, response_popups)
 
   vim.api.nvim_buf_set_lines(response_popups[1].bufnr, 0, -1, true, { "fun", "lines", "wooo" })
   local ns_id = vim.api.nvim_create_namespace("")
@@ -463,8 +504,8 @@ function M.build_and_mount(selection)
   input:on("InsertLeave",
     function()
       local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
-      Store.code.input:clear()
-      Store.code.input:append(table.concat(input_lines, "\n"))
+      Store.project.input:clear()
+      Store.project.input:append(table.concat(input_lines, "\n"))
     end
   )
 
@@ -480,10 +521,7 @@ function M.build_and_mount(selection)
   )
 
   -- Further Keymaps
-  ---@type integer[]
-  local bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
-  set_common_keymaps(input, bufs)
-  set_common_settings(all_popups)
+  set_keymaps_and_settings(input, response_popups)
 
   -- Notify of any errors / warnings
   for level, message in pairs(com.check_deps()) do
