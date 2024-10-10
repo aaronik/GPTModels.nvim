@@ -45,11 +45,10 @@ local project_prompt = function(filetype, input_text)
     You produce code to accomplish the user's request.
     The code you produce must be in Unified Diff Format.
     The code may only apply to the files the user has included.
-    Each diff should be wrapped in ```dif and ```
-    For each change provide:
-      * this separator (must be on its own line):  ~~~~~~~
+    For each change, provide:
+      * this separator string (which must be on its own line):  CHANGE_SEPARATOR
       * an explanation of the change
-      * the diff itself.
+      * the diff itself, surrounded by ```diff and ```
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
     Stylistic Notes:
@@ -294,12 +293,7 @@ local function llm_text_to_chunks_lines(text)
   ---@type string[][]
   local chunk_lines = {}
 
-  local chunks = vim.split(text, "~~~~~~", { trimempty = true })
-
-  -- local chunks = {}
-  -- for chunk in string.gmatch(text, "(```diff[^\n\r]*```%f[^\n\r]*)") do
-  --   table.insert(chunks, chunk)
-  -- end
+  local chunks = vim.split(text, "CHANGE_SEPARATOR", { trimempty = true })
 
   for _, chunk in ipairs(chunks) do
     local lines = vim.split(chunk, "\n")
@@ -352,6 +346,12 @@ local function safe_render_project(input, layout, previous_response_popups, llm_
     layout = Layout(layout_config, layout_boxes)
   end
 
+  -- Bail early if window is no longer open
+  if not input.bufnr then return layout, response_popups end     -- can happen when popup has been unmounted
+  local input_buf_loaded = vim.api.nvim_buf_is_loaded(input.bufnr)
+  local input_buf_valid = vim.api.nvim_buf_is_valid(input.bufnr)
+  if not (input_buf_loaded and input_buf_valid) then return layout, response_popups end
+
   -- TODO I don't think this belongs here
   layout:mount()
   layout:update(layout_boxes)
@@ -360,7 +360,8 @@ local function safe_render_project(input, layout, previous_response_popups, llm_
 
   -- Put llm response into popups
   for i, llm_text_chunk_lines in ipairs(llm_text_chunks_lines) do
-    vim.api.nvim_buf_set_lines(response_popups[i].bufnr, 0, -1, true, llm_text_chunk_lines)
+    -- vim.api.nvim_buf_set_lines(response_popups[i].bufnr, 0, -1, true, llm_text_chunk_lines)
+    com.safe_render_buffer_from_lines(response_popups[i].bufnr, llm_text_chunk_lines)
   end
 
   set_keymaps_and_settings(input, response_popups)
@@ -413,7 +414,6 @@ local on_CR = function(input, previous_response_popups, layout)
 
       Store.project.response:append(response)
 
-      -- Render
       local layout, response_popups = safe_render_project(
         input,
         layout,

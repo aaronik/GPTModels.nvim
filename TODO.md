@@ -1,4 +1,5 @@
 #### Little Things
+* Proper release system
 * Need to ensure no util.logs are used before each deploy
 * chat window should auto scroll when opened with autosaved session
 * code needs C-y?
