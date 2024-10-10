@@ -36,6 +36,11 @@ M.stub_schedule_wrap = function()
 end
 
 -- Triggers before/after(each) calls to get a clean state for each spec. Put in describe() block.
+-- * Stub cmd.exec
+-- * Delete cmd history
+-- * Set window height (so popups work correctly)
+-- * Clear store state
+-- * Reset assertion snapshots
 M.reset_state = function()
   local snapshot
 
@@ -59,8 +64,12 @@ M.reset_state = function()
   end)
 end
 
+-- Get some basic seeding of the store. A state that is meant to represent normal operating state for the app
+-- * Set models for all providers
+-- * Trigger current model setting
 M.seed_store = function ()
   before_each(function()
+    Store:clear()
     Store:set_models("ollama", { "ollama1", "ollama2" })
     Store:set_models("openai", { "openai1", "openai2" })
     Store:correct_potentially_missing_current_model()
