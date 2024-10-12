@@ -11,6 +11,11 @@
     * input bottom border is just q, Enter, and Ctrl-h maybe, or maybe just Ctrl-h
 * :help docs
 * make target for project wide type check pass
+    * https://luals.github.io/wiki/usage/#arguments
+    * /opt/homebrew/Cellar/lua-language-server/3.11.1/bin/lua-language-server --checklevel=Warning --logpath=/tmp/lls_out --check lua/gptmodels
+    The above prints the lls results into a json file. It does not recognize the neodev configured stuff though, so no vim global is configured, etc.
+    and there are >200 errors for the fully working plugin.
+
 * Switch to actual busted for testing, remove plenary if possible
     * Might could leverage lazy.nvim's built-in luarocks package management system
 
