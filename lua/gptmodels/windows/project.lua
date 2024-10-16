@@ -55,6 +55,28 @@ local project_prompt = function(filetype, input_text)
     * The code you produce should be clean and avoid unnecessary complexity.
     * Any algorithms or complex operations in your code should have comments simplifying what's happening.
     * Any unusual parts of the code should have comments explaining why the code is there.
+
+    Example:
+
+    Explanation: A good explanation of the first change
+
+    ```diff
+    --- first.file	2023-02-20 14:30:00.000000000 +0000
+    +++ first.file	2023-02-20 14:30:05.000000000 +0000
+    @@ -24,6 +24,5 @@
+    ...
+    ```
+
+    CHANGE_SEPARATOR
+
+    Explanation: A good explanation of the second change
+
+    ```diff
+    --- second.file	2023-02-20 14:30:00.000000000 +0000
+    +++ second.file	2023-02-20 14:30:05.000000000 +0000
+    @@ -24,6 +24,5 @@
+    ...
+    ```
   ]]
 
   local system = { system_string }
@@ -70,9 +92,9 @@ end
 -- based on the total number of boxes.
 ---@param input NuiPopup
 ---@param num_boxes integer
----@param existing_pups NuiPopup[]
+---@param extent_popups NuiPopup[]
 ---@return NuiPopup[], NuiLayout.Box
-local function build_layout_ui(input, num_boxes, existing_pups)
+local function build_layout_ui(input, num_boxes, extent_popups)
   local height = string.format("%.2f%%", 100 / (num_boxes > 5 and 5 or num_boxes))
 
   local boxes = {}
@@ -81,8 +103,8 @@ local function build_layout_ui(input, num_boxes, existing_pups)
     -- reuse existing popups to avoid memory leak in nui
     ---@type NuiPopup
     local pup
-    if i <= #existing_pups then
-      pup = existing_pups[i]
+    if i <= #extent_popups then
+      pup = extent_popups[i]
     else
       pup = Popup(com.build_common_popup_opts("Project"))
     end
@@ -125,37 +147,6 @@ local function build_layout_ui(input, num_boxes, existing_pups)
     Layout.Box(input, { size = "22%" }),
   }, { dir = "col" })
 end
-
-
--- local function safe_render_right_text_from_store()
---   -- if the window is closed and reopened again while a response is streaming in,
---   -- right_bufnr will be wrong, and it won't get repopulated.
---   -- So we're assigning to ..right.bufnr every time the window opens.
---   local right_text = Store.code.right:read()
---   local bufnr = Store.code.right.popup.bufnr
---   if right_text and bufnr then
---     com.safe_render_buffer_from_text(Store.code.right.popup.bufnr, right_text)
---   end
--- end
-
-
--- -- Render the whole code window from the Store, respecting closed windows/buffers
--- local function safe_render_from_store()
---   local left_text = Store.code.left:read()
---   local left_buf = Store.code.left.popup.bufnr or -1
---   if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
-
---   local right_text = Store.code.right:read()
---   local right_buf = Store.code.right.popup.bufnr or -1
---   if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
-
---   local input_text = Store.code.input:read()
---   local input_buf = Store.code.input.popup.bufnr or -1
---   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
-
---   -- Get the files back
---   com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
--- end
 
 
 ---TODO Bring this to everyone
@@ -280,7 +271,7 @@ local function set_common_settings(all_popups)
   -- Set buffers to same filetype as current file, for highlighting
   for _, pup in ipairs(all_popups) do
     -- vim.bo[pup.bufnr].filetype = vim.bo.filetype
-    vim.bo[pup.bufnr].filetype = "md"
+    vim.bo[pup.bufnr].filetype = "diff"
     vim.wo[pup.winid].wrap = true
   end
 end
@@ -318,10 +309,10 @@ end
 --- Take information (store state), render it, then return a bundle of view data
 ---@param input NuiPopup
 ---@param layout NuiLayout | nil
----@param previous_response_popups NuiPopup[]
+---@param extent_response_popups NuiPopup[]
 ---@param llm_text string
 ---@return NuiLayout, NuiPopup[]
-local function safe_render_project(input, layout, previous_response_popups, llm_text)
+local function safe_render_project(input, layout, extent_response_popups, llm_text)
   util.log("## llm_text:", llm_text)
 
   local llm_text_chunks_lines = llm_text_to_chunks_lines(llm_text)
@@ -330,7 +321,7 @@ local function safe_render_project(input, layout, previous_response_popups, llm_
   -- Minimum of one upper box for this layout
   local num_popups = #llm_text_chunks_lines >= 1 and #llm_text_chunks_lines or 1
 
-  local response_popups, layout_boxes = build_layout_ui(input, num_popups, previous_response_popups)
+  local response_popups, layout_boxes = build_layout_ui(input, num_popups, extent_response_popups)
 
   -- Instantiate new layout if one wasn't passed in
   if not layout then
@@ -347,13 +338,13 @@ local function safe_render_project(input, layout, previous_response_popups, llm_
   end
 
   -- Bail early if window is no longer open
-  if not input.bufnr then return layout, response_popups end     -- can happen when popup has been unmounted
+  if not input.bufnr then return layout, response_popups end -- can happen when popup has been unmounted
   local input_buf_loaded = vim.api.nvim_buf_is_loaded(input.bufnr)
   local input_buf_valid = vim.api.nvim_buf_is_valid(input.bufnr)
   if not (input_buf_loaded and input_buf_valid) then return layout, response_popups end
 
   -- TODO I don't think this belongs here
-  layout:mount()
+  -- layout:mount()
   layout:update(layout_boxes)
 
   vim.api.nvim_set_current_win(input.winid)
@@ -420,6 +411,7 @@ local on_CR = function(input, previous_response_popups, layout)
         previous_response_popups,
         Store.project.response:read() or ""
       )
+
       Store.project.layout = layout
       Store.project.response_popups = response_popups
 
@@ -452,51 +444,18 @@ function M.build_and_mount(selection)
     end
   end)
 
-  --   -- When the user opened this from visual mode with text
-  --   if selection then
-  --     -- start by clearing all existing state
-  --     Store.project.input:clear()
-  --     -- Store.project.response_popups:clear()
-  --     Store.project:clear_files()
-  --     Store.project:clear()
-
-  --     -- Put selection in input
-  --     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selection.lines)
-
-  --     -- And into the store, so the next window open can have it
-  --     Store.project.input:append(table.concat(selection.lines, "\n"))
-
-  --     -- If selected lines are given, it's like a new session, so we'll nuke all else
-  --     local extent_job = Store:get_job()
-  --     if extent_job then
-  --       extent_job.die()
-  --       vim.wait(100, function() return extent_job.done() end)
-  --     end
-  --   else
-  --     -- When the store already has some data
-  --     -- If a selection is passed in, though, then it gets a new session
-  --     safe_render_from_store()
-  --   end
-
   -- First time rendering; don't yet have layout
   local layout, response_popups = safe_render_project(input, nil, { top }, Store.project.response:read() or "")
 
   Store.project.response_popups = response_popups
   Store.project.layout          = layout
 
-  vim.api.nvim_buf_set_lines(response_popups[1].bufnr, 0, -1, true, { "fun", "lines", "wooo" })
-  local ns_id = vim.api.nvim_create_namespace("")
-  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffAdd", 0, 0, 999)
-  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffDelete", 1, 0, 999)
-  vim.api.nvim_buf_add_highlight(response_popups[1].bufnr, ns_id, "DiffChange", 2, 0, 999)
-  -- vim.api.nvim_buf_clear_namespace(right.bufnr, ns_id, 0, -1)
-
   -- Turn off syntax highlighting for input buffer.
-  vim.bo[input.bufnr].filetype = "txt"
-  vim.bo[input.bufnr].syntax = ""
+  vim.bo[input.bufnr].filetype  = "txt"
+  vim.bo[input.bufnr].syntax    = ""
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.bo[input.bufnr].buftype = "nofile"
+  vim.bo[input.bufnr].buftype   = "nofile"
 
   -- recalculate nui window when vim window resizes
   input:on("VimResized", function()
