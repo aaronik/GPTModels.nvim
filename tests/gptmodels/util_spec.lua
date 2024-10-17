@@ -157,4 +157,19 @@ describe("util", function()
       assert.are.same(expected_output, result)
     end)
   end)
+
+  describe("get_diff_from_text_chunk", function()
+    it("gets a diff", function()
+      local chunk = [[
+      not included
+      ```diff
+      included
+      ```
+      also not included
+      ]]
+
+      local diff = util.get_diff_from_text_chunk(chunk)
+      assert.same("included", diff)
+    end)
+  end)
 end)

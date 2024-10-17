@@ -164,4 +164,13 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
   return relevant_diagnostics, count
 end
 
+
+---get the part of text inside the `diff` and ````opening and closing marks
+---@param chunk string
+M.get_diff_from_text_chunk = function(chunk)
+  local split = vim.split(chunk, "```diff", { trimempty = true })[2]
+  return vim.split(split, "```", { trimempty = true })[1]
+end
+
+
 return M
