@@ -161,15 +161,42 @@ describe("util", function()
   describe("get_diff_from_text_chunk", function()
     it("gets a diff", function()
       local chunk = [[
-      not included
-      ```diff
-      included
-      ```
-      also not included
+not included
+```diff
+included
+```
+also not included
       ]]
 
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.same("included", diff)
+    end)
+
+    it("respects relative indentation", function()
+      local chunk = [[
+not included
+```diff
+not indented
+  indented
+```
+also not included
+      ]]
+
+      local diff = util.get_diff_from_text_chunk(chunk)
+      assert.same("not indented\n  indented", diff)
+    end)
+
+    it("respects absolute indentation", function()
+      local chunk = [[
+not included
+```diff
+  indented
+```
+also not included
+      ]]
+
+      local diff = util.get_diff_from_text_chunk(chunk)
+      assert.same("  indented", diff)
     end)
   end)
 end)
