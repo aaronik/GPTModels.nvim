@@ -270,7 +270,6 @@ end
 local function set_common_settings(all_popups)
   -- Set buffers to same filetype as current file, for highlighting
   for _, pup in ipairs(all_popups) do
-    -- vim.bo[pup.bufnr].filetype = vim.bo.filetype
     vim.bo[pup.bufnr].filetype = "diff"
     vim.wo[pup.winid].wrap = true
   end
@@ -297,7 +296,7 @@ end
 
 ---@param input NuiPopup
 ---@param response_popups NuiPopup[]
-local function set_keymaps_and_settings(input, response_popups)
+local function set_common_keymaps_and_settings(input, response_popups)
   local all_popups = util.merge_tables({ input }, response_popups)
   ---@type integer[]
   local bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
@@ -308,11 +307,10 @@ end
 
 --- Take information (store state), render it, then return a bundle of view data
 ---@param input NuiPopup
----@param layout NuiLayout | nil
 ---@param extent_response_popups NuiPopup[]
 ---@param llm_text string
----@return NuiLayout, NuiPopup[]
-local function safe_render_project(input, layout, extent_response_popups, llm_text)
+---@return NuiPopup[], NuiLayout.Box[]
+local function safe_render_project(input, extent_response_popups, llm_text)
   util.log("## llm_text:", llm_text)
 
   local llm_text_chunks_lines = llm_text_to_chunks_lines(llm_text)
@@ -323,29 +321,11 @@ local function safe_render_project(input, layout, extent_response_popups, llm_te
 
   local response_popups, layout_boxes = build_layout_ui(input, num_popups, extent_response_popups)
 
-  -- Instantiate new layout if one wasn't passed in
-  if not layout then
-    local layout_config = {
-      position = "50%",
-      relative = "editor",
-      size = {
-        width = "90%",
-        height = "90%",
-      },
-    }
-
-    layout = Layout(layout_config, layout_boxes)
-  end
-
   -- Bail early if window is no longer open
-  if not input.bufnr then return layout, response_popups end -- can happen when popup has been unmounted
+  if not input.bufnr then return response_popups, layout_boxes end -- can happen when popup has been unmounted
   local input_buf_loaded = vim.api.nvim_buf_is_loaded(input.bufnr)
   local input_buf_valid = vim.api.nvim_buf_is_valid(input.bufnr)
-  if not (input_buf_loaded and input_buf_valid) then return layout, response_popups end
-
-  -- TODO I don't think this belongs here
-  -- layout:mount()
-  layout:update(layout_boxes)
+  if not (input_buf_loaded and input_buf_valid) then return response_popups, layout_boxes end
 
   vim.api.nvim_set_current_win(input.winid)
 
@@ -355,9 +335,7 @@ local function safe_render_project(input, layout, extent_response_popups, llm_te
     com.safe_render_buffer_from_lines(response_popups[i].bufnr, llm_text_chunk_lines)
   end
 
-  set_keymaps_and_settings(input, response_popups)
-
-  return layout, response_popups
+  return response_popups, layout_boxes
 end
 
 
@@ -375,9 +353,6 @@ local on_CR = function(input, previous_response_popups, layout)
   local filetype = vim.bo[top.bufnr].filetype
 
   local prompt, system = project_prompt(filetype, input_text)
-
-  -- -- Clear the right window so the next response doesn't append to the previous one
-  -- Store.code.right:clear()
 
   -- Loading indicator
   com.safe_render_buffer_from_text(top.bufnr, "Loading...")
@@ -405,15 +380,16 @@ local on_CR = function(input, previous_response_popups, layout)
 
       Store.project.response:append(response)
 
-      local layout, response_popups = safe_render_project(
+      local response_popups, layout_boxes = safe_render_project(
         input,
-        layout,
-        previous_response_popups,
+        Store.project.response_popups,
         Store.project.response:read() or ""
       )
 
-      Store.project.layout = layout
       Store.project.response_popups = response_popups
+
+      layout:update(layout_boxes)
+      set_common_keymaps_and_settings(input, response_popups)
 
       -- scroll to the bottom if the window's still open and the user is not in it
       -- (If they're in it, the priority is for them to be able to nav around and yank)
@@ -427,7 +403,7 @@ local on_CR = function(input, previous_response_popups, layout)
   Store:register_job(job)
 end
 
----
+
 ---@param selection Selection | nil
 ---@return { input: NuiPopup, response_popups: NuiPopup[] }
 function M.build_and_mount(selection)
@@ -444,11 +420,29 @@ function M.build_and_mount(selection)
     end
   end)
 
-  -- First time rendering; don't yet have layout
-  local layout, response_popups = safe_render_project(input, nil, { top }, Store.project.response:read() or "")
+  -- Instantiate new layout if one wasn't passed in
+  local layout_config = {
+    position = "50%",
+    relative = "editor",
+    size = {
+      width = "90%",
+      height = "90%",
+    },
+  }
 
+  local initial_response_popups, initial_layout_boxes = build_layout_ui(input, 1, { top })
+  local layout = Layout(layout_config, initial_layout_boxes)
+  Store.project.layout = layout
+  layout:mount()
+
+  local response_popups, layout_boxes = safe_render_project(
+    input,
+    initial_response_popups,
+    Store.project.response:read() or ""
+  )
+  layout:update(layout_boxes)
+  set_common_keymaps_and_settings(input, response_popups)
   Store.project.response_popups = response_popups
-  Store.project.layout          = layout
 
   -- Turn off syntax highlighting for input buffer.
   vim.bo[input.bufnr].filetype  = "txt"
@@ -477,13 +471,10 @@ function M.build_and_mount(selection)
       noremap = true,
       silent = true,
       callback = function()
-        on_CR(input, response_popups, layout)
+        on_CR(input, Store.project.response_popups, layout)
       end
     }
   )
-
-  -- Further Keymaps
-  set_keymaps_and_settings(input, response_popups)
 
   -- Notify of any errors / warnings
   for level, message in pairs(com.check_deps()) do
