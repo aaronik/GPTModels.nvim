@@ -168,8 +168,9 @@ end
 ---get the part of text inside the `diff` and ````opening and closing marks
 ---@param chunk string
 M.get_diff_from_text_chunk = function(chunk)
-  local split = vim.split(chunk, "```diff", { trimempty = true })[2]
-  return vim.split(split, "```", { trimempty = true })[1]
+  local split = vim.split(chunk, "```diff\n", { trimempty = true })[2]
+  split = vim.split(split, "```", { trimempty = true })[1]
+  return string.sub(split, 1, -2) -- remove last character, which should be a newline
 end
 
 
