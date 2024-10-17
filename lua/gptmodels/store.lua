@@ -214,7 +214,7 @@ local Store = {
     end
 
     -- Current model is not available; select a default model
-    local preferred_defaults = { "mistral-nemo:latest", "llama3.1:latest", "deepseek-v2:latest", "gpt-4o-mini", "gpt-4o" }
+    local preferred_defaults = {"llama3.1:latest", "deepseek-v2:latest", "gpt-4o-mini", "gpt-4o" }
     for _, preferred_default in ipairs(preferred_defaults) do
       for _, provider in ipairs { "ollama", "openai" } do
         for _, available_model in ipairs(available_models[provider]) do
