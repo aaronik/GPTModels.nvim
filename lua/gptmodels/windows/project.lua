@@ -32,9 +32,9 @@ local project_prompt = function(filetype, input_text)
     local content = file:read("*all")
     file:close()
 
-    formatted_prompt = formatted_prompt .. "-------------- [BEGIN " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. "[BEGIN " .. filename .. "]\n\n"
     formatted_prompt = formatted_prompt .. content
-    formatted_prompt = formatted_prompt .. "-------------- [END " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. "[END " .. filename .. "]\n\n"
   end
 
   util.log("## formatted_prompt:", formatted_prompt)
@@ -42,6 +42,7 @@ local project_prompt = function(filetype, input_text)
   local system_string = [[
     You are a high-quality software creation and modification system.
     The user will provide a request. The user may include files with the request, which will be below the request in the prompt.
+      * The files in the request will be demarked with [BEGIN <filename>] and [END <filename>] - those demarcations are not part of the files, only the prompt.
     You produce code to accomplish the user's request.
     The code you produce must be in Unified Diff Format.
     The code may only apply to the files the user has included.
@@ -286,7 +287,7 @@ local function llm_text_to_chunks_lines(text)
   local chunks = vim.split(text, "CHANGE_SEPARATOR", { trimempty = true })
 
   for _, chunk in ipairs(chunks) do
-    local lines = vim.split(chunk, "\n")
+    local lines = vim.split(chunk, "\n", { trimempty = true })
     table.insert(chunk_lines, lines)
   end
 
