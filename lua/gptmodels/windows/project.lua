@@ -150,12 +150,21 @@ local function build_layout_ui(input, num_boxes, extent_popups)
 end
 
 
----TODO Bring this to everyone
----Set all the keymaps that apply to all bufs; input and top bufs
+---@param buf integer
+local function print_diff_from_buf_if_found(buf)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, true)
+  local chunk = table.concat(lines, "\n")
+  local diff = util.get_diff_from_text_chunk(chunk)
+  util.log(diff)
+end
+
+
+---Set all the keymaps that apply to all bufs for only the project window
+---bufs is meant to contain all buffers for the window, including the input
 ---@param input NuiPopup
 ---@param top NuiPopup
 ---@param bufs integer[]
-local function set_common_keymaps(input, top, bufs)
+local function set_local_keymaps(input, top, bufs)
   for i, buf in ipairs(bufs) do
     -- Tab cycles through windows
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
@@ -163,6 +172,8 @@ local function set_common_keymaps(input, top, bufs)
       silent = true,
       callback = function()
         com.cycle_tabs_forward(i, bufs)
+        local next_index = (i % #bufs) + 1
+        print_diff_from_buf_if_found(bufs[next_index])
       end
     })
 
@@ -172,9 +183,21 @@ local function set_common_keymaps(input, top, bufs)
       silent = true,
       callback = function()
         com.cycle_tabs_backward(i, bufs)
+        local prev_index = (i - 2) % #bufs + 1
+        print_diff_from_buf_if_found(bufs[prev_index])
       end
     })
+  end
+end
 
+
+---TODO Bring this to everyone
+---Set all the keymaps that apply to all bufs; input and top bufs
+---@param input NuiPopup
+---@param top NuiPopup
+---@param bufs integer[]
+local function set_common_keymaps(input, top, bufs)
+  for i, buf in ipairs(bufs) do
     -- Ctl-n to reset session
     vim.api.nvim_buf_set_keymap(buf, "", "<C-n>", "", {
       noremap = true,
@@ -300,8 +323,9 @@ end
 local function set_common_keymaps_and_settings(input, response_popups)
   local all_popups = util.merge_tables({ input }, response_popups)
   ---@type integer[]
-  local bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
-  set_common_keymaps(input, response_popups[1], bufs)
+  local all_bufs = vim.tbl_map(function(popup) return popup.bufnr end, all_popups)
+  set_common_keymaps(input, response_popups[1], all_bufs)
+  set_local_keymaps(input, response_popups[1], all_bufs)
   set_common_settings(all_popups)
 end
 

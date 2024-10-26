@@ -78,10 +78,11 @@ end
 ---@return { INFO: string | nil, ERROR: string | nil }
 function M.check_deps()
   local has_curl = true
-  local error_string = ""
-
   local has_ollama = true
+  local has_patch = true
+
   local info_string = ""
+  local error_string = ""
 
   cmd.exec({
     sync = true,
@@ -107,6 +108,19 @@ function M.check_deps()
     testid = "check-deps-warnings"
   })
 
+  cmd.exec({
+    sync = true,
+    cmd = "which",
+    args = { "patch" },
+    onexit = function(code)
+      if code ~= 0 then
+        has_patch = false
+      end
+    end,
+    testid = "check-deps-warnings"
+  })
+
+
   local has_openai_api_key = util.has_env_var("OPENAI_API_KEY")
 
   if not has_curl then
@@ -121,6 +135,11 @@ function M.check_deps()
   if not has_openai_api_key then
     info_string = info_string ..
         "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+  end
+
+  if not has_patch then
+    info_string = info_string ..
+        "GPTModels.nvim is missing optional dependency `patch`. The project window will not work. "
   end
 
   if not has_openai_api_key and not has_ollama then
@@ -186,18 +205,18 @@ M.set_input_top_border_text = function(input, files)
   end
 end
 
----@param win_index integer
+---@param buf_index integer
 ---@param bufs table<integer>
-M.cycle_tabs_forward = function(win_index, bufs)
-  local next_buf_index = (win_index % #bufs) + 1
+M.cycle_tabs_forward = function(buf_index, bufs)
+  local next_buf_index = (buf_index % #bufs) + 1
   local next_win = vim.fn.bufwinid(bufs[next_buf_index])
   vim.api.nvim_set_current_win(next_win)
 end
 
----@param win_index integer
+---@param buf_index integer
 ---@param bufs table<integer>
-M.cycle_tabs_backward = function(win_index, bufs)
-  local prev_buf_index = (win_index - 2) % #bufs + 1
+M.cycle_tabs_backward = function(buf_index, bufs)
+  local prev_buf_index = (buf_index - 2) % #bufs + 1
   local prev_win = vim.fn.bufwinid(bufs[prev_buf_index])
   vim.api.nvim_set_current_win(prev_win)
 end

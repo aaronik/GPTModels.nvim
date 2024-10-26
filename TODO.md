@@ -4,6 +4,7 @@
 * Get live reloading of C-p telescope model picker when openai results come in
 * Proper release system
 * Need to ensure no util.logs are used before each deploy
+* Info message when there are multiple missing dependencies should be nicer.
 * chat window should auto scroll when opened with autosaved session
 * code needs C-y?
 * Focus same buffer on nui exit?

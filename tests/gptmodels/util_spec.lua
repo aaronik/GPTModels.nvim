@@ -198,5 +198,38 @@ also not included
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.same("  indented", diff)
     end)
+
+    it("doesn't explode when there're no ```diff or ``` included", function()
+      local chunk = "no diff here"
+      local diff = util.get_diff_from_text_chunk(chunk)
+      assert.is_nil(diff)
+    end)
+  end)
+
+  describe("apply_diff", function()
+    it("takes file content and a unified diff format diff, and applies the diff", function()
+      local content = [[
+content line 1
+content line 2
+content line 3
+      ]]
+
+      local diff = [[
+--- file	2024-10-20 13:28:39
++++ file	2024-10-20 13:30:50
+@@ -1,3 +1,2 @@
+ content line 1
+-content line 2
+ content line 3
+]]
+
+      local expected = [[
+content line 1
+content line 3
+      ]]
+
+      local result = util.apply_diff(content, diff)
+      assert.same(expected, result)
+    end)
   end)
 end)

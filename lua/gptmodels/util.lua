@@ -167,10 +167,22 @@ end
 
 ---get the part of text inside the `diff` and ````opening and closing marks
 ---@param chunk string
+---@return string | nil
 M.get_diff_from_text_chunk = function(chunk)
-  local split = vim.split(chunk, "```diff\n", { trimempty = true })[2]
+  local split_lines = vim.split(chunk, "```diff\n", { trimempty = true })
+  if #split_lines <= 1 then return nil end
+  local split = split_lines[2]
   split = vim.split(split, "```", { trimempty = true })[1]
   return string.sub(split, 1, -2) -- remove last character, which should be a newline
+end
+
+
+---apply a diff to the contents of a file
+---@param file_content string
+---@param diff string
+---@return string
+M.apply_diff = function (file_content, diff)
+
 end
 
 

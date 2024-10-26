@@ -437,7 +437,7 @@ for _, doe in pairs(doze) do
       local error_message =
       "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
       local info_message =
-      "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+      "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. GPTModels.nvim is missing optional dependency `patch`. The project window will not work. "
 
       -- number of notify calls
       for i = 1, 2 do
