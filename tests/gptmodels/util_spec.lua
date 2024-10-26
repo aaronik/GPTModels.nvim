@@ -167,7 +167,6 @@ included
 ```
 also not included
       ]]
-
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.same("included", diff)
     end)
@@ -181,7 +180,6 @@ not indented
 ```
 also not included
       ]]
-
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.same("not indented\n  indented", diff)
     end)
@@ -194,7 +192,6 @@ not included
 ```
 also not included
       ]]
-
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.same("  indented", diff)
     end)
@@ -203,6 +200,16 @@ also not included
       local chunk = "no diff here"
       local diff = util.get_diff_from_text_chunk(chunk)
       assert.is_nil(diff)
+    end)
+
+    it("handles when the given text starts with ```diff", function()
+      local chunk = [[
+```diff
+buncha diff stuff wooooo
+```
+      ]]
+      local diff = util.get_diff_from_text_chunk(chunk)
+      assert.same("buncha diff stuff wooooo", diff)
     end)
   end)
 

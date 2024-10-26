@@ -79,7 +79,7 @@ end
 M.merge_tables = function(...)
   local new_table = {}
 
-  for _, t in ipairs({...}) do
+  for _, t in ipairs({ ... }) do
     for k, v in pairs(t) do
       if type(k) == "number" then
         table.insert(new_table, v)
@@ -142,7 +142,8 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
     if diagnostic.lnum >= selection.start_line and diagnostic.lnum <= selection.end_line then
       local selection_problem_code_start_line = diagnostic.lnum - selection.start_line + 1
       local selection_problem_code_end_line = diagnostic.end_lnum - selection.start_line + 1
-      local problem_code_lines = { unpack(selection.lines, selection_problem_code_start_line, selection_problem_code_end_line) }
+      local problem_code_lines = { unpack(selection.lines, selection_problem_code_start_line,
+        selection_problem_code_end_line) }
 
       local severity_label = constants.DIAGNOSTIC_SEVERITY_LABEL_MAP[diagnostic.severity]
 
@@ -165,13 +166,18 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
 end
 
 
----get the part of text inside the `diff` and ````opening and closing marks
+---Get the part of text inside the `diff` and ````opening and closing marks
 ---@param chunk string
 ---@return string | nil
 M.get_diff_from_text_chunk = function(chunk)
+  local contains_diff_string = chunk:find('```diff\n') and chunk:find('```')
+
+  if not contains_diff_string then
+    return nil
+  end
+
   local split_lines = vim.split(chunk, "```diff\n", { trimempty = true })
-  if #split_lines <= 1 then return nil end
-  local split = split_lines[2]
+  local split = #split_lines > 1 and split_lines[2] or split_lines[1] -- depending on if the buf actually starts with ```diff
   split = vim.split(split, "```", { trimempty = true })[1]
   return string.sub(split, 1, -2) -- remove last character, which should be a newline
 end
@@ -181,7 +187,7 @@ end
 ---@param file_content string
 ---@param diff string
 ---@return string
-M.apply_diff = function (file_content, diff)
+M.apply_diff = function(file_content, diff)
 
 end
 

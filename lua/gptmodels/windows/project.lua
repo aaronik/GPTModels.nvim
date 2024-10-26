@@ -37,8 +37,6 @@ local project_prompt = function(filetype, input_text)
     formatted_prompt = formatted_prompt .. "[END " .. filename .. "]\n\n"
   end
 
-  util.log("## formatted_prompt:", formatted_prompt)
-
   local system_string = [[
     You are a high-quality software creation and modification system.
     The user will provide a request. The user may include files with the request, which will be below the request in the prompt.
@@ -48,7 +46,7 @@ local project_prompt = function(filetype, input_text)
     The code may only apply to the files the user has included.
     For each change, provide:
       * this separator string (which must be on its own line):  CHANGE_SEPARATOR
-      * an explanation of the change
+      * an explanation of the change, prefixed with Explanation:
       * the diff itself, surrounded by ```diff and ```
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
@@ -57,7 +55,7 @@ local project_prompt = function(filetype, input_text)
     * Any algorithms or complex operations in your code should have comments simplifying what's happening.
     * Any unusual parts of the code should have comments explaining why the code is there.
 
-    Example:
+    Supposing what the user asked for warranted two changes, here is an EXAMPLE of what you might respond with:
 
     Explanation: A good explanation of the first change
 
@@ -336,10 +334,7 @@ end
 ---@param llm_text string
 ---@return NuiPopup[], NuiLayout.Box[]
 local function safe_render_project(input, extent_response_popups, llm_text)
-  util.log("## llm_text:", llm_text)
-
   local llm_text_chunks_lines = llm_text_to_chunks_lines(llm_text)
-  util.log("## llm_text_chunks_lines:", llm_text_chunks_lines)
 
   -- Minimum of one upper box for this layout
   local num_popups = #llm_text_chunks_lines >= 1 and #llm_text_chunks_lines or 1
