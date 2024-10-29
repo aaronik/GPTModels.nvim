@@ -46,8 +46,10 @@ local project_prompt = function(filetype, input_text)
     The code may only apply to the files the user has included.
     For each change, provide:
       * this separator string (which must be on its own line):  CHANGE_SEPARATOR
+        - Note that if there's only one change, don't include CHANGE_SEPARATOR.
       * an explanation of the change, prefixed with Explanation:
       * the diff itself, surrounded by ```diff and ```
+        - In the diff, when you name the file, be sure to respect the given capitalization of the filename.
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
     Stylistic Notes:
@@ -157,6 +159,16 @@ local function print_diff_from_buf_if_found(buf)
 end
 
 
+---Extracts text that looks like a diff from the contents of a given buffer
+---@param buf integer
+---@return string | nil
+local function get_diff_from_buf_if_found(buf)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, true)
+  local chunk = table.concat(lines, "\n")
+  return util.get_diff_from_text_chunk(chunk)
+end
+
+
 ---Set all the keymaps that apply to all bufs for only the project window
 ---bufs is meant to contain all buffers for the window, including the input
 ---@param input NuiPopup
@@ -170,8 +182,25 @@ local function set_local_keymaps(input, top, bufs)
       silent = true,
       callback = function()
         com.cycle_tabs_forward(i, bufs)
+        local APPLY_DIFF_BORDER_TEXT = " Apply diff? "
         local next_index = (i % #bufs) + 1
-        print_diff_from_buf_if_found(bufs[next_index])
+        local next_buf = bufs[next_index]
+        local diff = get_diff_from_buf_if_found(next_buf)
+        ---@type NuiPopup
+        local next_popup = nil
+        for _, pup in ipairs(util.merge_tables(Store.project.response_popups, { input })) do
+          -- Clear any previous bottom border texts that this method has performed
+          ---@type string
+          local border_text = table.concat(vim.api.nvim_buf_get_lines(pup.border.bufnr, 0, -1, true), "")
+          if border_text:find(APPLY_DIFF_BORDER_TEXT, 1, true) then
+            pup.border:set_text("bottom", "", "center")
+          end
+
+          -- Set apply text to the currently selected popup if a diff is found in it
+          if pup.bufnr == next_buf and diff then
+            pup.border:set_text("bottom", APPLY_DIFF_BORDER_TEXT, "center")
+          end
+        end
       end
     })
 
@@ -182,7 +211,7 @@ local function set_local_keymaps(input, top, bufs)
       callback = function()
         com.cycle_tabs_backward(i, bufs)
         local prev_index = (i - 2) % #bufs + 1
-        print_diff_from_buf_if_found(bufs[prev_index])
+        local diff = get_diff_from_buf_if_found(bufs[prev_index])
       end
     })
   end
@@ -460,16 +489,16 @@ function M.build_and_mount(selection)
     initial_response_popups,
     Store.project.response:read() or ""
   )
+  Store.project.response_popups = response_popups
   layout:update(layout_boxes)
   set_common_keymaps_and_settings(input, response_popups)
-  Store.project.response_popups = response_popups
 
   -- Turn off syntax highlighting for input buffer.
-  vim.bo[input.bufnr].filetype  = "txt"
-  vim.bo[input.bufnr].syntax    = ""
+  vim.bo[input.bufnr].filetype = "txt"
+  vim.bo[input.bufnr].syntax   = ""
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
-  vim.bo[input.bufnr].buftype   = "nofile"
+  vim.bo[input.bufnr].buftype  = "nofile"
 
   -- recalculate nui window when vim window resizes
   input:on("VimResized", function()
