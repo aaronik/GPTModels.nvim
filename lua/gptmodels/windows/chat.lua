@@ -4,6 +4,7 @@ local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local llm = require("gptmodels.llm")
 local Store = require("gptmodels.store")
+local prompts = require("gptmodels.prompts")
 
 local M = {}
 
@@ -26,39 +27,51 @@ local safe_render_buffer_from_messages = function(bufnr, messages)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
 end
 
+---generate LlmMessages with file name and file content off of given file names
+---@param file_names string[]
+---@return LlmMessage[]
+local extract_and_generate_file_messages = function(file_names)
+  ---@type LlmMessage[]
+  local file_messages = {}
+  for _, file_name in ipairs(file_names) do
+    local file = io.open(file_name, "r")
+    if not file then break end
+    ---@type string
+    local file_content = file:read("*all")
+    file:close()
+
+    table.insert(file_messages, {
+      role = "user",
+      content = prompts.included_file(file_name, file_content)
+    })
+  end
+
+  return file_messages
+end
+
 ---@param input_bufnr integer
 ---@param chat_bufnr integer
 local on_CR = function(input_bufnr, chat_bufnr)
   local input_lines = vim.api.nvim_buf_get_lines(input_bufnr, 0, -1, false)
   local input_text = table.concat(input_lines, "\n")
 
+  -- Put input text into chat store
+  Store.chat.chat:append({ role = "user", content = input_text })
+
+  -- Render the chat window
+  safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
+
   -- Clear input buf, store
   vim.api.nvim_buf_set_lines(input_bufnr, 0, -1, true, {})
   Store.chat.input:clear()
 
-  -- Put input text into chat window
-  Store.chat.chat:append({ role = "user", content = input_text })
-
-  safe_render_buffer_from_messages(chat_bufnr, Store.chat.chat:read())
-
   -- Scroll to the bottom (in case user message goes past bottom of win)
   com.safe_scroll_to_bottom_when_user_not_present(Store.chat.chat.popup.winid or 1, Store.chat.chat.popup.bufnr)
 
-  -- Attach included files
-  local file_messages = {}
-  for _, file_name in ipairs(Store.chat:get_files()) do
-    local file = io.open(file_name, "r")
-    if not file then break end
-    local file_content = file:read("*all")
-    file:close()
+  local messages = Store.chat.chat:read()
 
-    table.insert(file_messages, {
-      role = "user",
-      content = "[INCLUDED FILE]\n* file name: " .. file_name .. "\n* file content: \n" .. file_content .. "\n\n----------- [EOF] -----------\n\n"
-    })
-  end
-
-  local messages = util.merge_tables(Store.chat.chat:read(), file_messages)
+  local file_messages = extract_and_generate_file_messages(Store.chat:get_filenames())
+  messages = util.merge_tables(file_messages, messages)
 
   local job = llm.chat({
     llm = {
@@ -67,6 +80,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
     },
     on_read = function(err, message)
       if err then
+        -- TODO This message shouldn't be added to the store, it should just be rendered on the screen
         Store.chat.chat:append({ role = "assistant", content = err })
         safe_render_buffer_from_messages(Store.chat.chat.popup.bufnr, Store.chat.chat:read())
         return
@@ -155,7 +169,7 @@ function M.build_and_mount(selection)
     safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat:read())
 
     -- Get the files back
-    com.set_input_top_border_text(input, Store.chat:get_files())
+    com.set_input_top_border_text(input, Store.chat:get_filenames())
   end
 
   local layout = Layout(
@@ -223,7 +237,7 @@ function M.build_and_mount(selection)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        com.set_input_top_border_text(input, Store.chat:get_files())
+        com.set_input_top_border_text(input, Store.chat:get_filenames())
       end
     })
 
@@ -233,7 +247,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = com.launch_telescope_file_picker(function(filename)
         Store.chat:append_file(filename)
-        com.set_input_top_border_text(input, Store.chat:get_files())
+        com.set_input_top_border_text(input, Store.chat:get_filenames())
       end)
     })
 
@@ -243,7 +257,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store.chat:clear_files()
-        com.set_input_top_border_text(input, Store.chat:get_files())
+        com.set_input_top_border_text(input, Store.chat:get_filenames())
       end
     })
 

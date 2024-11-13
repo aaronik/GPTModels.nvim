@@ -200,7 +200,7 @@ for _, doe in pairs(doze) do
       if args.llm.prompt then
         assert(string.match(args.llm.prompt, "README.md"))
       else
-        assert(string.match(args.llm.messages[3].content, "README.md"))
+        assert(string.match(args.llm.messages[1].content, "README.md"))
       end
 
       -- Now we'll make sure C-g clears the files

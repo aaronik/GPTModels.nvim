@@ -5,13 +5,9 @@ local util = require("gptmodels.util")
 local assert = require("luassert")
 local chat_window = require('gptmodels.windows.chat')
 local stub = require('luassert.stub')
-local spy = require('luassert.spy')
 local llm = require('gptmodels.llm')
-local cmd = require('gptmodels.cmd')
 local Store = require('gptmodels.store')
-local ollama = require('gptmodels.providers.ollama')
 local helpers = require('tests.gptmodels.spec_helpers')
-local com = require('gptmodels.windows.common')
 
 describe("The Chat window", function()
   helpers.reset_state()
@@ -89,7 +85,7 @@ describe("The Chat window", function()
     assert.same({ "second" }, input_lines)
 
     -- files were removed
-    assert.same({}, Store.chat:get_files())
+    assert.same({}, Store.chat:get_filenames())
   end)
 
   it("shifts through windows on <Tab>", function()
@@ -189,15 +185,14 @@ describe("The Chat window", function()
     Store.chat:append_file("docs/gpt.txt")
 
     -- Press <C-n>
-    local keys = vim.api.nvim_replace_termcodes("<C-n>", true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    helpers.feed_keys("<C-n>")
 
     -- Assert all windows are cleared
     assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.input.bufnr, 0, -1, true))
     assert.same({ '' }, vim.api.nvim_buf_get_lines(chat.chat.bufnr, 0, -1, true))
 
     -- And the store of included files
-    assert.same({}, Store.chat:get_files())
+    assert.same({}, Store.chat:get_filenames())
   end)
 
   -- Having a lot of trouble testing this.

@@ -29,7 +29,7 @@ local code_prompt = function(filetype, input_text, code_text)
 
   local formatted_prompt = string.format(prompt_template, input_text, filetype, code_text)
 
-  for _, filename in ipairs(Store.code:get_files()) do
+  for _, filename in ipairs(Store.code:get_filenames()) do
     local file = io.open(filename, "r")
     if not file then break end
     local content = file:read("*all")
@@ -82,7 +82,7 @@ local function safe_render_from_store()
   if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
 
   -- Get the files back
-  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_files())
+  com.set_input_top_border_text(Store.code.input.popup, Store.code:get_filenames())
 end
 
 local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
@@ -284,7 +284,7 @@ function M.build_and_mount(selection)
         for _, bu in ipairs(bufs) do
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
-        com.set_input_top_border_text(input, Store.code:get_files())
+        com.set_input_top_border_text(input, Store.code:get_filenames())
       end
     })
 
@@ -336,7 +336,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = com.launch_telescope_file_picker(function(filename)
         Store.code:append_file(filename)
-        com.set_input_top_border_text(input, Store.code:get_files())
+        com.set_input_top_border_text(input, Store.code:get_filenames())
       end)
     })
 
@@ -346,7 +346,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         Store.code:clear_files()
-        com.set_input_top_border_text(input, Store.code:get_files())
+        com.set_input_top_border_text(input, Store.code:get_filenames())
       end
     })
 

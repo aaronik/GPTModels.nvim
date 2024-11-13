@@ -71,7 +71,7 @@ end
 ---@field clear fun(self: ChatWindow | CodeWindow)
 ---@field input StrPane
 ---@field append_file fun(self: Window, filename: string)
----@field get_files fun(self: Window): string[]
+---@field get_filenames fun(self: Window): string[]
 ---@field clear_files fun(self: Window)
 ---@field private _files string[]
 
@@ -240,7 +240,7 @@ local Store = {
 
     _files = {},
     append_file = function(self, filename) table.insert(self._files, filename) end,
-    get_files = function(self) return self._files end,
+    get_filenames = function(self) return self._files end,
     clear_files = function(self) self._files = {} end,
 
     clear = function(self)
@@ -262,7 +262,7 @@ local Store = {
 
     _files = {},
     append_file = function(self, filename) table.insert(self._files, filename) end,
-    get_files = function(self) return self._files end,
+    get_filenames = function(self) return self._files end,
     clear_files = function(self) self._files = {} end,
 
     clear = function(self)

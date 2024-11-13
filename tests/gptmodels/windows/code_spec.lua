@@ -75,7 +75,7 @@ describe("The code window", function()
     assert.same({ "" }, input_lines)
 
     -- files were removed
-    assert.same({}, Store.code:get_files())
+    assert.same({}, Store.code:get_filenames())
   end)
 
   it("shifts through windows on <Tab>", function()
@@ -263,7 +263,7 @@ describe("The code window", function()
     assert.same({ '' }, vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true))
 
     -- And the store of included files
-    assert.same({}, Store.code:get_files())
+    assert.same({}, Store.code:get_filenames())
   end)
 
   it("transfers contents of right pane to left pane on <C-x> (xfer)", function()

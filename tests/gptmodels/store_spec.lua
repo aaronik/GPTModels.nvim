@@ -40,8 +40,8 @@ describe("Store | setting / getting", function()
     Store.chat:append_file("lua/gpt/windows/code.lua")
     Store.chat:append_file("lua/gpt/windows/chat.lua")
 
-    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.code:get_files())
-    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.chat:get_files())
+    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.code:get_filenames())
+    assert.same({ "lua/gpt/windows/code.lua", "lua/gpt/windows/chat.lua" }, Store.chat:get_filenames())
   end)
 end)
 
