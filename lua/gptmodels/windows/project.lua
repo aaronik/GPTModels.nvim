@@ -4,6 +4,7 @@ local Layout         = require("nui.layout")
 local Popup          = require("nui.popup")
 local llm            = require('gptmodels.llm')
 local Store          = require('gptmodels.store')
+local prompts        = require('gptmodels.prompts')
 
 local M              = {}
 
@@ -37,11 +38,7 @@ local project_prompt = function(filetype, input_text)
     formatted_prompt = formatted_prompt .. "[END " .. filename .. "]\n\n"
   end
 
-  local system_string = [[
-    You are a high-quality software creation and modification system.
-    The user will provide a request. The user may include files with the request, which will be below the request in the prompt.
-      * The files in the request will be demarked with [BEGIN <filename>] and [END <filename>] - those demarcations are not part of the files, only the prompt.
-    You produce code to accomplish the user's request.
+  local system_string_1 = [[
     The code you produce must be in Unified Diff Format.
     The code may only apply to the files the user has included.
     For each change, provide:
@@ -52,13 +49,10 @@ local project_prompt = function(filetype, input_text)
         - In the diff, when you name the file, be sure to respect the given capitalization of the filename.
     An automated system will apply the diffs you provide, so please make sure the diffs are formatted correctly.
 
-    Stylistic Notes:
-    * The code you produce should be clean and avoid unnecessary complexity.
-    * Any algorithms or complex operations in your code should have comments simplifying what's happening.
-    * Any unusual parts of the code should have comments explaining why the code is there.
-
     Supposing what the user asked for warranted two changes, here is an EXAMPLE of what you might respond with:
+  ]]
 
+  local system_string_2 = [[
     Explanation: A good explanation of the first change
 
     ```diff
@@ -79,6 +73,14 @@ local project_prompt = function(filetype, input_text)
     ...
     ```
   ]]
+
+  local system_string = prompts.CODE_PROMPT_PREAMBLE
+    .. "\n\n"
+    .. system_string_1
+    .. "\n\n"
+    .. prompts.CODE_STYLISTIC_NOTES
+    .. "\n\n"
+    .. system_string_2
 
   local system = { system_string }
 
