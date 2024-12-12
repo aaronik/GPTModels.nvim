@@ -1,4 +1,5 @@
 #### Little Things
+* When ollama models (and all others) are fetched, they should be inserted into the existing <C-p> window
 * chat window's prompt needs to be adjusted so the user request counts as much as the included files,
   currently it's dominated by the files and many llms end up just explaining what's in the files
 * Get live reloading of C-p telescope model picker when openai results come in

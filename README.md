@@ -1,5 +1,7 @@
-<span><img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple"></span>
-<a href="https://neovim.io/"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim"></a>
+<span style="height: 20px;">
+  <img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple" style="height: 20px;">
+</span>
+<a href="https://neovim.io/" style="vertical-align: middle;"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim" style="height: 20px;"></a>
 
 # GPTModels.nvim - a window based AI plugin
 
@@ -20,7 +22,7 @@ The plugin code itself is well tested and leverages the lua type system, which m
 ### Features
 
 * **Two popup windows to facilitate AI integration**
-* **Works out of the box** - There's no configuration; the plugin is meant to just work. 
+* **Works out of the box** - There's no configuration; the plugin is meant to just work.
 * **Supports OpenAI and Ollama** - Local LLMs can be amazing as well. This plugin makes it simple to query different models. I often get "second opinions" on code I'm getting LLMs help with.
 * **LSP Diagnostic inclusion** - LSP diagnostics in selected code are transferred to the code window for easy diagnostic fixing.
 * **File inclusion** - Include files with your request by hitting <C-f> and picking from the telescope picker.
