@@ -114,15 +114,18 @@ function M.check_deps()
   end
 
   if not has_ollama then
-    info_string = info_string .. "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
+    info_string = info_string ..
+    "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
   end
 
   if not has_openai_api_key then
-    info_string = info_string .. "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+    info_string = info_string ..
+    "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
   end
 
   if not has_openai_api_key and not has_ollama then
-    error_string = error_string .. "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
+    error_string = error_string ..
+    "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
   end
 
   return {
@@ -271,6 +274,7 @@ M.launch_telescope_model_picker = function(on_complete)
   local actions = require('telescope.actions')
   local state = require('telescope.actions.state')
   local pickers = require('telescope.pickers')
+  local finders = require('telescope.finders')
 
   local opts = util.merge_tables(theme, {
     attach_mappings = function(_, map)
@@ -288,13 +292,33 @@ M.launch_telescope_model_picker = function(on_complete)
     end
   })
 
-  pickers.new(opts, {
+  local picker = pickers.new(opts, {
     prompt_title = "pick a model",
-    finder = require('telescope.finders').new_table {
+    finder = finders.new_table {
       results = Store:llm_model_strings()
     },
     sorter = conf.generic_sorter({}),
-  }):find()
+  })
+
+  local refresh_finder = function()
+    picker:refresh(finders.new_table {
+      results = Store:llm_model_strings()
+    }, {})
+  end
+
+  -- Poll for new results
+  local interval = 500
+  vim.defer_fn(function()
+    -- End polling if picker closes
+    if picker.closed then return end
+
+    refresh_finder()
+    vim.defer_fn(function()
+      refresh_finder()
+    end, interval)
+  end, interval)
+
+  picker:find()
 end
 
 return M
