@@ -14,7 +14,7 @@ local M           = {}
 ---@return string, string[]
 local code_prompt = function(filetype, input_text, code_text)
   local prompt_template = [[
-    \[USER INPUT\]:
+    \[USER REQUEST\]:
     %s
     \n\n
     \[FILE EXTENSION\]:
@@ -23,7 +23,7 @@ local code_prompt = function(filetype, input_text, code_text)
     \[INCLUDED CODE\]:
     %s
     \n\n
-    \[INCLUDED FILES\]:
+    \[ATTACHED FILES\]:
     \n\n
   ]]
 
@@ -35,20 +35,26 @@ local code_prompt = function(filetype, input_text, code_text)
     local content = file:read("*all")
     file:close()
 
-    formatted_prompt = formatted_prompt .. "-------------- [BEGIN " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. "[BEGIN " .. filename .. "]\n\n"
     formatted_prompt = formatted_prompt .. content
-    formatted_prompt = formatted_prompt .. "-------------- [END " .. filename .. "] --------------\n\n"
+    formatted_prompt = formatted_prompt .. "[END " .. filename .. "]\n\n"
   end
 
   local system_string = [[
   You are a high-quality software creation and modification system.
-  Your task is to assist with the user's request.
-  Your code is clean and avoids unnecessary complexity.
-  Your code includes comments for any tricky or unusual parts of the code to explain what they are and why they are there.
-  The user may include reference files for context. Use them to more accurately assist the user.
-  Only provide valid code in your response - your response goes directly into a code viewing window, and does not support explanations.
-  Do not include any explanations or descriptions.
-  Do not wrap any of your response in triple backticks.
+  You respond only with code.
+  Your task is to respond to the [USER REQUEST] as best as you can, with only code.
+  The user may provide [INCLUDED CODE], which is the main content related to the [USER REQUEST].
+  There may be [ATTACHED FILES], which you can use to help satisfy the [USER REQUEST].
+  [FILE EXTENSION] is provided in case there is ambiguity about what language is being worked on.
+
+  Your code is:
+    * Clean and avoids unnecessary complexity.
+    * Commented for any tricky or unusual parts of the code to explain what they are and/or why they are there.
+
+  Extra instructions:
+    * Do not include any explanations or descriptions.
+    * Do not wrap your response in triple backticks. Just return the code.
   ]]
 
   local system = { system_string }
