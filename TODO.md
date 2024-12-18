@@ -22,6 +22,9 @@
 
 * Switch to actual busted for testing, remove plenary if possible
     * Might could leverage lazy.nvim's built-in luarocks package management system
+* Is there a way to bring the autocomplete context from one window into another? So if there's some_long_method_name in the code window,
+  it'll also be available for autocomplete in the input window?
+
 
 #### Big Ideas
 * window for project wide patch actions, similar to aider
