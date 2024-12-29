@@ -1,4 +1,5 @@
 #### Little Things
+* Make sure o1 models are available
 * Let some ops, like attach files, work in insert mode as well
 * Let <CR> work from all windows
 * Offer some config for ollama location
