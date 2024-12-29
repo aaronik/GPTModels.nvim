@@ -1,14 +1,14 @@
 #### Little Things
-* When ollama models (and all others) are fetched, they should be inserted into the existing <C-p> window
+* Let some ops, like attach files, work in insert mode as well
+* Let <CR> work from all windows
+* Offer some config for ollama location
 * chat window's prompt needs to be adjusted so the user request counts as much as the included files,
   currently it's dominated by the files and many llms end up just explaining what's in the files
 * Get live reloading of C-p telescope model picker when openai results come in
 * chat window should auto scroll when opened with autosaved session
-* code needs C-y?
-* Focus same buffer on nui exit?
 * Add copilot support
     * https://github.com/B00TK1D/copilot-api/blob/main/api.py -- python implementation
-* Protect against opening windows many times?
+    * Maybe can just use copilot.nvim if there's an available API
 * Figure out how to test nui border text and test all the titles
 * Help window
     * with detailed descriptions of commands
