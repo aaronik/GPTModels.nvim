@@ -319,7 +319,7 @@ function M.build_and_mount(selection)
 
   -- Notify of any errors / warnings
   for level, message in pairs(com.check_deps()) do
-    if message then
+    if #message > 0 then
       vim.notify_once(message, vim.log.levels[level])
     end
   end
