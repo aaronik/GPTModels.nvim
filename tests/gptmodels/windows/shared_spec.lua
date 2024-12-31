@@ -12,7 +12,7 @@ local code_window = require('gptmodels.windows.code')
 local Store = require('gptmodels.store')
 
 -- What we'll iterate over, containing any differences required for the specs
--- Purpose here is to abstract a bunch of common logic
+-- Purpose here is to abstract a bunch of common logic. doze == windowz
 local doze = {
   chat = {
     window = chat_window,
@@ -30,15 +30,12 @@ local doze = {
   }
 }
 
--- Felt cute, might delete later
-local they = it
-
 for _, doe in pairs(doze) do
-  describe("[" .. doe.name .. "] Both windows", function()
+  describe(doe.name, function()
     helpers.reset_state()
     helpers.seed_store()
 
-    they("set wrap on all bufs, because these are small windows and that works better", function()
+    it("sets wrap on all bufs, because these are small windows and that works better", function()
       -- First disable it globally, so the popups don't inherit the wrap from this test
       vim.wo[0].wrap = false
 
@@ -49,7 +46,7 @@ for _, doe in pairs(doze) do
       end
     end)
 
-    they("close the window on q", function()
+    it("closes the window on q", function()
       local win = doe.window.build_and_mount()
 
       -- Send a request
@@ -60,7 +57,7 @@ for _, doe in pairs(doze) do
       assert.is_nil(win.input.bufnr)
     end)
 
-    they("save input text on InsertLeave and prepopulate on reopen", function()
+    it("saves input text on InsertLeave and prepopulate on reopen", function()
       local initial_input = "some initial input"
       local win = doe.window.build_and_mount()
 
@@ -80,7 +77,7 @@ for _, doe in pairs(doze) do
       assert.same({ initial_input }, input_lines)
     end)
 
-    they("open a model picker on <C-p>", function()
+    it("opens a model picker on <C-p>", function()
       -- For down the line of this crazy stubbing exercise
       local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
       get_selected_entry_stub.returns({ "abc.123.pie", index = 1 }) -- typical response
@@ -117,7 +114,7 @@ for _, doe in pairs(doze) do
       assert.equal('123.pie', set_model_stub.calls[1].refs[3])
     end)
 
-    they("cycle through available models with <C-j>", function()
+    it("cycles through available models with <C-j>", function()
       Store:set_models("openai", {})
       Store:set_models("ollama", { "m1", "m2", "m3" })
       Store:set_model("ollama", "m1")
@@ -138,7 +135,7 @@ for _, doe in pairs(doze) do
       assert.equal("m1", Store:get_model().model)
     end)
 
-    they("cycle through available models with <C-k>", function()
+    it("cycles through available models with <C-k>", function()
       Store:set_models("openai", {})
       Store:set_models("ollama", { "m1", "m2", "m3" })
       Store:set_model("ollama", "m1")
@@ -157,7 +154,7 @@ for _, doe in pairs(doze) do
       assert.equal("m3", Store:get_model().model)
     end)
 
-    they("include files on <C-f> and clear them on <C-g>", function()
+    it("includes files on <C-f> and clears them on <C-g>", function()
       doe.window.build_and_mount()
 
       -- I'm only stubbing this because it's so hard to test. One time out of hundreds
@@ -219,7 +216,7 @@ for _, doe in pairs(doze) do
       end
     end)
 
-    they("kill active job on <C-c>", function()
+    it("kills active job on <C-c>", function()
       doe.window.build_and_mount()
       local llm_request_stub = stub(llm, doe.llm_request)
       local die_called = false
@@ -239,7 +236,7 @@ for _, doe in pairs(doze) do
       assert.is_true(die_called)
     end)
 
-    they("automatically scroll display window when user is not in it", function()
+    it("automatically scrolls display window when user is not in it", function()
       local win = doe.window.build_and_mount()
 
       local llm_stub = stub(llm, doe.llm_request)
@@ -322,7 +319,7 @@ for _, doe in pairs(doze) do
       assert.equal(expected_scroll, actual_scroll)
     end)
 
-    they("finish jobs in the background when closed", function()
+    it("finishes jobs in the background when closed", function()
       doe.window.build_and_mount()
       local chat_stub = stub(llm, doe.llm_request)
       local die_called = false
@@ -376,7 +373,7 @@ for _, doe in pairs(doze) do
       assert(util.contains_line(display_lines, "additional response"))
     end)
 
-    they("fetch models when started (etl)", function()
+    it("fetches models when started (etl)", function()
       Store:set_models("openai", { "ma1", "ma2" })
       Store:set_models("ollama", { "m1", "m2" })
       Store:set_model("ollama", "m1")
@@ -406,7 +403,7 @@ for _, doe in pairs(doze) do
       assert.same({ "openai1", "openai2" }, Store:get_models("openai"))
     end)
 
-    they("alert the user when required dependencies are not installed", function()
+    it("alerts the user when required dependencies are not installed", function()
       local notify_stub = stub(vim, 'notify_once')
 
       local exec_stub = stub(cmd, "exec")
@@ -449,7 +446,7 @@ for _, doe in pairs(doze) do
       end
     end)
 
-    they("set input bottom border text on launch", function()
+    it("sets input bottom border text on launch", function()
       local set_text_stub = stub(com, "set_input_bottom_border_text")
       local chat = doe.window.build_and_mount()
       assert.stub(set_text_stub).was_called(1)
@@ -457,7 +454,7 @@ for _, doe in pairs(doze) do
       assert.equal(args[1], chat.input)
     end)
 
-    they("handle errors gracefully - curl error messages appear on screen", function()
+    it("handles errors gracefully - curl error messages appear on screen", function()
       helpers.stub_schedule_wrap()
 
       Store:set_models("ollama", { "m" })

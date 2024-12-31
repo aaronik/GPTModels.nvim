@@ -4,7 +4,7 @@
 
 local util = require('gptmodels.util')
 
-function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
+function InvokeGptModelsCode(opts)
   local gpt_opts = {
     visual_mode = opts.count ~= -1
   }
@@ -14,7 +14,7 @@ function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
   require('gptmodels').code(gpt_opts)
 end
 
-function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
+function InvokeGptModelsChat(opts)
   local gpt_opts = {
     visual_mode = opts.count ~= -1
   }
