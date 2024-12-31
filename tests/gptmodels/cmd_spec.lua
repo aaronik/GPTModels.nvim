@@ -56,7 +56,9 @@ describe("cmd.exec", function()
 
     -- That directory is definitely not found, which leads to a message to
     -- stderr with this in it
-    assert.not_nil(string.find(e, "No such file or directory"))
+    -- (github workflow runner) ls: cannot access '/thisdirdefinitelydoesntexistimsureofitforreal': No such file or directory
+    local expected = "No such file or directory"
+    assert.not_nil(string.find(e, expected), e .. " [did not contain] " .. expected)
   end)
 
   it("handles exit codes", function()

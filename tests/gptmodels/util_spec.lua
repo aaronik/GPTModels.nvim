@@ -107,7 +107,7 @@ describe("util", function()
   describe("ensure_env_var", function()
     it("returns true", function()
       -- always set
-      local res = util.has_env_var("SHELL")
+      local res = util.has_env_var("HOME")
       assert.is_true(res)
     end)
 

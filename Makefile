@@ -23,4 +23,6 @@ build-doc:
 install-precommit-hook:
 	pre-commit install
 
+ensure-no-util-r:
+	! grep --exclude-dir=.git -r --exclude test.yml 'util.R' | grep -v '\-\-'
 
