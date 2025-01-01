@@ -26,3 +26,5 @@ install-precommit-hook:
 ensure-no-util-r:
 	! grep --exclude-dir=.git -r --exclude test.yml 'util.R' | grep -v '\-\-'
 
+# Run everything, if it's a 0 code, everything's good
+pass: test ensure-no-util-r
