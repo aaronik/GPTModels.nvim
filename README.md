@@ -1,9 +1,15 @@
+<a href="https://neovim.io/" style="vertical-align: middle;"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim" style="height: 20px;"></a>
 <span style="height: 20px;">
   <img alt="Static Badge" src="https://img.shields.io/badge/100%25_lua-purple" style="height: 20px;">
 </span>
-<a href="https://neovim.io/" style="vertical-align: middle;"><img src="https://img.shields.io/badge/NeoVim-%2357A143.svg?&amp;style=for-the-badge&amp;logo=neovim&amp;logoColor=white" alt="Neovim" style="height: 20px;"></a>
+![build status](https://github.com/aaronik/gptmodels.nvim/actions/workflows/test.yml/badge.svg)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/aaronik/gptmodels.nvim)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/aaronik/gptmodels.nvim)
+
 
 # GPTModels.nvim - a window based AI plugin
+
+![gptmodels_demo](https://github.com/user-attachments/assets/19839d07-0282-444a-99f4-cd538a44ca36)
 
 <img width="1271" alt="image of :GPTChat window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/3e642a48-ce56-4295-a5fa-368b523bab2e">
 <img width="1271" alt="image of :GPTCode window" src="https://github.com/Aaronik/GPT.nvim/assets/1324601/ca6604af-302f-4a44-8964-bb683633031e">
