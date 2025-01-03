@@ -1,8 +1,4 @@
----@diagnostic disable: undefined-global
-
-local util = require("gptmodels.util")
 local assert = require("luassert")
-local stub = require('luassert.stub')
 local cmd = require('gptmodels.cmd')
 
 describe("cmd.exec", function()
@@ -163,5 +159,4 @@ describe("cmd.exec", function()
 
     assert.equal(0, sig)
   end)
-
 end)

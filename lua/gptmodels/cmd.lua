@@ -1,6 +1,5 @@
-local util = require('gptmodels.util')
-local uv = vim.uv
-require('gptmodels.types')
+local uv = vim.uv or vim.loop
+assert(uv, "GPTModels.nvim couldn't find either vim.uv or vim.loop, GPTModels won't work")
 
 local M = {}
 
