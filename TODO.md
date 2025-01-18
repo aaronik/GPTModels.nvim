@@ -1,4 +1,5 @@
 #### Little Things
+* Snacks.picker closes the window on <Esc> from normal mode. Should do same.
 * Make sure o1 models are available
 * Let some ops, like attach files, work in insert mode as well
 * Let <CR> work from all windows
@@ -25,6 +26,9 @@
     * Might could leverage lazy.nvim's built-in luarocks package management system
 * Is there a way to bring the autocomplete context from one window into another? So if there's some_long_method_name in the code window,
   it'll also be available for autocomplete in the input window?
+* Save one session to disk. Sessions are remembered across restarts
+* Save results of previous llm fetches to disk too, totally solve fetch slowness.
+    * Still need to get real time insert though for the UX
 
 
 #### Big Ideas
