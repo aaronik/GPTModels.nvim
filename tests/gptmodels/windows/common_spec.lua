@@ -1,4 +1,3 @@
-local util = require('gptmodels.util')
 local assert = require("luassert")
 local stub = require('luassert.stub')
 local Popup = require('nui.popup')

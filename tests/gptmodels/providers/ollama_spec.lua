@@ -47,7 +47,8 @@ describe("ollama.generate", function()
     local initial_clipped_json = '{"model":"whatever","created_at":"2024-05-14T04:31:47.332514Z","respo'
     local follow_on_one = 'nse":"hiya","done":false,"context":[128006,9125],"total_duration":5058894333,"load_d'
     local follow_on_two =
-    'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
+        'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration"'
+        .. ':2508684000,"eval_count":64,"eval_duration":1507712000}'
 
     local exec_stub = stub(cmd, "exec")
 
@@ -121,9 +122,11 @@ describe("ollama.chat", function()
   it('combines clipped responses', function()
     local initial_clipped_json = '{"model":"llama3","created_at":"2024-05-14T04:31:47.332514Z","mess'
     local follow_on_one =
-    'age":{"content": "hiya", "role": "assistant"},"done":false,"context":[128006,9125],"total_duration":5058894333,"load_d'
+        'age":{"content": "hiya", "role": "assistant"},"done":false,"context":'
+        .. '[128006,9125],"total_duration":5058894333,"load_d'
     local follow_on_two =
-    'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":2508684000,"eval_count":64,"eval_duration":1507712000}'
+        'uration":1040750958,"prompt_eval_count":1242,"prompt_eval_duration":'
+        .. '2508684000,"eval_count":64,"eval_duration":1507712000}'
 
     local exec_stub = stub(cmd, "exec")
 

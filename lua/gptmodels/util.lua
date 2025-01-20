@@ -142,7 +142,11 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
     if diagnostic.lnum >= selection.start_line and diagnostic.lnum <= selection.end_line then
       local selection_problem_code_start_line = diagnostic.lnum - selection.start_line + 1
       local selection_problem_code_end_line = diagnostic.end_lnum - selection.start_line + 1
-      local problem_code_lines = { unpack(selection.lines, selection_problem_code_start_line, selection_problem_code_end_line) }
+      local problem_code_lines = {
+        unpack(selection.lines,
+        selection_problem_code_start_line,
+        selection_problem_code_end_line),
+      }
 
       local severity_label = constants.DIAGNOSTIC_SEVERITY_LABEL_MAP[diagnostic.severity]
 

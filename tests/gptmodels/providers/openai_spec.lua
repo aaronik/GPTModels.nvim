@@ -64,9 +64,15 @@ describe("openai.generate", function()
     -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
     -- All messages are just "hello"
     local response_1 =
-    'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+        'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,'
+        .. '"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":'
+        .. '{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
     local response_2 =
-    'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
+        'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13",'
+        .. '"system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,'
+        .. '"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion'
+        .. '.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":'
+        .. '[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
@@ -126,10 +132,14 @@ describe("openai.chat", function()
       assert(vim.list_contains(exec_args.args, "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or "")))
 
       local sample_llm_response =
-      'data: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":"both"},"logprobs":null,"finish_reason":null}]}'
+          'data: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,'
+          .. '"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":'
+          .. '{"content":"both"},"logprobs":null,"finish_reason":null}]}'
 
       sample_llm_response = sample_llm_response ..
-          '\n\ndata: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":" halves"},"logprobs":null,"finish_reason":null}]}\n\n'
+          '\n\ndata: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk",'
+          .. '"created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d",'
+          .. '"choices":[{"index":0,"delta":{"content":" halves"},"logprobs":null,"finish_reason":null}]}\n\n'
 
       -- This is how it comes in from openai for whatever reason. Note role needs to be injected most of the time
       exec_args.onread(nil, sample_llm_response)
@@ -173,9 +183,15 @@ describe("openai.chat", function()
     -- Two responses, which contain three messages, one of which is split (clipped) across the two responses
     -- All messages are just "hello"
     local response_1 =
-    'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
+    'data: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,'
+      .. '"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":'
+      .. '{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIw'
     local response_2 =
-    'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
+    'X9HNkmbRa","object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13",'
+      .. '"system_fingerprint":"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},'
+      .. '"logprobs":null,"finish_reason":null}]}\r\ndata: {"id":"chatcmpl-9v8g31Z2PfncKDYcmlIwX9HNkmbRa"'
+      .. ',"object":"chat.completion.chunk","created":1723405079,"model":"gpt-4o-2024-05-13","system_fingerprint":'
+      .. '"fp_3aa7262c27","choices":[{"index":0,"delta":{"content":"hello"},"logprobs":null,"finish_reason":null}]}'
 
     exec_stub.invokes(function(data)
       local exec_args = data
@@ -248,8 +264,10 @@ describe("openai.fetch_models", function()
   it("correctly handles openai errors", function()
     local exec_stub = stub(cmd, "exec")
     local error = nil
+    local finished = false
     openai.fetch_models(function(err)
       error = err
+      finished = true
     end)
 
     ---@type ExecArgs
@@ -269,7 +287,7 @@ describe("openai.fetch_models", function()
       end
     end)
 
-    openai.fetch_models(function (err, models)
+    openai.fetch_models(function()
     end)
   end)
 end)

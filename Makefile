@@ -1,30 +1,33 @@
-TESTS_INIT=tests/minimal_init.lua
+MINIMAL_INIT=tests/minimal_init.lua
 TESTS_DIR=tests
+NO_UTIL_SPEC=checks
 
 .PHONY: test
 
-test_nvim:
+test:
 	@nvim \
 		--headless \
 		--noplugin \
-		-u ${TESTS_INIT} \
-		-c "PlenaryBustedDirectory ${TESTS_DIR} { minimal_init = '${TESTS_INIT}' }"
-
-test:
-	$(MAKE) test_nvim
+		-u ${MINIMAL_INIT} \
+		-c "PlenaryBustedDirectory ${TESTS_DIR} { minimal_init = '${MINIMAL_INIT}' }"
 
 test-watch:
 	nodemon -e lua -x "$(MAKE) test || exit 1"
 
-build-doc:
-	pre-commit run
+check: ## Run luacheck on the project
+	luacheck . --globals vim it describe before_each after_each --exclude-files tests/fixtures --max-comment-line-length 140
 
-# Currently not used; README.md is in :help
-install-precommit-hook:
-	pre-commit install
+no-utils:
+	@nvim \
+		--headless \
+		--noplugin \
+		-u ${MINIMAL_INIT} \
+		-c "PlenaryBustedDirectory ${NO_UTIL_SPEC} { minimal_init = '${MINIMAL_INIT}' }"
 
-ensure-no-util-r:
-	! grep --exclude-dir=.git -r --exclude test.yml 'util.R' | grep -v '\-\-'
+pass: test no-utils check ## Run everything, if it's a 0 code, everything's good
 
-# Run everything, if it's a 0 code, everything's good
-pass: test ensure-no-util-r
+help: ## Displays this information.
+	@printf '%s\n' "Usage: make <command>"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@printf '\n'
+

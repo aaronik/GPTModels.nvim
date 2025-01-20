@@ -122,9 +122,16 @@ function M.build_and_mount(selection)
 
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
-    if chat.bufnr and chat.winid and vim.api.nvim_buf_is_valid(chat.bufnr) and vim.api.nvim_win_is_valid(chat.winid) then
-      com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
-    end
+    local has_buf_and_win = chat.bufnr and chat.winid
+    if not has_buf_and_win then return end
+
+    local buf_valid = vim.api.nvim_buf_is_valid(chat.bufnr)
+    local win_valid = vim.api.nvim_win_is_valid(chat.winid)
+    if not buf_valid and win_valid then return end
+
+    -- all providers, but especially openai, can have the etl finish after a window has been closed,
+    -- if it opens then closes real fast
+    com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
   end)
 
   -- Input window is text with no syntax

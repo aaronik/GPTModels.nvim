@@ -1,6 +1,4 @@
-local util = require('gptmodels.util')
 local cmd = require('gptmodels.cmd')
-local consts = require('gptmodels.constants')
 require('gptmodels.types')
 
 -- curl http://localhost:11434/api/chat -d '{ "model": "llama2", "messages": [ { "role": "user", "content": "why is the sky blue?" } ] }'

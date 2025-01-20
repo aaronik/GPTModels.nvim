@@ -27,34 +27,29 @@ jobs:
     - name: Install Plenary
       run: |
         git clone https://github.com/nvim-lua/plenary.nvim.git
-        mkdir -p .local/share/nvim/lazy/
-        mv plenary.nvim .local/share/nvim/lazy/
+        mkdir -p $HOME/.local/share/nvim/lazy/
+        mv plenary.nvim $HOME/.local/share/nvim/lazy/
 
     - name: Install Nui
       run: |
         git clone https://github.com/MunifTanjim/nui.nvim
-        mkdir -p .local/share/nvim/lazy/
-        mv nui.nvim .local/share/nvim/lazy/
+        mkdir -p $HOME/.local/share/nvim/lazy/
+        mv nui.nvim $HOME/.local/share/nvim/lazy/
 
     - name: Install Telescope
       run: |
         git clone https://github.com/nvim-telescope/telescope.nvim
-        mkdir -p .local/share/nvim/lazy/
-        mv telescope.nvim .local/share/nvim/lazy/
+        mkdir -p $HOME/.local/share/nvim/lazy/
+        mv telescope.nvim $HOME/.local/share/nvim/lazy/
 
     - name: Run Tests
-      env:
-        XDG_CONFIG_HOME: ${{ github.workspace }}/.config
-        XDG_DATA_HOME: ${{ github.workspace }}/.local/share
-        XDG_STATE_HOME: ${{ github.workspace }}/.local/state
-        XDG_CACHE_HOME: ${{ github.workspace }}/.cache
       run: make test
 
-    - name: Ensure No util.R in code
-      env:
-        XDG_CONFIG_HOME: ${{ github.workspace }}/.config
-        XDG_DATA_HOME: ${{ github.workspace }}/.local/share
-        XDG_STATE_HOME: ${{ github.workspace }}/.local/state
-        XDG_CACHE_HOME: ${{ github.workspace }}/.cache
-      run: make ensure-no-util-r
+    - name: Check for errant util calls
+      run: make no-utils
+
+    - name: Run luacheck type check / linter
+      run: |
+        sudo apt-get install lua-check -y --no-install-recommends
+        make check
 

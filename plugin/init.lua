@@ -9,24 +9,24 @@ local function models()
   return require('gptmodels')
 end
 
-function InvokeGptModelsCode(opts)
+local function code_with_vis_ops(opts)
   local gpt_opts = { visual_mode = opts.count ~= -1 }
   models().code(gpt_opts)
 end
 
-function InvokeGptModelsChat(opts)
+local function chat_with_vis_ops(opts)
   local gpt_opts = { visual_mode = opts.count ~= -1 }
   models().chat(gpt_opts)
 end
 
 vim.api.nvim_create_user_command(
   "GPTModelsCode",
-  InvokeGptModelsCode,
+  code_with_vis_ops,
   { nargs = "?", range = "%", addr = "lines" }
 )
 
 vim.api.nvim_create_user_command(
   "GPTModelsChat",
-  InvokeGptModelsChat,
+  chat_with_vis_ops,
   { nargs = "?", range = "%", addr = "lines" }
 )

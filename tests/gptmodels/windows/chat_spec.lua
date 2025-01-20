@@ -40,7 +40,7 @@ describe("The Chat window", function()
   it("clears all windows, kills job, removes files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
-    local chat = chat_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate input a bit
+    chat_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate input a bit
 
     local die_called = false
 
@@ -73,7 +73,7 @@ describe("The Chat window", function()
     local second_given_lines = { "second" }
 
     -- reopen window with new selection
-    chat = chat_window.build_and_mount(helpers.build_selection(second_given_lines))
+    local chat = chat_window.build_and_mount(helpers.build_selection(second_given_lines))
 
     -- old job got killed
     assert(die_called)

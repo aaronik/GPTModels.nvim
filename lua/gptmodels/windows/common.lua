@@ -125,7 +125,8 @@ function M.check_deps()
 
   if not has_openai_api_key and not has_ollama then
     error_string = error_string ..
-    "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
+    "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable."
+      .. " The plugin will have no models and will not work. "
   end
 
   return {

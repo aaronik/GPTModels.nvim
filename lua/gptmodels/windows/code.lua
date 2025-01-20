@@ -163,10 +163,16 @@ function M.build_and_mount(selection)
 
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
-    -- all providers, but especially openai, can have the etl finish after a window has been closed, if it opens then closes real fast
-    if right.bufnr and right.winid and vim.api.nvim_buf_is_valid(right.bufnr) and vim.api.nvim_win_is_valid(right.winid) then
-      com.set_window_title(right, com.model_display_name())
-    end
+    local has_buf_and_win = right.bufnr and right.winid
+    if not has_buf_and_win then return end
+
+    local buf_valid = vim.api.nvim_buf_is_valid(right.bufnr)
+    local win_valid = vim.api.nvim_win_is_valid(right.winid)
+    if not buf_valid and win_valid then return end
+
+    -- all providers, but especially openai, can have the etl finish after a window has been closed,
+    -- if it opens then closes real fast
+    com.set_window_title(right, com.model_display_name())
   end)
 
   -- Turn off syntax highlighting for input buffer.

@@ -59,7 +59,7 @@ for _, doe in pairs(doze) do
 
     it("saves input text on InsertLeave and prepopulate on reopen", function()
       local initial_input = "some initial input"
-      local win = doe.window.build_and_mount()
+      doe.window.build_and_mount()
 
       -- Enter insert mode
       helpers.feed_keys("i" .. initial_input)
@@ -71,7 +71,7 @@ for _, doe in pairs(doze) do
       helpers.feed_keys(":q<CR>")
 
       -- Reopen the window
-      win = doe.window.build_and_mount()
+      local win = doe.window.build_and_mount()
 
       local input_lines = vim.api.nvim_buf_get_lines(win.input.bufnr, 0, -1, true)
       assert.same({ initial_input }, input_lines)
@@ -285,8 +285,6 @@ for _, doe in pairs(doze) do
       end
 
       -- This time we should stay put
-      last_line = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(win[doe.response_pane].winid))
-      win_height = vim.api.nvim_win_get_height(win[doe.response_pane].winid)
       expected_scroll = actual_scroll -- unchanged since last check
       actual_scroll = vim.fn.line('w0', win[doe.response_pane].winid)
 
@@ -432,9 +430,16 @@ for _, doe in pairs(doze) do
       -- TODO Move this test and the one in chat_spec to common_spec and just check in both of these
       -- that check_deps is being called
       local error_message =
-      "GPTModels.nvim is missing `curl`, which is required. The plugin will not work. GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable. The plugin will have no models and will not work. "
+      "GPTModels.nvim is missing `curl`, which is required."
+      .. " The plugin will not work."
+      .. " GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable."
+      .. " The plugin will have no models and will not work. "
+
       local info_message =
-      "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+      "GPTModels.nvim is missing optional dependency `ollama`."
+      .. " Local ollama models will be unavailable."
+      .. " GPTModels.nvim is missing optional OPENAI_API_KEY env var."
+      .. " openai models will be unavailable. "
 
       -- number of notify calls
       for i = 1, 2 do

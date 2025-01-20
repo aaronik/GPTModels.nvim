@@ -4,15 +4,9 @@ local util        = require("gptmodels.util")
 local assert      = require("luassert")
 local code_window = require('gptmodels.windows.code')
 local stub        = require('luassert.stub')
-local spy         = require('luassert.spy')
 local llm         = require('gptmodels.llm')
-local cmd         = require('gptmodels.cmd')
 local Store       = require('gptmodels.store')
-local ollama      = require('gptmodels.providers.ollama')
 local helpers     = require('tests.gptmodels.spec_helpers')
-local func        = require('vim.func')
-local com         = require('gptmodels.windows.common')
-local openai      = require('gptmodels.providers.openai')
 
 describe("The code window", function()
   helpers.reset_state()
@@ -28,7 +22,7 @@ describe("The code window", function()
   it("clears all windows, kills job, and clears files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
-    local code = code_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate left pane
+    code_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate left pane
 
     local die_called = false
 
@@ -61,7 +55,7 @@ describe("The code window", function()
     local second_given_lines = { "second" }
 
     -- reopen window with new selection
-    code = code_window.build_and_mount(helpers.build_selection(second_given_lines))
+    local code = code_window.build_and_mount(helpers.build_selection(second_given_lines))
 
     -- old job got killed
     assert(die_called)

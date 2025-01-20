@@ -139,7 +139,7 @@ describe("cmd.exec", function()
   end)
 
   it("can exec synchronously", function()
-    local sig = signal
+    local sig = 1
 
     ---@type ExecArgs
     local exec_args = {
