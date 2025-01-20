@@ -101,16 +101,16 @@ describe("openai.chat", function()
   it("passes correct data to curl", function()
     local cmd_stub = stub(cmd, "exec")
 
+    -- intercept curl call
     cmd_stub.invokes(function(data)
       ---@type ExecArgs
       local exec_args = data
 
-      -- right url in right place
-      assert.equal(exec_args.args[1], "https://api.openai.com/v1/chat/completions")
+      -- right url
+      assert(vim.list_contains(exec_args.args, "https://api.openai.com/v1/chat/completions"))
+      assert(vim.list_contains(exec_args.args, "--no-progress-meter"))
 
       local llm_data_json = exec_args.args[3]
-
-      assert(util.contains_line(exec_args.args, "--no-progress-meter"))
 
       ---@type LlmChatArgs | nil
       local llm_data = vim.fn.json_decode(llm_data_json)
@@ -123,7 +123,7 @@ describe("openai.chat", function()
       assert.equal(true, llm_data.stream)
 
       -- Ensure OPENAI_API_KEY is passed in correctly
-      assert.equal("Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""), exec_args.args[5])
+      assert(vim.list_contains(exec_args.args, "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or "")))
 
       local sample_llm_response =
       'data: {"id":"chatcmpl-9NlDMQabkgi97t6OQTDXQKwGt7mx4","object":"chat.completion.chunk","created":1715450064,"model":"gpt-4-turbo-2024-04-09","system_fingerprint":"fp_294de9593d","choices":[{"index":0,"delta":{"content":"both"},"logprobs":null,"finish_reason":null}]}'

@@ -1,4 +1,3 @@
-local util = require('gptmodels.util')
 local cmd = require('gptmodels.cmd')
 local consts = require('gptmodels.constants')
 require('gptmodels.types')
@@ -23,14 +22,13 @@ require('gptmodels.types')
 ---@param response string
 ---@return string | nil, LlmMessage[] | nil
 local parse_llm_response = function(response)
-    -- replace \r\n with just \n
     response = string.gsub(response, "\r\n", "\n")
 
     -- Break on newlines, remove empty lines
     local json_lines = vim.split(response, "\n")
     json_lines = vim.tbl_filter(function(line) return line ~= "" end, json_lines)
 
-    -- Then, for some reason all their lines start with data: . Just the string, not json. Weird.
+    -- All their lines start with data: . Just the string, not in json
     for i, line in ipairs(json_lines) do
         if line:sub(1, 5) == "data:" then
             json_lines[i] = line:sub(7)
@@ -41,7 +39,7 @@ local parse_llm_response = function(response)
     local messages = {}
 
     for _, line in ipairs(json_lines) do
-        -- openai will return this as its own line for some reason
+        -- openai will return this as its own line
         if line == '[DONE]' or line == "" then
             break
         end
@@ -143,19 +141,21 @@ local Provider = {
 
     chat = function(args)
         local url = "https://api.openai.com/v1/chat/completions"
+        local openai_api_key = os.getenv("OPENAI_API_KEY") or ""
 
         local curl_args = {
             url,
             "--data",
             vim.fn.json_encode(args.llm),
             "-H",
-            "Authorization: Bearer " .. (os.getenv("OPENAI_API_KEY") or ""),
+            "Authorization: Bearer " .. openai_api_key,
             "-H",
             "Content-Type: application/json",
             "--no-buffer",
             "--no-progress-meter",
         }
 
+        -- For clipped responses
         local response_aggregate = ''
 
         local job = cmd.exec({
@@ -170,7 +170,6 @@ local Provider = {
                 local parse_error, messages = parse_llm_response(response)
 
                 if parse_error then
-                    -- return args.on_read(parse_error)
                     response_aggregate = response
                 end
 
