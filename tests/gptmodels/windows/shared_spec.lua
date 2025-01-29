@@ -7,7 +7,7 @@ local ollama = require('gptmodels.providers.ollama')
 local llm = require('gptmodels.llm')
 local openai = require('gptmodels.providers.openai')
 local chat_window = require('gptmodels.windows.chat')
-local helpers = require('tests.gptmodels.spec_helpers')
+local h = require('tests.gptmodels.spec_helpers')
 local code_window = require('gptmodels.windows.code')
 local Store = require('gptmodels.store')
 
@@ -32,8 +32,8 @@ local doze = {
 
 for _, doe in pairs(doze) do
   describe(doe.name, function()
-    helpers.hook_reset_state()
-    helpers.hook_seed_store()
+    h.hook_reset_state()
+    h.hook_seed_store()
 
     it("sets wrap on all bufs, because these are small windows and that works better", function()
       -- First disable it globally, so the popups don't inherit the wrap from this test
@@ -50,7 +50,7 @@ for _, doe in pairs(doze) do
       local win = doe.window.build_and_mount()
 
       -- Send a request
-      helpers.feed_keys("q")
+      h.feed_keys("q")
 
       -- assert window was closed
       assert.is_nil(win.input.winid)
@@ -62,18 +62,18 @@ for _, doe in pairs(doze) do
       doe.window.build_and_mount()
 
       -- Enter insert mode
-      helpers.feed_keys("i" .. initial_input)
+      h.feed_keys("i" .. initial_input)
 
       -- <Esc> to trigger save
-      helpers.feed_keys("<Esc>")
+      h.feed_keys("<Esc>")
 
       -- Close the window with :q
-      helpers.feed_keys(":q<CR>")
+      h.feed_keys(":q<CR>")
 
       -- Reopen the window
       local win = doe.window.build_and_mount()
 
-      local input_lines = vim.api.nvim_buf_get_lines(win.input.bufnr, 0, -1, true)
+      local input_lines = h.get_popup_lines(win.input)
       assert.same({ initial_input }, input_lines)
     end)
 
@@ -93,16 +93,14 @@ for _, doe in pairs(doze) do
       doe.window.build_and_mount()
 
       -- Open model picker
-      local c_m = vim.api.nvim_replace_termcodes("<C-p>", true, true, true)
-      vim.api.nvim_feedkeys(c_m, 'mtx', true)
+      h.feed_keys("<C-p>")
 
       assert.stub(new_picker_stub).was_called(1)
 
       -- Type whatever nonsense and press enter
-      local search = vim.api.nvim_replace_termcodes("<CR>", true, true, true)
-      vim.api.nvim_feedkeys(search, 'mtx', true)
+      h.feed_keys("<CR>")
 
-      local attach_mappings = new_picker_stub.calls[1].refs[1].attach_mappings
+      local attach_mappings = h.stub_args(new_picker_stub).attach_mappings
       local map = stub()
       map.invokes(function(_, _, cb)
         cb(9999) -- this will call get_selected_entry internally
@@ -110,8 +108,8 @@ for _, doe in pairs(doze) do
       attach_mappings(nil, map)
 
       assert.stub(set_model_stub).was_called(1)
-      assert.equal('abc', set_model_stub.calls[1].refs[2])
-      assert.equal('123.pie', set_model_stub.calls[1].refs[3])
+      assert.equal('abc', h.stub_args(set_model_stub, 2))
+      assert.equal('123.pie', h.stub_args(set_model_stub, 3))
     end)
 
     it("cycles through available models with <C-j>", function()
@@ -124,14 +122,14 @@ for _, doe in pairs(doze) do
       Store:set_model("ollama", "m1")
 
       assert.equal("m1", Store:get_model().model)
-      helpers.feed_keys("<C-j>")
+      h.feed_keys("<C-j>")
       assert.equal("m2", Store:get_model().model)
-      helpers.feed_keys("<C-j>")
+      h.feed_keys("<C-j>")
       assert.equal("m3", Store:get_model().model)
 
       -- When initially set to a model that isn't present
       Store:set_model("ollama", "absent-model")
-      helpers.feed_keys("<C-j>")
+      h.feed_keys("<C-j>")
       assert.equal("m1", Store:get_model().model)
     end)
 
@@ -143,14 +141,14 @@ for _, doe in pairs(doze) do
       doe.window.build_and_mount()
 
       assert.equal("m1", Store:get_model().model)
-      helpers.feed_keys("<C-k>")
+      h.feed_keys("<C-k>")
       assert.equal("m3", Store:get_model().model)
-      helpers.feed_keys("<C-k>")
+      h.feed_keys("<C-k>")
       assert.equal("m2", Store:get_model().model)
 
       -- When initially set to a model that isn't present
       Store:set_model("ollama", "absent-model")
-      helpers.feed_keys("<C-k>")
+      h.feed_keys("<C-k>")
       assert.equal("m3", Store:get_model().model)
     end)
 
@@ -170,12 +168,10 @@ for _, doe in pairs(doze) do
       stub(require('telescope.actions'), "close")
 
       -- Press ctl-f to open the telescope picker
-      local ctrl_f = vim.api.nvim_replace_termcodes('<C-f>', true, true, true)
-      vim.api.nvim_feedkeys(ctrl_f, 'mtx', false)
+      h.feed_keys('<C-f>')
 
       -- Press enter to select the first file, was Makefile in testing
-      local cr = vim.api.nvim_replace_termcodes('<CR>', true, true, true)
-      vim.api.nvim_feedkeys(cr, 'mtx', false)
+      h.feed_keys('<CR>')
 
       -- Simulate finding a file
       assert.stub(find_files).was_called(1)
@@ -188,10 +184,10 @@ for _, doe in pairs(doze) do
 
       -- Now we'll check what was given to llm.generate
       local generate_stub = stub(llm, doe.llm_request)
-      vim.api.nvim_feedkeys(cr, 'mtx', false)
+      h.feed_keys('<CR>')
 
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
-      local args = generate_stub.calls[1].refs[1]
+      local args = h.stub_args(generate_stub)
 
       -- Does the request now contain the file
       if args.llm.prompt then
@@ -201,10 +197,10 @@ for _, doe in pairs(doze) do
       end
 
       -- Now we'll make sure C-g clears the files
-      local ctrl_g = vim.api.nvim_replace_termcodes('<C-g>', true, true, true)
-      vim.api.nvim_feedkeys(ctrl_g, 'mtx', false)
-      vim.api.nvim_feedkeys(cr, 'mtx', false)
+      h.feed_keys('<C-g>')
+      h.feed_keys('<CR>')
 
+      -- TODO h.stub_args should do both calls and refs
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
       args = generate_stub.calls[2].refs[1]
 
@@ -219,21 +215,17 @@ for _, doe in pairs(doze) do
     it("kills active job on <C-c>", function()
       doe.window.build_and_mount()
       local llm_request_stub = stub(llm, doe.llm_request)
-      local die_called = false
 
-      llm_request_stub.returns({
-        die = function()
-          die_called = true
-        end
-      })
+      local fake_job = h.fake_job()
+      llm_request_stub.returns(fake_job)
 
       -- Make a request to start a job
-      helpers.feed_keys('xhello<Esc><CR>')
+      h.feed_keys('xhello<Esc><CR>')
 
       -- press ctrl-c
-      helpers.feed_keys('<C-c>')
+      h.feed_keys('<C-c>')
 
-      assert.is_true(die_called)
+      assert.is_true(fake_job.done())
     end)
 
     it("automatically scrolls display window when user is not in it", function()
@@ -241,10 +233,10 @@ for _, doe in pairs(doze) do
 
       local llm_stub = stub(llm, doe.llm_request)
 
-      helpers.feed_keys('<CR>')
+      h.feed_keys('<CR>')
 
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
-      local args = llm_stub.calls[1].refs[1]
+      local args = h.stub_args(llm_stub)
 
       local long_content = ""
       for _ = 1, 1000, 1 do
@@ -270,7 +262,7 @@ for _, doe in pairs(doze) do
       assert.equal(expected_scroll, actual_scroll)
 
       -- Now press s-tab to get into the window
-      helpers.feed_keys('<S-Tab>')
+      h.feed_keys('<S-Tab>')
 
       -- Another big response
       if doe.name == "code_window" then
@@ -291,7 +283,7 @@ for _, doe in pairs(doze) do
       assert.equal(expected_scroll, actual_scroll)
 
       -- Now we'll close the window to later reopen it
-      helpers.feed_keys(':q<CR>')
+      h.feed_keys(':q<CR>')
 
       -- reopen the closed window
       win = doe.window.build_and_mount()
@@ -322,19 +314,14 @@ for _, doe in pairs(doze) do
       local chat_stub = stub(llm, doe.llm_request)
       local die_called = false
 
-      chat_stub.returns({
-        die = function()
-          die_called = true
-        end
-      })
+      local fake_job = h.fake_job()
+      chat_stub.returns(fake_job)
 
       -- Make a request to start a job
-      local keys = vim.api.nvim_replace_termcodes('ihello<Esc><CR>', true, true, true)
-      vim.api.nvim_feedkeys(keys, 'mtx', false)
+      h.feed_keys('ihello<Esc><CR>')
 
       -- quit with :q
-      keys = vim.api.nvim_replace_termcodes('<Esc>:q<CR>', true, true, true)
-      vim.api.nvim_feedkeys(keys, 'mtx', false)
+      h.feed_keys('<Esc>:q<CR>')
 
       assert.is_not.True(die_called)
 
@@ -344,7 +331,7 @@ for _, doe in pairs(doze) do
       -- vim.wait(10)
 
       ---@type MakeChatRequestArgs | MakeGenerateRequestArgs
-      local args = chat_stub.calls[1].refs[1]
+      local args = h.stub_args(chat_stub)
 
       if args.llm.prompt then
         args.on_read(nil, "response to be saved in background")
@@ -453,14 +440,14 @@ for _, doe in pairs(doze) do
 
     it("sets input bottom border text on launch", function()
       local set_text_stub = stub(com, "set_input_bottom_border_text")
-      local chat = doe.window.build_and_mount()
+      local win = doe.window.build_and_mount()
       assert.stub(set_text_stub).was_called(1)
-      local args = set_text_stub.calls[1].refs
-      assert.equal(args[1], chat.input)
+      local args = h.stub_args(set_text_stub)
+      assert.equal(args, win.input)
     end)
 
     it("handles errors gracefully - curl error messages appear on screen", function()
-      helpers.stub_schedule_wrap()
+      h.stub_schedule_wrap()
 
       Store:set_models("ollama", { "m" })
       Store:set_model("ollama", "m")
@@ -479,9 +466,9 @@ for _, doe in pairs(doze) do
       local win = doe.window.build_and_mount()
 
       -- Send a request
-      helpers.feed_keys('ihello<Esc><CR>')
+      h.feed_keys('ihello<Esc><CR>')
 
-      local displayed_lines = vim.api.nvim_buf_get_lines(win[doe.response_pane].bufnr, 0, -1, true)
+      local displayed_lines = h.get_popup_lines(win[doe.response_pane])
       assert(util.contains_line(displayed_lines, "curl error"))
     end)
   end)

@@ -95,8 +95,9 @@ end
 
 -- Get the given stub's first call's arguments
 ---@param stoob any -- TODO Wait do we not have typing for stubs!?
-M.stub_args = function(stoob)
-  return stoob.calls[1].refs[1]
+---@param call_num integer | nil -- TODO Wait do we not have typing for stubs!?
+M.stub_args = function(stoob, call_num)
+  return stoob.calls[1].refs[call_num or 1]
 end
 
 return M
