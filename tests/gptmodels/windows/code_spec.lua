@@ -9,12 +9,12 @@ local Store       = require('gptmodels.store')
 local helpers     = require('tests.gptmodels.spec_helpers')
 
 describe("The code window", function()
-  helpers.reset_state()
-  helpers.seed_store()
+  helpers.hook_reset_state()
+  helpers.hook_seed_store()
 
   it("places provided selected text in left window", function()
     local given_lines = { "text line 1", "text line 2" }
-    local code = code_window.build_and_mount(helpers.build_selection(given_lines))
+    local code = code_window.build_and_mount(helpers.generate_selection(given_lines))
     local gotten_lines = vim.api.nvim_buf_get_lines(code.left.bufnr, 0, -1, true)
     assert.same(given_lines, gotten_lines)
   end)
@@ -22,7 +22,7 @@ describe("The code window", function()
   it("clears all windows, kills job, and clears files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
-    code_window.build_and_mount(helpers.build_selection(first_given_lines)) -- populate left pane
+    code_window.build_and_mount(helpers.generate_selection(first_given_lines)) -- populate left pane
 
     local die_called = false
 
@@ -55,7 +55,7 @@ describe("The code window", function()
     local second_given_lines = { "second" }
 
     -- reopen window with new selection
-    local code = code_window.build_and_mount(helpers.build_selection(second_given_lines))
+    local code = code_window.build_and_mount(helpers.generate_selection(second_given_lines))
 
     -- old job got killed
     assert(die_called)
@@ -193,7 +193,7 @@ describe("The code window", function()
     Store.code.input:append("input content")
     Store.code.left:append("left content")
 
-    local code = code_window.build_and_mount(helpers.build_selection({ "provided text" }))
+    local code = code_window.build_and_mount(helpers.generate_selection({ "provided text" }))
 
     local right_lines = vim.api.nvim_buf_get_lines(code.right.bufnr, 0, -1, true)
     local input_lines = vim.api.nvim_buf_get_lines(code.input.bufnr, 0, -1, true)
@@ -293,7 +293,7 @@ describe("The code window", function()
     local llm_stub = stub(llm, "generate")
 
     -- left window is saved when it opens
-    local code = code_window.build_and_mount(helpers.build_selection({ "left" }))
+    local code = code_window.build_and_mount(helpers.generate_selection({ "left" }))
 
     -- Add user input
     vim.api.nvim_buf_set_lines(code.input.bufnr, 0, -1, true, { "input" })

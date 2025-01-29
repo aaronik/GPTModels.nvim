@@ -32,8 +32,8 @@ local doze = {
 
 for _, doe in pairs(doze) do
   describe(doe.name, function()
-    helpers.reset_state()
-    helpers.seed_store()
+    helpers.hook_reset_state()
+    helpers.hook_seed_store()
 
     it("sets wrap on all bufs, because these are small windows and that works better", function()
       -- First disable it globally, so the popups don't inherit the wrap from this test
