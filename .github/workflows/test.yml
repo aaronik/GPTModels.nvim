@@ -15,11 +15,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Install Make Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install libtool-bin autoconf automake cmake g++ pkg-config unzip gettext curl -y
-
     - name: Install Neovim
       run: |
         sudo snap install nvim --classic
