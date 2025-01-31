@@ -32,7 +32,7 @@ describe("The code window", function()
     h.feed_keys('xhello<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(llm_stub)
+    local args = h.stub_call_args(llm_stub)
 
     args.on_read(nil, "some content") -- populate right pane
 
@@ -103,7 +103,7 @@ describe("The code window", function()
     h.feed_keys('xhello<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(generate_stub)
+    local args = h.stub_call_args(generate_stub)
 
     -- simulate a multiline resposne from the llm
     args.on_read(nil, "line 1\nline 2")
@@ -120,7 +120,7 @@ describe("The code window", function()
     h.feed_keys('xincluding system prompt?<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(generate_stub)
+    local args = h.stub_call_args(generate_stub)
     assert.not_nil(args.llm.system)
   end)
 
@@ -134,7 +134,7 @@ describe("The code window", function()
     h.feed_keys('xincluding filetype?<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(generate_stub)
+    local args = h.stub_call_args(generate_stub)
 
     assert.not_nil(string.find(args.llm.prompt, "lua"))
     assert.not_nil(args.llm.prompt)
@@ -148,7 +148,7 @@ describe("The code window", function()
     h.feed_keys('xloading test<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(generate_stub)
+    local args = h.stub_call_args(generate_stub)
 
     -- before on_response gets a response from the llm, the right window should show a loading indicator
     assert.same({ "Loading..." }, h.get_popup_lines(win.right))
@@ -181,7 +181,7 @@ describe("The code window", function()
     h.feed_keys('xtesting first response<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args_first = h.stub_args(generate_stub)
+    local args_first = h.stub_call_args(generate_stub)
 
     -- Simulate first response
     args_first.on_read(nil, "first response line")
@@ -194,7 +194,7 @@ describe("The code window", function()
     h.feed_keys('xtesting second response<Esc><CR>')
 
     ---@type MakeGenerateRequestArgs
-    local args_second = h.stub_args(generate_stub)
+    local args_second = h.stub_call_args(generate_stub)
 
     -- Simulate second response
     args_second.on_read(nil, "second response line")
@@ -233,7 +233,7 @@ describe("The code window", function()
     h.feed_keys("itransfer panes<Esc><CR>")
 
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(generate_stub)
+    local args = h.stub_call_args(generate_stub)
 
     -- Get some stuff into the right pane, this will get transfered around
     args.on_read(nil, "xfer")
@@ -271,7 +271,7 @@ describe("The code window", function()
 
     -- right window is saved when an llm response comes in
     ---@type MakeGenerateRequestArgs
-    local args = h.stub_args(llm_stub)
+    local args = h.stub_call_args(llm_stub)
     args.on_read(nil, "right")
 
     -- Close the window with :q

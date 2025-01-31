@@ -84,20 +84,68 @@ end
 M.fake_job = function()
   local die_called = false
   return {
-      die = function()
-        die_called = true
-      end,
-      done = function()
-        return die_called
-      end
-    }
+    die = function()
+      die_called = true
+    end,
+    done = function()
+      return die_called
+    end
+  }
 end
 
 -- Get the given stub's first call's arguments
 ---@param stoob any -- TODO Wait do we not have typing for stubs!?
 ---@param call_num integer | nil -- TODO Wait do we not have typing for stubs!?
-M.stub_args = function(stoob, call_num)
+M.stub_call_args = function(stoob, call_num)
+  if not stoob.calls[1] then
+    error("stub_args received stub with no calls")
+  end
   return stoob.calls[1].refs[call_num or 1]
+end
+
+-- Takes what shoud be fed into the telescope picker, and returns a
+-- function that needs to be called to trigger the telescope pick
+---@param contents table
+---@return function
+M.stub_model_picker = function(contents)
+  local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
+  get_selected_entry_stub.returns(contents)
+  stub(require('telescope.actions'), "close")
+  local new_picker_stub = stub(require('telescope.pickers'), "new")
+  new_picker_stub.returns({ find = function() end })
+
+  return function()
+    assert.stub(new_picker_stub).was_called(1)
+    local attach_mappings = M.stub_call_args(new_picker_stub).attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+  end
+end
+
+-- Same as above but for file picker
+-- I'm only stubbing this because it's so hard to test. One time out of
+-- hundreds I was able to get the test to reflect a picked file. I don't know
+-- if there's some
+-- async magic or what but I can't make it work. Tried vim.wait forever.
+---@param contents table
+---@return function
+M.stub_file_picker = function(contents)
+  local find_files = stub(require('telescope.builtin'), "find_files")
+  local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
+  get_selected_entry.returns(contents)
+  stub(require('telescope.actions'), "close")
+  return function()
+    assert.stub(find_files).was_called(1)
+    local attach_mappings = find_files.calls[1].refs[1].attach_mappings
+    local map = stub()
+    map.invokes(function(_, _, cb)
+      cb(9999) -- this will call get_selected_entry internally
+    end)
+    attach_mappings(nil, map)
+  end
 end
 
 return M

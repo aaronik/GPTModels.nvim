@@ -78,38 +78,23 @@ for _, doe in pairs(doze) do
     end)
 
     it("opens a model picker on <C-p>", function()
-      -- For down the line of this crazy stubbing exercise
-      local get_selected_entry_stub = stub(require('telescope.actions.state'), "get_selected_entry")
-      get_selected_entry_stub.returns({ "abc.123.pie", index = 1 }) -- typical response
-
-      -- And just make sure there are no closing errors
-      stub(require('telescope.actions'), "close")
+      local select_model = h.stub_model_picker({ "abc.123.pie", index = 1 })
 
       local set_model_stub = stub(Store, "set_model")
-
-      local new_picker_stub = stub(require('telescope.pickers'), "new")
-      new_picker_stub.returns({ find = function() end })
 
       doe.window.build_and_mount()
 
       -- Open model picker
       h.feed_keys("<C-p>")
 
-      assert.stub(new_picker_stub).was_called(1)
+      -- Scroll a bit
+      h.feed_keys("<Down>")
 
-      -- Type whatever nonsense and press enter
-      h.feed_keys("<CR>")
-
-      local attach_mappings = h.stub_args(new_picker_stub).attach_mappings
-      local map = stub()
-      map.invokes(function(_, _, cb)
-        cb(9999) -- this will call get_selected_entry internally
-      end)
-      attach_mappings(nil, map)
+      select_model()
 
       assert.stub(set_model_stub).was_called(1)
-      assert.equal('abc', h.stub_args(set_model_stub, 2))
-      assert.equal('123.pie', h.stub_args(set_model_stub, 3))
+      assert.equal('abc', h.stub_call_args(set_model_stub, 2))
+      assert.equal('123.pie', h.stub_call_args(set_model_stub, 3))
     end)
 
     it("cycles through available models with <C-j>", function()
@@ -155,17 +140,7 @@ for _, doe in pairs(doze) do
     it("includes files on <C-f> and clears them on <C-g>", function()
       doe.window.build_and_mount()
 
-      -- I'm only stubbing this because it's so hard to test. One time out of hundreds
-      -- I was able to get the test to reflect a picked file. I don't know if there's some
-      -- async magic or what but I can't make it work. Tried vim.wait forever.
-      local find_files = stub(require('telescope.builtin'), "find_files")
-
-      -- For down the line of this crazy stubbing exercise
-      local get_selected_entry = stub(require('telescope.actions.state'), "get_selected_entry")
-      get_selected_entry.returns({ "README.md", index = 1 }) -- typical response
-
-      -- And just make sure there are no closing errors
-      stub(require('telescope.actions'), "close")
+      local select_file = h.stub_file_picker({ "README.md", index = 1 })
 
       -- Press ctl-f to open the telescope picker
       h.feed_keys('<C-f>')
@@ -173,21 +148,14 @@ for _, doe in pairs(doze) do
       -- Press enter to select the first file, was Makefile in testing
       h.feed_keys('<CR>')
 
-      -- Simulate finding a file
-      assert.stub(find_files).was_called(1)
-      local attach_mappings = find_files.calls[1].refs[1].attach_mappings
-      local map = stub()
-      map.invokes(function(_, _, cb)
-        cb(9999) -- this will call get_selected_entry internally
-      end)
-      attach_mappings(nil, map)
+      select_file()
 
       -- Now we'll check what was given to llm.generate
       local generate_stub = stub(llm, doe.llm_request)
       h.feed_keys('<CR>')
 
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
-      local args = h.stub_args(generate_stub)
+      local args = h.stub_call_args(generate_stub)
 
       -- Does the request now contain the file
       if args.llm.prompt then
@@ -200,7 +168,7 @@ for _, doe in pairs(doze) do
       h.feed_keys('<C-g>')
       h.feed_keys('<CR>')
 
-      -- TODO h.stub_args should do both calls and refs
+      -- TODO h.stub_call_args should do both calls and refs
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
       args = generate_stub.calls[2].refs[1]
 
@@ -236,7 +204,7 @@ for _, doe in pairs(doze) do
       h.feed_keys('<CR>')
 
       ---@type MakeGenerateRequestArgs | MakeChatRequestArgs
-      local args = h.stub_args(llm_stub)
+      local args = h.stub_call_args(llm_stub)
 
       local long_content = ""
       for _ = 1, 1000, 1 do
@@ -331,7 +299,7 @@ for _, doe in pairs(doze) do
       -- vim.wait(10)
 
       ---@type MakeChatRequestArgs | MakeGenerateRequestArgs
-      local args = h.stub_args(chat_stub)
+      local args = h.stub_call_args(chat_stub)
 
       if args.llm.prompt then
         args.on_read(nil, "response to be saved in background")
@@ -442,7 +410,7 @@ for _, doe in pairs(doze) do
       local set_text_stub = stub(com, "set_input_bottom_border_text")
       local win = doe.window.build_and_mount()
       assert.stub(set_text_stub).was_called(1)
-      local args = h.stub_args(set_text_stub)
+      local args = h.stub_call_args(set_text_stub)
       assert.equal(args, win.input)
     end)
 

@@ -51,7 +51,7 @@ describe("The Chat window", function()
     h.feed_keys('xhello<Esc><CR>')
 
     ---@type MakeChatRequestArgs
-    local args = h.stub_args(llm_chat_stub)
+    local args = h.stub_call_args(llm_chat_stub)
 
     args.on_read(nil, { role = "assistant", content = "some content" }) -- populate chat pane
 
@@ -136,7 +136,7 @@ describe("The Chat window", function()
 
     -- grab the given callback
     ---@type MakeChatRequestArgs
-    local args = h.stub_args(llm_chat_stub)
+    local args = h.stub_call_args(llm_chat_stub)
 
     -- simulate llm responding
     args.on_read(nil, { role = "assistant", content = "response text1\nresponse text2" })
