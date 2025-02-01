@@ -2,52 +2,44 @@
 --
 -- via https://www.petergundel.de/neovim/lua/hack/2023/12/17/get-neovim-mode-when-executing-a-command.html
 
-local util = require('gptmodels.util')
-
-function InvokeGptModelsCode(opts, preview_ns, preview_buffer)
-  local gpt_opts = {
-    visual_mode = opts.count ~= -1
-  }
-
+local function models()
   -- For development only
-  util.R('gptmodels').code(gpt_opts);
-  -- require('gptmodels').code(gpt_opts)
+  -- local util = require('gptmodels.util')
+  -- return util.R('gptmodels')
+  return require('gptmodels')
 end
 
-function InvokeGptModelsChat(opts, preview_ns, preview_buffer)
-  local gpt_opts = {
-    visual_mode = opts.count ~= -1
-  }
-
-  -- For development only
-  util.R('gptmodels').chat(gpt_opts);
-  -- require('gptmodels').chat(gpt_opts)
+local function code_with_vis_ops(opts)
+  local gpt_opts = { visual_mode = opts.count ~= -1 }
+  models().code(gpt_opts)
 end
 
-function InvokeGptModelsProject(opts, preview_ns, preview_buffer)
-  local gpt_opts = {
-    visual_mode = opts.count ~= -1
-  }
-
-  -- For development only
-  util.R('gptmodels').project(gpt_opts);
-  -- require('gptmodels').project(gpt_opts)
+local function chat_with_vis_ops(opts)
+  local gpt_opts = { visual_mode = opts.count ~= -1 }
+  models().chat(gpt_opts)
 end
 
+local function project_with_vis_ops(opts)
+  local gpt_opts = { visual_mode = opts.count ~= -1 }
+  models().project(gpt_opts)
+end
+
+
+-- https://www.petergundel.de/neovim/lua/hack/2023/12/17/get-neovim-mode-when-executing-a-command.html
 vim.api.nvim_create_user_command(
   "GPTModelsCode",
-  InvokeGptModelsCode,
+  code_with_vis_ops,
   { nargs = "?", range = "%", addr = "lines" }
 )
 
 vim.api.nvim_create_user_command(
   "GPTModelsChat",
-  InvokeGptModelsChat,
+  chat_with_vis_ops,
   { nargs = "?", range = "%", addr = "lines" }
 )
 
 vim.api.nvim_create_user_command(
   "GPTModelsProject",
-  InvokeGptModelsProject,
+  project_with_vis_ops,
   { nargs = "?", range = "%", addr = "lines" }
 )
