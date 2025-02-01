@@ -52,12 +52,13 @@ local parse_llm_response = function(response)
             return consts.LLM_DECODE_ERROR_STRING .. line .. ":\n" .. vim.inspect(data) .. "\n\n"
         end
 
-        if not data.choices[1].delta.role then
-            data.choices[1].delta.role = "assistant"
+        local delta = data.choices[1].delta
+        if not delta.role then
+            delta.role = "assistant"
         end
 
-        if not data.choices[1].delta.content then
-            data.choices[1].delta.content = ""
+        if not delta.content then
+            delta.content = ""
         end
 
         table.insert(messages, data.choices[1].delta)

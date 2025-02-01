@@ -19,6 +19,10 @@ describe("The code window", function()
     assert.same(given_lines, gotten_lines)
   end)
 
+  -- DSL wants
+  -- * h.assert_window_empty
+
+  -- TODO Maybe it doesn't, tho? What if you could iteratively augment Code!?
   it("clears all windows, kills job, and clears files when opened with selected text", function()
     -- First, open a window and add some stuff
     local first_given_lines = { "first" }
@@ -34,7 +38,8 @@ describe("The code window", function()
     ---@type MakeGenerateRequestArgs
     local args = h.stub_call_args(llm_stub)
 
-    args.on_read(nil, "some content") -- populate right pane
+    -- populate right pane
+    args.on_read(nil, "some content")
 
     -- add files
     Store.code:append_file("README.md")
