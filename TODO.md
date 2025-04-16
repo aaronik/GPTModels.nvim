@@ -29,6 +29,7 @@
 * Save one session to disk. Sessions are remembered across restarts
 * Save results of previous llm fetches to disk too, totally solve fetch slowness.
     * Still need to get real time insert though for the UX
+* Should use vim.ui.select instead of calling telescope directly?
 
 
 #### Big Ideas
