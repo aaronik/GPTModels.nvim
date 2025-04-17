@@ -237,13 +237,15 @@ describe("openai.fetch_models", function()
     ---@type ExecArgs
     local exec_args = exec_stub.calls[1].refs[1]
 
-    local openai_response = [[
+    local openai_response_chunk_1 = [[
     {
       "data": [
         { "id": "gpt-4o" },
         { "id": "gpt-4o-mini" },
         { "id": "gpt-3.5-turbo-1106" },
-        { "id": "chatgpt-4o-latest" },
+        { "id": "chatgpt-4]]
+
+    local openai_response_chunk_2 = [[o-latest" },
         { "id": "babbage-002" },
         { "id": "whisper-1" },
         { "id": "davinci-002" }
@@ -251,7 +253,11 @@ describe("openai.fetch_models", function()
     }
     ]]
 
-    exec_args.onread(nil, openai_response)
+    exec_args.onread(nil, openai_response_chunk_1)
+    exec_args.onread(nil, openai_response_chunk_2)
+
+    exec_args.onexit(0, 0)
+
     vim.wait(20, function() return finished end)
 
     assert.is_nil(error)
@@ -274,6 +280,7 @@ describe("openai.fetch_models", function()
     local exec_args = exec_stub.calls[1].refs[1]
     local openai_response = '{"error": {"message": "Error message"}}'
     exec_args.onread(nil, openai_response)
+    exec_args.onexit(1, 1)
     vim.wait(20, function() return finished end)
     assert.equal(error, "Error message")
   end)

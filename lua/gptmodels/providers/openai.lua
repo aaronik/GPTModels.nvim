@@ -213,16 +213,14 @@ local Provider = {
             onread = vim.schedule_wrap(function(err, json_response)
                 if err then return cb(err) end
                 if not json_response then return end
-
-                json_response = response_aggregate .. json_response
-
+                response_aggregate = response_aggregate .. json_response
+            end),
+            onexit = vim.schedule_wrap(function()
                 ---@type boolean, nil | { data: nil | { id: string }[], error: nil | { message: string } }
-                local status_ok, response = pcall(vim.fn.json_decode, json_response)
+                local status_ok, response = pcall(vim.fn.json_decode, response_aggregate)
 
                 -- Failed fetches
                 if not response or not status_ok then
-                    -- TODO Test this bit
-                    response_aggregate = response_aggregate .. json_response
                     return cb("error retrieving openai models")
                 end
 
@@ -239,14 +237,11 @@ local Provider = {
                     if
                         model.id:sub(1, 3) == "gpt"
                         or model.id:sub(1, 7) == "chatgpt"
-                        or model.id:sub(1, 2) == "o1"
-                        or model.id:sub(1, 2) == "o3"
                     then
                         table.insert(models, model.id)
                     end
                 end
 
-                response_aggregate = ""
                 return cb(nil, models)
             end)
         })
