@@ -3,10 +3,16 @@
 -- via https://www.petergundel.de/neovim/lua/hack/2023/12/17/get-neovim-mode-when-executing-a-command.html
 
 local function models()
-  -- For development only
-  -- local util = require('gptmodels.util')
-  -- return util.R('gptmodels')
-  return require('gptmodels')
+  if os.getenv("GPTMODELS_NVIM_ENV") == "development" then
+    -- For development. Makes the plugin auto-reload so you
+    -- don't need to restart nvim to get the changes live.
+    -- F*** it, we're doing it live! kinda thing.
+    local util = require('gptmodels.util')
+    return util.R('gptmodels')
+  else
+    return require('gptmodels')
+  end
+
 end
 
 local function code_with_vis_ops(opts)

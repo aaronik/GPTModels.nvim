@@ -19,6 +19,9 @@ describe("Extent util calls:", function()
   util_R_stub.callback = orig_R
   util_log_stub.callback = orig_log
 
+    -- Simulate GPTMODELS_NVIM_ENV being set to anything other than "development", see plugin/init.lua
+  stub(os, "getenv").returns("")
+
   for _, command in ipairs(commands) do
     it(command .. " encounters no " .. "util.R calls", function()
       vim.cmd(command)
