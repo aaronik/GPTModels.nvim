@@ -199,6 +199,7 @@ local Provider = {
     --| jq -r '.data[].id'
 
     fetch_models = function(cb)
+        local response_aggregate = ""
         local job = cmd.exec({
             cmd = "curl",
             args = {
@@ -213,11 +214,15 @@ local Provider = {
                 if err then return cb(err) end
                 if not json_response then return end
 
+                json_response = response_aggregate .. json_response
+
                 ---@type boolean, nil | { data: nil | { id: string }[], error: nil | { message: string } }
                 local status_ok, response = pcall(vim.fn.json_decode, json_response)
 
                 -- Failed fetches
-                if not status_ok or not response then
+                if not response or not status_ok then
+                    -- TODO Test this bit
+                    response_aggregate = response_aggregate .. json_response
                     return cb("error retrieving openai models")
                 end
 
@@ -231,11 +236,17 @@ local Provider = {
 
                 for _, model in ipairs(response.data) do
                     -- Many models are offered, only gpt* or chatgpt* models are chat bots, which is what this plugin uses.
-                    if model.id:sub(1, 3) == "gpt" or model.id:sub(1, 7) == "chatgpt" then
+                    if
+                        model.id:sub(1, 3) == "gpt"
+                        or model.id:sub(1, 7) == "chatgpt"
+                        or model.id:sub(1, 2) == "o1"
+                        or model.id:sub(1, 2) == "o3"
+                    then
                         table.insert(models, model.id)
                     end
                 end
 
+                response_aggregate = ""
                 return cb(nil, models)
             end)
         })
