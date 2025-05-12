@@ -1,11 +1,11 @@
-local util        = require('gptmodels.util')
-local com         = require('gptmodels.windows.common')
-local Layout      = require("nui.layout")
-local Popup       = require("nui.popup")
-local llm         = require('gptmodels.llm')
-local Store       = require('gptmodels.store')
+local util = require("gptmodels.util")
+local com = require("gptmodels.windows.common")
+local Layout = require("nui.layout")
+local Popup = require("nui.popup")
+local llm = require("gptmodels.llm")
+local Store = require("gptmodels.store")
 
-local M           = {}
+local M = {}
 
 -- The system prompt for the LLM
 ---@param filetype string
@@ -31,7 +31,9 @@ local code_prompt = function(filetype, input_text, code_text)
 
   for _, filename in ipairs(Store.code:get_filenames()) do
     local file = io.open(filename, "r")
-    if not file then break end
+    if not file then
+      break
+    end
     local content = file:read("*all")
     file:close()
 
@@ -77,15 +79,21 @@ end
 local function safe_render_from_store()
   local left_text = Store.code.left:read()
   local left_buf = Store.code.left.popup.bufnr or -1
-  if left_text then com.safe_render_buffer_from_text(left_buf, left_text) end
+  if left_text then
+    com.safe_render_buffer_from_text(left_buf, left_text)
+  end
 
   local right_text = Store.code.right:read()
   local right_buf = Store.code.right.popup.bufnr or -1
-  if right_text then com.safe_render_buffer_from_text(right_buf, right_text) end
+  if right_text then
+    com.safe_render_buffer_from_text(right_buf, right_text)
+  end
 
   local input_text = Store.code.input:read()
   local input_buf = Store.code.input.popup.bufnr or -1
-  if input_text then com.safe_render_buffer_from_text(input_buf, input_text) end
+  if input_text then
+    com.safe_render_buffer_from_text(input_buf, input_text)
+  end
 
   -- Get the files back
   com.set_input_top_border_text(Store.code.input.popup, Store.code:get_filenames())
@@ -126,7 +134,9 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
       end
 
       -- No response _and_ no error? Weird. Happens though.
-      if not response then return end
+      if not response then
+        return
+      end
 
       Store.code.right:append(response)
 
@@ -138,7 +148,7 @@ local on_CR = function(input_bufnr, left_bufnr, right_bufnr)
     end,
     on_end = function()
       Store:clear_job()
-    end
+    end,
   })
 
   Store:register_job(job)
@@ -164,11 +174,15 @@ function M.build_and_mount(selection)
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
     local has_buf_and_win = right.bufnr and right.winid
-    if not has_buf_and_win then return end
+    if not has_buf_and_win then
+      return
+    end
 
     local buf_valid = vim.api.nvim_buf_is_valid(right.bufnr)
     local win_valid = vim.api.nvim_win_is_valid(right.winid)
-    if not buf_valid and win_valid then return end
+    if not buf_valid and win_valid then
+      return
+    end
 
     -- all providers, but especially openai, can have the etl finish after a window has been closed,
     -- if it opens then closes real fast
@@ -201,7 +215,7 @@ function M.build_and_mount(selection)
     if relevant_diagnostic_count > 0 then
       vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, relevant_diagnostics)
       for _, line in ipairs(relevant_diagnostics) do
-        Store.code.input:append(line .. '\n')
+        Store.code.input:append(line .. "\n")
       end
     end
 
@@ -215,7 +229,9 @@ function M.build_and_mount(selection)
     local extent_job = Store:get_job()
     if extent_job then
       extent_job.die()
-      vim.wait(100, function() return extent_job.done() end)
+      vim.wait(100, function()
+        return extent_job.done()
+      end)
     end
   else
     -- When the store already has some data
@@ -247,24 +263,20 @@ function M.build_and_mount(selection)
   end)
 
   -- For input, save to populate on next open
-  input:on("InsertLeave",
-    function()
-      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
-      Store.code.input:clear()
-      Store.code.input:append(table.concat(input_lines, "\n"))
-    end
-  )
+  input:on("InsertLeave", function()
+    local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
+    Store.code.input:clear()
+    Store.code.input:append(table.concat(input_lines, "\n"))
+  end)
 
   -- For input, set <CR>
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    {
-      noremap = true,
-      silent = true,
-      callback = function()
-        on_CR(input.bufnr, left.bufnr, right.bufnr)
-      end
-    }
-  )
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "", {
+    noremap = true,
+    silent = true,
+    callback = function()
+      on_CR(input.bufnr, left.bufnr, right.bufnr)
+    end,
+  })
 
   -- Further Keymaps
   local bufs = { left.bufnr, right.bufnr, input.bufnr }
@@ -275,7 +287,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         com.cycle_tabs_forward(i, bufs)
-      end
+      end,
     })
 
     -- Shift-Tab cycles through windows in reverse
@@ -284,7 +296,7 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         com.cycle_tabs_backward(i, bufs)
-      end
+      end,
     })
 
     -- Ctl-n to reset session
@@ -297,7 +309,7 @@ function M.build_and_mount(selection)
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
         com.set_input_top_border_text(input, Store.code:get_filenames())
-      end
+      end,
     })
 
     -- Ctrl-c to kill active job
@@ -308,7 +320,7 @@ function M.build_and_mount(selection)
         if Store:get_job() then
           Store:get_job().die()
         end
-      end
+      end,
     })
 
     -- Ctrl-p to open model picker
@@ -319,7 +331,7 @@ function M.build_and_mount(selection)
         com.launch_telescope_model_picker(function()
           com.set_window_title(right, com.model_display_name())
         end)
-      end
+      end,
     })
 
     -- Ctrl-j to cycle forward through llms
@@ -329,7 +341,7 @@ function M.build_and_mount(selection)
       callback = function()
         Store:cycle_model_forward()
         com.set_window_title(right, com.model_display_name())
-      end
+      end,
     })
 
     -- Ctrl-k to cycle forward through llms
@@ -339,7 +351,7 @@ function M.build_and_mount(selection)
       callback = function()
         Store:cycle_model_backward()
         com.set_window_title(right, com.model_display_name())
-      end
+      end,
     })
 
     -- Ctl-f to include files
@@ -349,7 +361,7 @@ function M.build_and_mount(selection)
       callback = com.launch_telescope_file_picker(function(filename)
         Store.code:append_file(filename)
         com.set_input_top_border_text(input, Store.code:get_filenames())
-      end)
+      end),
     })
 
     -- Ctl-g to clear files
@@ -359,7 +371,7 @@ function M.build_and_mount(selection)
       callback = function()
         Store.code:clear_files()
         com.set_input_top_border_text(input, Store.code:get_filenames())
-      end
+      end,
     })
 
     -- Ctl-x to clear files
@@ -368,13 +380,15 @@ function M.build_and_mount(selection)
       silent = true,
       callback = function()
         local right_text = Store.code.right:read()
-        if not right_text then return end
+        if not right_text then
+          return
+        end
         Store.code.left:clear()
         Store.code.left:append(right_text)
         Store.code.right:clear()
         com.safe_render_buffer_from_text(right.bufnr, Store.code.right:read() or "")
         com.safe_render_buffer_from_text(left.bufnr, Store.code.left:read() or "")
-      end
+      end,
     })
 
     -- q to exit
@@ -405,7 +419,7 @@ function M.build_and_mount(selection)
   return {
     input = input,
     right = right,
-    left = left
+    left = left,
   }
 end
 

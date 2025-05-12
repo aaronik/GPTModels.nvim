@@ -1,8 +1,8 @@
-local Store = require('gptmodels.store')
-local cmd = require('gptmodels.cmd')
-local util = require('gptmodels.util')
-local ollama = require('gptmodels.providers.ollama')
-local openai = require('gptmodels.providers.openai')
+local Store = require("gptmodels.store")
+local cmd = require("gptmodels.cmd")
+local util = require("gptmodels.util")
+local ollama = require("gptmodels.providers.ollama")
+local openai = require("gptmodels.providers.openai")
 
 local M = {}
 
@@ -43,15 +43,21 @@ end
 ---@param bufnr integer
 ---@param text string
 function M.safe_render_buffer_from_text(bufnr, text)
-  if not bufnr then return end
+  if not bufnr then
+    return
+  end
   -- local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_loaded = true
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
 
-  if not (buf_loaded and buf_valid) then return end
+  if not (buf_loaded and buf_valid) then
+    return
+  end
 
   local buf_writable = vim.bo[bufnr].modifiable
-  if not buf_writable then return end
+  if not buf_writable then
+    return
+  end
 
   local response_lines = vim.split(text or "", "\n")
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, response_lines)
@@ -62,13 +68,19 @@ end
 ---@param bufnr integer
 ---@param lines string[]
 function M.safe_render_buffer_from_lines(bufnr, lines)
-  if not bufnr then return end
+  if not bufnr then
+    return
+  end
   local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
-  if not (buf_loaded and buf_valid) then return end
+  if not (buf_loaded and buf_valid) then
+    return
+  end
 
   local buf_writable = vim.bo[bufnr].modifiable
-  if not buf_writable then return end
+  if not buf_writable then
+    return
+  end
 
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, true, lines)
 end
@@ -92,7 +104,7 @@ function M.check_deps()
         has_curl = false
       end
     end,
-    testid = "check-deps-errors"
+    testid = "check-deps-errors",
   })
 
   cmd.exec({
@@ -104,7 +116,7 @@ function M.check_deps()
         has_ollama = false
       end
     end,
-    testid = "check-deps-warnings"
+    testid = "check-deps-warnings",
   })
 
   local has_openai_api_key = util.has_env_var("OPENAI_API_KEY")
@@ -114,24 +126,24 @@ function M.check_deps()
   end
 
   if not has_ollama then
-    info_string = info_string ..
-    "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
+    info_string = info_string
+      .. "GPTModels.nvim is missing optional dependency `ollama`. Local ollama models will be unavailable. "
   end
 
   if not has_openai_api_key then
-    info_string = info_string ..
-    "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
+    info_string = info_string
+      .. "GPTModels.nvim is missing optional OPENAI_API_KEY env var. openai models will be unavailable. "
   end
 
   if not has_openai_api_key and not has_ollama then
-    error_string = error_string ..
-    "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable."
+    error_string = error_string
+      .. "GPTModels.nvim is missing both the OPENAI_API_KEY env var and the `ollama` executable."
       .. " The plugin will have no models and will not work. "
   end
 
   return {
     ERROR = error_string and error_string or nil,
-    INFO = info_string and info_string or nil
+    INFO = info_string and info_string or nil,
   }
 end
 
@@ -141,9 +153,7 @@ end
 ---@param bufnr integer
 M.safe_scroll_to_bottom_when_user_not_present = function(winid, bufnr)
   if vim.api.nvim_win_is_valid(winid) and vim.api.nvim_get_current_win() ~= winid then
-    vim.api.nvim_win_set_cursor(
-      winid, { vim.api.nvim_buf_line_count(bufnr), 0 }
-    )
+    vim.api.nvim_win_set_cursor(winid, { vim.api.nvim_buf_line_count(bufnr), 0 })
   end
 end
 
@@ -172,18 +182,10 @@ end
 ---@param files table<string>
 M.set_input_top_border_text = function(input, files)
   if #files == 0 then
-    input.border:set_text(
-      "top",
-      " Prompt ",
-      "center"
-    )
+    input.border:set_text("top", " Prompt ", "center")
   else
     local files_string = table.concat(files, ", ")
-    input.border:set_text(
-      "top",
-      " Prompt + " .. files_string .. " ",
-      "center"
-    )
+    input.border:set_text("top", " Prompt + " .. files_string .. " ", "center")
   end
 end
 
@@ -252,17 +254,17 @@ end
 ---@param on_complete fun(filename: string): nil
 M.launch_telescope_file_picker = function(on_complete)
   return function()
-    local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-    require('telescope.builtin').find_files(util.merge_tables(theme, {
+    local theme = require("telescope.themes").get_dropdown({ winblend = 10 })
+    require("telescope.builtin").find_files(util.merge_tables(theme, {
       prompt_title = "include file name/contents in prompt",
       attach_mappings = function(_, map)
-        map('i', '<CR>', function(prompt_bufnr)
-          local selection = require('telescope.actions.state').get_selected_entry()
+        map("i", "<CR>", function(prompt_bufnr)
+          local selection = require("telescope.actions.state").get_selected_entry()
           on_complete(selection[1])
-          require('telescope.actions').close(prompt_bufnr)
+          require("telescope.actions").close(prompt_bufnr)
         end)
         return true
-      end
+      end,
     }))
   end
 end
@@ -270,48 +272,55 @@ end
 -- Generates a function that abstracts the telescope stuff, w/ a simpler api
 ---@param on_complete fun(): nil
 M.launch_telescope_model_picker = function(on_complete)
-  local theme = require('telescope.themes').get_dropdown({ winblend = 10 })
-  local conf = require('telescope.config').values
-  local actions = require('telescope.actions')
-  local state = require('telescope.actions.state')
-  local pickers = require('telescope.pickers')
-  local finders = require('telescope.finders')
+  local theme = require("telescope.themes").get_dropdown({ winblend = 10 })
+  local conf = require("telescope.config").values
+  local actions = require("telescope.actions")
+  local state = require("telescope.actions.state")
+  local pickers = require("telescope.pickers")
+  local finders = require("telescope.finders")
 
   local opts = util.merge_tables(theme, {
     attach_mappings = function(_, map)
-      map('i', '<CR>', function(bufnr)
+      map("i", "<CR>", function(bufnr)
         local selection = state.get_selected_entry()
         local model_split = vim.split(selection[1], ".", { plain = true })
         local provider = model_split[1]
         local model = table.concat(model_split, ".", 2)
-        if not (provider and model) then return end
+        if not (provider and model) then
+          return
+        end
         Store:set_model(provider, model)
         on_complete()
         actions.close(bufnr)
       end)
       return true
-    end
+    end,
   })
 
   local picker = pickers.new(opts, {
     prompt_title = "pick a model",
-    finder = finders.new_table {
-      results = Store:llm_model_strings()
-    },
+    finder = finders.new_table({
+      results = Store:llm_model_strings(),
+    }),
     sorter = conf.generic_sorter({}),
   })
 
   local refresh_finder = function()
-    picker:refresh(finders.new_table {
-      results = Store:llm_model_strings()
-    }, {})
+    picker:refresh(
+      finders.new_table({
+        results = Store:llm_model_strings(),
+      }),
+      {}
+    )
   end
 
   -- Poll for new results
   local interval = 500
   vim.defer_fn(function()
     -- End polling if picker closes
-    if picker.closed then return end
+    if picker.closed then
+      return
+    end
 
     refresh_finder()
     vim.defer_fn(function()

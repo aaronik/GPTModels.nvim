@@ -1,4 +1,4 @@
-local constants = require "gptmodels.constants"
+local constants = require("gptmodels.constants")
 
 -- Utility functions
 local M = {}
@@ -42,7 +42,9 @@ M.log = function(...)
   -- Swallow further errors
   -- This is a utility for development, it should never cause issues
   -- during real use.
-  if not log_file then return end
+  if not log_file then
+    return
+  end
 
   -- Write each arg to disk
   for _, arg in ipairs(args) do
@@ -79,7 +81,7 @@ end
 M.merge_tables = function(...)
   local new_table = {}
 
-  for _, t in ipairs({...}) do
+  for _, t in ipairs({ ... }) do
     for k, v in pairs(t) do
       if type(k) == "number" then
         table.insert(new_table, v)
@@ -93,10 +95,10 @@ M.merge_tables = function(...)
 end
 
 M.guid = function()
-  local template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-  return string.gsub(template, '[xy]', function(c)
-    local v = (c == 'x') and math.random(0, 0xf) or math.random(8, 0xb)
-    return string.format('%x', v)
+  local template = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+  return string.gsub(template, "[xy]", function(c)
+    local v = (c == "x") and math.random(0, 0xf) or math.random(8, 0xb)
+    return string.format("%x", v)
   end)
 end
 
@@ -109,9 +111,7 @@ M.get_visual_selection = function()
   local end_column = vim.fn.getpos("'>")[3]
 
   local end_col = math.min(end_column, 2147483646)
-  local lines = vim.api.nvim_buf_get_text(
-    0, start_line, start_column, end_line, end_col, {}
-  )
+  local lines = vim.api.nvim_buf_get_text(0, start_line, start_column, end_line, end_col, {})
 
   ---@type Selection
   local selection = {
@@ -119,7 +119,7 @@ M.get_visual_selection = function()
     end_line = end_line,
     start_column = start_column,
     end_column = end_column,
-    lines = lines
+    lines = lines,
   }
 
   return selection
@@ -143,9 +143,7 @@ M.get_relevant_diagnostics = function(diagnostics, selection)
       local selection_problem_code_start_line = diagnostic.lnum - selection.start_line + 1
       local selection_problem_code_end_line = diagnostic.end_lnum - selection.start_line + 1
       local problem_code_lines = {
-        unpack(selection.lines,
-        selection_problem_code_start_line,
-        selection_problem_code_end_line),
+        unpack(selection.lines, selection_problem_code_start_line, selection_problem_code_end_line),
       }
 
       local severity_label = constants.DIAGNOSTIC_SEVERITY_LABEL_MAP[diagnostic.severity]

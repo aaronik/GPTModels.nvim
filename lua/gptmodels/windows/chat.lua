@@ -1,5 +1,5 @@
-local util = require('gptmodels.util')
-local com = require('gptmodels.windows.common')
+local util = require("gptmodels.util")
+local com = require("gptmodels.windows.common")
 local Layout = require("nui.layout")
 local Popup = require("nui.popup")
 local llm = require("gptmodels.llm")
@@ -13,10 +13,14 @@ local WINDOW_TITLE_PREFIX = "Chat w/ "
 ---@param bufnr integer
 ---@param messages LlmMessage[]
 local safe_render_buffer_from_messages = function(bufnr, messages)
-  if not bufnr then return end -- can happen when popup has been unmounted
+  if not bufnr then
+    return
+  end -- can happen when popup has been unmounted
   local buf_loaded = vim.api.nvim_buf_is_loaded(bufnr)
   local buf_valid = vim.api.nvim_buf_is_valid(bufnr)
-  if not (buf_loaded and buf_valid) then return end
+  if not (buf_loaded and buf_valid) then
+    return
+  end
 
   local lines = {}
   for _, message in ipairs(messages) do
@@ -35,14 +39,16 @@ local extract_and_generate_file_messages = function(file_names)
   local file_messages = {}
   for _, file_name in ipairs(file_names) do
     local file = io.open(file_name, "r")
-    if not file then break end
+    if not file then
+      break
+    end
     ---@type string
     local file_content = file:read("*all")
     file:close()
 
     table.insert(file_messages, {
       role = "user",
-      content = prompts.included_file(file_name, file_content)
+      content = prompts.included_file(file_name, file_content),
     })
   end
 
@@ -99,7 +105,7 @@ local on_CR = function(input_bufnr, chat_bufnr)
     end,
     on_end = function()
       Store:clear_job()
-    end
+    end,
   })
 
   Store:register_job(job)
@@ -123,26 +129,30 @@ function M.build_and_mount(selection)
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
     local has_buf_and_win = chat.bufnr and chat.winid
-    if not has_buf_and_win then return end
+    if not has_buf_and_win then
+      return
+    end
 
     local buf_valid = vim.api.nvim_buf_is_valid(chat.bufnr)
     local win_valid = vim.api.nvim_win_is_valid(chat.winid)
-    if not buf_valid and win_valid then return end
+    if not buf_valid and win_valid then
+      return
+    end
 
     -- all providers, but especially openai, can have the etl finish after a window has been closed,
     -- if it opens then closes real fast
-    com.set_window_title(chat, 'Chat w/ ' .. com.model_display_name())
+    com.set_window_title(chat, "Chat w/ " .. com.model_display_name())
   end)
 
   -- Input window is text with no syntax
-  vim.bo[input.bufnr].filetype = 'txt'
-  vim.bo[input.bufnr].syntax = ''
+  vim.bo[input.bufnr].filetype = "txt"
+  vim.bo[input.bufnr].syntax = ""
 
   -- Make input a 'scratch' buffer, effectively making it a temporary buffer
   vim.bo[input.bufnr].buftype = "nofile"
 
   -- Chat in markdown
-  vim.bo[chat.bufnr].filetype = 'markdown'
+  vim.bo[chat.bufnr].filetype = "markdown"
 
   -- Add text selection to input buf
   if selection then
@@ -150,7 +160,9 @@ function M.build_and_mount(selection)
     local extent_job = Store:get_job()
     if extent_job then
       extent_job.die()
-      vim.wait(100, function() return extent_job.done() end)
+      vim.wait(100, function()
+        return extent_job.done()
+      end)
     end
 
     -- clear chat window
@@ -165,12 +177,14 @@ function M.build_and_mount(selection)
     vim.api.nvim_buf_set_lines(input.bufnr, 0, -1, true, selection.lines)
 
     -- Go to bottom of input and enter insert mode
-    local keys = vim.api.nvim_replace_termcodes('<Esc>Go', true, true, true)
-    vim.api.nvim_feedkeys(keys, 'mtx', true)
+    local keys = vim.api.nvim_replace_termcodes("<Esc>Go", true, true, true)
+    vim.api.nvim_feedkeys(keys, "mtx", true)
   else
     -- If there's saved input, render that
     local input_content = Store.chat.input:read()
-    if input_content then com.safe_render_buffer_from_text(input.bufnr, input_content) end
+    if input_content then
+      com.safe_render_buffer_from_text(input.bufnr, input_content)
+    end
 
     -- If there's a chat history, open with that.
     safe_render_buffer_from_messages(chat.bufnr, Store.chat.chat:read())
@@ -200,24 +214,20 @@ function M.build_and_mount(selection)
   end)
 
   -- For input, save to populate on next open
-  input:on("InsertLeave",
-    function()
-      local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
-      Store.chat.input:clear()
-      Store.chat.input:append(table.concat(input_lines, "\n"))
-    end
-  )
+  input:on("InsertLeave", function()
+    local input_lines = vim.api.nvim_buf_get_lines(input.bufnr, 0, -1, true)
+    Store.chat.input:clear()
+    Store.chat.input:append(table.concat(input_lines, "\n"))
+  end)
 
   -- keymaps
-  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "",
-    {
-      noremap = true,
-      silent = true,
-      callback = function()
-        on_CR(input.bufnr, chat.bufnr)
-      end
-    }
-  )
+  vim.api.nvim_buf_set_keymap(input.bufnr, "n", "<CR>", "", {
+    noremap = true,
+    silent = true,
+    callback = function()
+      on_CR(input.bufnr, chat.bufnr)
+    end,
+  })
 
   local bufs = { chat.bufnr, input.bufnr }
   for i, buf in ipairs(bufs) do
@@ -225,14 +235,18 @@ function M.build_and_mount(selection)
     vim.api.nvim_buf_set_keymap(buf, "n", "<Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() com.cycle_tabs_forward(i, bufs) end,
+      callback = function()
+        com.cycle_tabs_forward(i, bufs)
+      end,
     })
 
     -- Shift-Tab cycles through windows in reverse
     vim.api.nvim_buf_set_keymap(buf, "n", "<S-Tab>", "", {
       noremap = true,
       silent = true,
-      callback = function() com.cycle_tabs_backward(i, bufs) end,
+      callback = function()
+        com.cycle_tabs_backward(i, bufs)
+      end,
     })
 
     -- Ctl-n to reset session
@@ -245,7 +259,7 @@ function M.build_and_mount(selection)
           vim.api.nvim_buf_set_lines(bu, 0, -1, true, {})
         end
         com.set_input_top_border_text(input, Store.chat:get_filenames())
-      end
+      end,
     })
 
     -- Ctl-f to include files
@@ -255,7 +269,7 @@ function M.build_and_mount(selection)
       callback = com.launch_telescope_file_picker(function(filename)
         Store.chat:append_file(filename)
         com.set_input_top_border_text(input, Store.chat:get_filenames())
-      end)
+      end),
     })
 
     -- Ctl-g to clear files
@@ -265,7 +279,7 @@ function M.build_and_mount(selection)
       callback = function()
         Store.chat:clear_files()
         com.set_input_top_border_text(input, Store.chat:get_filenames())
-      end
+      end,
     })
 
     -- Ctrl-p to open model picker
@@ -276,7 +290,7 @@ function M.build_and_mount(selection)
         com.launch_telescope_model_picker(function()
           com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
         end)
-      end
+      end,
     })
 
     -- Ctrl-c to kill active job
@@ -287,7 +301,7 @@ function M.build_and_mount(selection)
         if Store:get_job() then
           Store:get_job().die()
         end
-      end
+      end,
     })
 
     -- Ctrl-j to cycle forward through llms
@@ -297,7 +311,7 @@ function M.build_and_mount(selection)
       callback = function()
         Store:cycle_model_forward()
         com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
-      end
+      end,
     })
 
     -- Ctrl-k to cycle forward through llms
@@ -307,14 +321,16 @@ function M.build_and_mount(selection)
       callback = function()
         Store:cycle_model_backward()
         com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
-      end
+      end,
     })
 
     -- "q" exits from the thing
     vim.api.nvim_buf_set_keymap(buf, "n", "q", "", {
       noremap = true,
       silent = true,
-      callback = function() layout:unmount() end,
+      callback = function()
+        layout:unmount()
+      end,
     })
   end
 
@@ -333,7 +349,7 @@ function M.build_and_mount(selection)
 
   return {
     input = input,
-    chat = chat
+    chat = chat,
   }
 end
 

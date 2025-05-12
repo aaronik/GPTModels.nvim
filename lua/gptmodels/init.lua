@@ -1,4 +1,4 @@
-local util = require('gptmodels.util')
+local util = require("gptmodels.util")
 local code_window = require("gptmodels.windows.code")
 local chat_window = require("gptmodels.windows.chat")
 
@@ -25,14 +25,13 @@ end
 
 ---@param opts { visual_mode: boolean }
 ---@see file plugin/init.lua
-M.chat = function (opts)
+M.chat = function(opts)
   if opts.visual_mode then
     local selection = util.get_visual_selection()
     chat_window.build_and_mount(selection)
   else
     chat_window.build_and_mount()
   end
-
 end
 
 return M
