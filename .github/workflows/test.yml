@@ -47,3 +47,8 @@ jobs:
         sudo apt-get install lua-check -y --no-install-recommends
         make check
 
+    - name: Check formatting
+      run: |
+        sudo apt-get install npm -y --no-install-recommends
+        sudo npm install -g @johnnymorganz/stylua-bin
+        make check-fmt

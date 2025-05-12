@@ -2,7 +2,7 @@ MINIMAL_INIT=tests/minimal_init.lua
 TESTS_DIR=tests
 NO_UTIL_SPEC=checks
 
-.PHONY: test fmt
+.PHONY: test fmt check-fmt
 
 test: ## Run the whole test suite
 	@nvim \
@@ -28,6 +28,9 @@ pass: test no-utils check ## Run everything, if it's a 0 code, everything's good
 
 fmt:
 	stylua lua/
+
+check-fmt:
+	stylua --check lua/
 
 help: ## Displays this information.
 	@printf '%s\n' "Usage: make <command>"
