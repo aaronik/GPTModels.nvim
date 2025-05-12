@@ -65,7 +65,6 @@
 ---@field end_column number
 ---@field lines string[]
 
-
 -- -- Wish they exported types
 -- -- Update: At some point it appears they did, but later I'm having trouble finding them.
 -- -- LSP is not picking it up any more, but often requires file to be open before registering

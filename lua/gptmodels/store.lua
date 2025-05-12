@@ -109,9 +109,15 @@ local function build_strpane()
   ---@type StrPane
   return {
     _text = "",
-    append = function(self, text) self._text = self._text .. text end,
-    read = function(self) return self._text end,
-    clear = function(self) self._text = "" end
+    append = function(self, text)
+      self._text = self._text .. text
+    end,
+    read = function(self)
+      return self._text
+    end,
+    clear = function(self)
+      self._text = ""
+    end,
   }
 end
 
@@ -149,7 +155,9 @@ local Store = {
   cycle_model_forward = function(self)
     local model_options = build_model_options(self)
     local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
-    if not current_index then current_index = #model_options end
+    if not current_index then
+      current_index = #model_options
+    end
     local selected_option = model_options[(current_index % #model_options) + 1]
     self:set_model(selected_option.provider, selected_option.model)
   end,
@@ -157,7 +165,9 @@ local Store = {
   cycle_model_backward = function(self)
     local model_options = build_model_options(self)
     local current_index = find_model_index(model_options, self._llm_provider, self._llm_model)
-    if not current_index then current_index = 1 end
+    if not current_index then
+      current_index = 1
+    end
     local selected_option = model_options[(current_index - 2) % #model_options + 1]
     self:set_model(selected_option.provider, selected_option.model)
   end,
@@ -183,14 +193,16 @@ local Store = {
     -- Define available models as a table with providers and their corresponding models
     local available_models = {
       ollama = self:get_models("ollama"),
-      openai = self:get_models("openai")
+      openai = self:get_models("openai"),
     }
 
     -- TODO Handle the case where available_models might be empty
-    if not available_models.ollama and not available_models.openai then return end
+    if not available_models.ollama and not available_models.openai then
+      return
+    end
 
     -- Check if the current model is still present in the available models list
-    for _, provider in ipairs { "ollama", "openai" } do
+    for _, provider in ipairs({ "ollama", "openai" }) do
       for _, available_model in ipairs(available_models[provider]) do
         if available_model == current_model then
           -- The currently selected model is present in our lists, no work need be done.
@@ -202,7 +214,7 @@ local Store = {
     -- Current model is not available; select a default model
     local preferred_defaults = { "llama3.1:latest", "deepseek-v2:latest", "gpt-4o-mini", "gpt-4o" }
     for _, preferred_default in ipairs(preferred_defaults) do
-      for _, provider in ipairs { "ollama", "openai" } do
+      for _, provider in ipairs({ "ollama", "openai" }) do
         for _, available_model in ipairs(available_models[provider]) do
           if available_model == preferred_default then
             self:set_model(provider, preferred_default)
@@ -213,7 +225,7 @@ local Store = {
     end
 
     -- If no preferred defaults are available, user gets the first available one
-    for _, provider in ipairs { "ollama", "openai" } do
+    for _, provider in ipairs({ "ollama", "openai" }) do
       if #available_models[provider] > 0 then
         -- Set the model to the first available option from the corresponding provider
         self:set_model(provider, available_models[provider][1])
@@ -239,43 +251,66 @@ local Store = {
     input = build_strpane(),
 
     _files = {},
-    append_file = function(self, filename) table.insert(self._files, filename) end,
-    get_filenames = function(self) return self._files end,
-    clear_files = function(self) self._files = {} end,
+    append_file = function(self, filename)
+      table.insert(self._files, filename)
+    end,
+    get_filenames = function(self)
+      return self._files
+    end,
+    clear_files = function(self)
+      self._files = {}
+    end,
 
     clear = function(self)
       self.right:clear()
       self.left:clear()
       self.input:clear()
       self:clear_files()
-    end
+    end,
   },
   chat = {
     input = build_strpane(),
 
     chat = {
       _messages = {},
-      read = function(self) return self._messages end,
-      append = function(self, message) concat_chat(self._messages, message) end,
-      clear = function(self) self._messages = {} end
+      read = function(self)
+        return self._messages
+      end,
+      append = function(self, message)
+        concat_chat(self._messages, message)
+      end,
+      clear = function(self)
+        self._messages = {}
+      end,
     },
 
     _files = {},
-    append_file = function(self, filename) table.insert(self._files, filename) end,
-    get_filenames = function(self) return self._files end,
-    clear_files = function(self) self._files = {} end,
+    append_file = function(self, filename)
+      table.insert(self._files, filename)
+    end,
+    get_filenames = function(self)
+      return self._files
+    end,
+    clear_files = function(self)
+      self._files = {}
+    end,
 
     clear = function(self)
       self.input:clear()
       self.chat:clear()
       self:clear_files()
-    end
+    end,
   },
 
-  register_job = function(self, job) self._job = job end,
-  get_job = function(self) return self._job end,
-  clear_job = function(self) self._job = nil end
-
+  register_job = function(self, job)
+    self._job = job
+  end,
+  get_job = function(self)
+    return self._job
+  end,
+  clear_job = function(self)
+    self._job = nil
+  end,
 }
 
 return Store

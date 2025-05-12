@@ -15,32 +15,44 @@ function M.exec(args)
 
   local handle, pid = uv.spawn(args.cmd, {
     stdio = { stdin, stdout, stderr },
-    args = args.args
+    args = args.args,
   }, function(code, signal) -- on exit
     stdin:close()
     stdout:close()
     stderr:close()
     done = true
-    if args.onexit then args.onexit(code, signal) end
+    if args.onexit then
+      args.onexit(code, signal)
+    end
   end)
 
   if args.onread then
-    uv.read_start(stdout, function(err, data) args.onread(err, data) end)
-    uv.read_start(stderr, function(_, err) args.onread(err, nil) end)
+    uv.read_start(stdout, function(err, data)
+      args.onread(err, data)
+    end)
+    uv.read_start(stderr, function(_, err)
+      args.onread(err, nil)
+    end)
   end
 
   if args.sync then
     -- arbitrarily chosen, don't love that it's built in here
-    vim.wait(2 * 60 * 1000, function() return done end)
+    vim.wait(2 * 60 * 1000, function()
+      return done
+    end)
   end
 
   return {
     handle = handle,
     pid = pid,
-    done = function() return done end,
+    done = function()
+      return done
+    end,
     die = function()
-      if not handle then return end
-      uv.process_kill(handle, 'sigterm')
+      if not handle then
+        return
+      end
+      uv.process_kill(handle, "sigterm")
       -- Give it a moment to terminate gracefully
       vim.defer_fn(function()
         if not handle:is_closing() then
