@@ -2,7 +2,7 @@ MINIMAL_INIT=tests/minimal_init.lua
 TESTS_DIR=tests
 NO_UTIL_SPEC=checks
 
-.PHONY: test
+.PHONY: test fmt
 
 test: ## Run the whole test suite
 	@nvim \
@@ -25,6 +25,9 @@ no-utils: ## Make sure there are no errant utils hanging around
 		-c "PlenaryBustedDirectory ${NO_UTIL_SPEC} { minimal_init = '${MINIMAL_INIT}' }"
 
 pass: test no-utils check ## Run everything, if it's a 0 code, everything's good
+
+fmt:
+	stylua lua/
 
 help: ## Displays this information.
 	@printf '%s\n' "Usage: make <command>"
