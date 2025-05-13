@@ -14,7 +14,7 @@ test: ## Run the whole test suite
 test-watch: ## Watching for changes to lua files
 	@nodemon -e lua -x "$(MAKE) test || exit 1"
 
-check: ## Run luacheck on the project
+check: ## Run luacheck on the project (lua type checker)
 	@luacheck . --globals vim it describe before_each after_each --exclude-files tests/fixtures --max-comment-line-length 140
 
 no-utils: ## Make sure there are no errant utils hanging around
@@ -24,12 +24,12 @@ no-utils: ## Make sure there are no errant utils hanging around
 		-u ${MINIMAL_INIT} \
 		-c "PlenaryBustedDirectory ${NO_UTIL_SPEC} { minimal_init = '${MINIMAL_INIT}' }"
 
-pass: test no-utils check ## Run everything, if it's a 0 code, everything's good
+pass: test no-utils check check-fmt ## Run everything, if it's a 0 code, everything's good
 
-fmt:
+fmt: ## Run stylua on the project (lua code style linter), including automatic changes
 	stylua lua/
 
-check-fmt:
+check-fmt: ## Check stylua on the project, only emitting errors, not modifying project at all
 	stylua --check lua/
 
 help: ## Displays this information.
