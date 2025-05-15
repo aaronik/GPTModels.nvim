@@ -29,7 +29,7 @@ describe("cmd.exec", function()
   end)
 
   it("calls onread with errors", function()
-    local e = "initial"
+    local e = ""
 
     ---@type ExecArgs
     local exec_args = {
@@ -38,7 +38,7 @@ describe("cmd.exec", function()
       args = { "/thisdirdefinitelydoesntexistimsureofitforreal" },
       onread = function(err, data)
         if data then error(data) end
-        if err then e = err end
+        if err then e = e .. err end
       end,
     }
 
@@ -52,9 +52,7 @@ describe("cmd.exec", function()
 
     -- That directory is definitely not found, which leads to a message to
     -- stderr with this in it
-    -- (github workflow runner) ls: cannot access '/thisdirdefinitelydoesntexistimsureofitforreal': No such file or directory
-    local expected = "No such file or directory"
-    assert.not_nil(string.find(e, expected), e .. " [did not contain] " .. expected)
+    assert.not_nil(string.find(e, "No such file or directory"))
   end)
 
   it("handles exit codes", function()
