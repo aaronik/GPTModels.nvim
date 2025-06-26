@@ -171,7 +171,11 @@ function M.build_and_mount(selection)
   Store.code.left.popup = left
   Store.code.input.popup = input
 
-  -- Fetch all models so user can work with what they have on their system
+  -- Load any persisted state first (model selection and cached models)
+  Store:load_persisted_state()
+  com.set_window_title(right, com.model_display_name())
+
+  -- Fetch all models so user can work with what they have access to
   com.trigger_models_etl(function()
     local has_buf_and_win = right.bufnr and right.winid
     if not has_buf_and_win then

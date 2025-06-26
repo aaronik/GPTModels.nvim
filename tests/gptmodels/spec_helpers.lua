@@ -43,6 +43,10 @@ M.hook_reset_state = function()
     -- stubbing cmd.exec prevents the llm call from happening
     stub(cmd, "exec")
 
+    -- Mock persistence functions to prevent loading real saved data during tests
+    stub(Store, "load_persisted_state")
+    stub(Store, "save_persisted_state")
+
     Store:clear()
     snapshot = assert:snapshot()
   end)

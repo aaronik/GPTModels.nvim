@@ -96,13 +96,29 @@ end
 ---@field get_job fun(self: Store): Job | nil
 ---@field clear_job fun(self: Store)
 ---@field get_models fun(self: Store, provider: Provider): string[]
----@field set_models fun(self: Store, provider: Provider, models: string[])
+---@field set_models fun(self: Store, provider: Provider, models: string[], skip_persistence?: boolean)
 ---@field get_model fun(self: Store): { provider: string, model: string }
 ---@field set_model fun(self: Store, provider: Provider, model: string)
 ---@field cycle_model_forward fun(self: Store)
 ---@field cycle_model_backward fun(self: Store)
 ---@field llm_model_strings fun(self: Store): string[]
 ---@field correct_potentially_missing_current_model fun(self: Store)
+---@field save_persisted_state fun(self: Store)
+---@field load_persisted_state fun(self: Store)
+
+-- Get the path to the persistence file
+---@return string
+local function get_persistence_file_path()
+  local data_path = vim.fn.stdpath("data")
+  return data_path .. "/gptmodels/state.json"
+end
+
+-- Get the directory for persistence files
+---@return string
+local function get_persistence_dir()
+  local data_path = vim.fn.stdpath("data")
+  return data_path .. "/gptmodels"
+end
 
 ---@return StrPane
 local function build_strpane()
@@ -140,6 +156,7 @@ local Store = {
   set_model = function(self, provider, model)
     self._llm_provider = provider
     self._llm_model = model
+    self:save_persisted_state()
   end,
 
   -- get all models for a provider
@@ -148,8 +165,11 @@ local Store = {
   end,
 
   -- set all models for a provider, overwriting previous values
-  set_models = function(self, provider, models)
+  set_models = function(self, provider, models, skip_persistence)
     self._llm_models[provider] = models
+    if not skip_persistence then
+      self:save_persisted_state()
+    end
   end,
 
   cycle_model_forward = function(self)
@@ -240,9 +260,10 @@ local Store = {
   clear = function(self)
     self.code:clear()
     self.chat:clear()
-    self:set_models("ollama", {})
-    self:set_models("openai", {})
-    -- TODO Need to clear default model as well?
+    self._llm_models.ollama = {}
+    self._llm_models.openai = {}
+    self._llm_provider = ""
+    self._llm_model = ""
   end,
 
   code = {
@@ -310,6 +331,78 @@ local Store = {
   end,
   clear_job = function(self)
     self._job = nil
+  end,
+
+  -- Save current state to disk
+  save_persisted_state = function(self)
+    local persistence_dir = get_persistence_dir()
+    local persistence_file = get_persistence_file_path()
+
+    -- Create directory if it doesn't exist
+    vim.fn.mkdir(persistence_dir, "p")
+
+    -- Prepare data to save
+    local data = {
+      current_provider = self._llm_provider,
+      current_model = self._llm_model,
+      models = {
+        openai = self._llm_models.openai,
+        ollama = self._llm_models.ollama,
+      },
+    }
+
+    -- Write to file
+    local encoded = vim.json.encode(data)
+    local file = io.open(persistence_file, "w")
+    if file then
+      file:write(encoded)
+      file:close()
+    end
+  end,
+
+  -- Load persisted state from disk
+  load_persisted_state = function(self)
+    local persistence_file = get_persistence_file_path()
+
+    -- Check if file exists
+    if vim.fn.filereadable(persistence_file) == 0 then
+      return
+    end
+
+    -- Read and parse file
+    local file = io.open(persistence_file, "r")
+    if not file then
+      return
+    end
+
+    local content = file:read("*a")
+    file:close()
+
+    -- Handle empty file
+    if not content or content == "" then
+      return
+    end
+
+    -- Parse JSON safely
+    local ok, data = pcall(vim.json.decode, content)
+    if not ok or not data then
+      return
+    end
+
+    -- Restore state
+    if data.current_provider and data.current_model then
+      self._llm_provider = data.current_provider
+      self._llm_model = data.current_model
+    end
+
+    if data.models then
+      if data.models.openai then
+        self._llm_models.openai = data.models.openai
+      end
+      if data.models.ollama then
+        self._llm_models.ollama = data.models.ollama
+      end
+    end
   end,
 }
 

@@ -126,6 +126,10 @@ function M.build_and_mount(selection)
   Store.chat.chat.popup = chat
   Store.chat.input.popup = input
 
+  -- Load any persisted state first (model selection and cached models)
+  Store:load_persisted_state()
+  com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
+
   -- Fetch all models so user can work with what they have on their system
   com.trigger_models_etl(function()
     local has_buf_and_win = chat.bufnr and chat.winid
@@ -141,7 +145,7 @@ function M.build_and_mount(selection)
 
     -- all providers, but especially openai, can have the etl finish after a window has been closed,
     -- if it opens then closes real fast
-    com.set_window_title(chat, "Chat w/ " .. com.model_display_name())
+    com.set_window_title(chat, WINDOW_TITLE_PREFIX .. com.model_display_name())
   end)
 
   -- Input window is text with no syntax

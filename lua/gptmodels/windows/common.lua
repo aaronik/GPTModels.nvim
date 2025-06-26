@@ -214,27 +214,29 @@ end
 -- Triggers the fetching / saving of available models from the ollama and openai servers
 ---@param on_complete fun(): nil
 M.trigger_models_etl = function(on_complete)
+  local completed_providers = {}
+  local total_providers = 2
+
   ---@param err string | nil
   ---@param models string[] | nil
   ---@param provider Provider
   local function handle_models_fetch(err, models, provider)
     -- If there's an error fetching, assume we have no models
-    -- TODO We still need to inform the user somehow that their ollama models
-    -- fetching didn't work. Just not if we earlier detected a missing ollama
-    -- executable. Store.detected_missing_ollama_exe = true?
-    -- BUT DO WE? Maybe the models not appearing is sufficient feedback!
-    -- I think passing the err back is a good idea, because that can include
-    -- provider information
     if err or not models or #models == 0 then
-      Store:set_models(provider, {})
-      Store:correct_potentially_missing_current_model()
-      return on_complete()
+      Store:set_models(provider, {}, true) -- skip persistence during fetching
+    else
+      Store:set_models(provider, models, true) -- skip persistence during fetching
     end
 
-    Store:set_models(provider, models)
-    -- TODO Test that this gets called
-    Store:correct_potentially_missing_current_model()
-    on_complete()
+    -- Mark this provider as completed
+    completed_providers[provider] = true
+
+    -- Save state after ALL providers have completed
+    if vim.tbl_count(completed_providers) == total_providers then
+      -- Save the final state with all fetched models
+      Store:save_persisted_state()
+      on_complete()
+    end
   end
 
   -- Fetch models from ollama server
